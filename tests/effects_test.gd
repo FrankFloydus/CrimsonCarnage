@@ -2,6 +2,8 @@ extends SceneTree
 ## Direct damage, owned timed modifiers and reentrant cleanup in Combat 2.0.
 ## Run: godot --headless --path . --script res://tests/effects_test.gd
 
+const ATTRIBUTE_FIXTURE = preload("res://tests/attribute_fixture.gd")
+
 var _checks: int = 0
 var _failures: int = 0
 var _actors: Array[ActorAttributes] = []
@@ -45,7 +47,7 @@ func _run() -> void:
 
 
 func _actor() -> ActorAttributes:
-	var actor := ActorAttributes.new()
+	var actor := ATTRIBUTE_FIXTURE.new_attributes()
 	actor.set_base_value(CombatAttributes.Id.MAX_HEALTH, 200.0)
 	actor.restore_resources()
 	_actors.append(actor)

@@ -23,7 +23,7 @@ func reset_actor() -> void:
 	for number in _damage_numbers.get_children():
 		number.queue_free()
 	_damage_number_sequence = 0
-	ability_system.effects.clear()
+	ability_system.clear_transient_effects()
 	attributes.restore_resources()
 
 

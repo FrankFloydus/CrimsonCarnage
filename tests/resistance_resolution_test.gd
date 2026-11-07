@@ -1,6 +1,8 @@
 extends SceneTree
 ## Matching-school Resistance boundaries, authoring, payload integration and actual damage telemetry.
 
+const ATTRIBUTE_FIXTURE = preload("res://tests/attribute_fixture.gd")
+
 const RESISTANCES: Array[int] = [
 	CombatAttributes.Id.FIRE_RESISTANCE, CombatAttributes.Id.COLD_RESISTANCE,
 	CombatAttributes.Id.LIGHTNING_RESISTANCE, CombatAttributes.Id.VOID_RESISTANCE,
@@ -37,7 +39,7 @@ func _run() -> void:
 
 
 func _actor() -> ActorAttributes:
-	var actor := ActorAttributes.new()
+	var actor := ATTRIBUTE_FIXTURE.new_attributes()
 	actor.set_base_value(CombatAttributes.Id.MAX_HEALTH, 10000.0)
 	actor.restore_resources()
 	_actors.append(actor)
@@ -46,6 +48,7 @@ func _actor() -> ActorAttributes:
 
 func _effect(school: int = GameplayEffectDefinition.MagicSchool.FIRE, amount: float = 100.0) -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
+	effect.executions = [GameplayEffectDamageExecution.new()]
 	effect.effect_id = &"Effect.ResistanceTest"
 	effect.damage_type = GameplayEffectDefinition.DamageType.MAGIC
 	effect.magic_school = school

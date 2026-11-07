@@ -1,6 +1,8 @@
 extends SceneTree
 ## Independent Combat 2.0 power/coefficient expectations across primary values and levels.
 
+const ATTRIBUTE_FIXTURE = preload("res://tests/attribute_fixture.gd")
+
 var _checks: int = 0
 var _failures: int = 0
 var _random := RandomNumberGenerator.new()
@@ -21,13 +23,14 @@ func _run() -> void:
 
 
 func _actor() -> ActorAttributes:
-	return ActorAttributes.new()
+	return ATTRIBUTE_FIXTURE.new_attributes()
 
 
 func _test_flat_primary_damage() -> void:
 	var source := _actor()
 	var target := _actor()
 	var physical := GameplayEffectDefinition.new()
+	physical.executions = [GameplayEffectDamageExecution.new()]
 	physical.base_magnitude = 100.0
 	physical.power_coefficient = 0.5
 	for strength: float in [0.0, 10.0, 50.0, 100.0, 138.0]:
@@ -42,6 +45,7 @@ func _test_flat_primary_damage() -> void:
 		_near(CombatMath.resolve_effect(physical, context, target), 100.0 + strength,
 				"Dexterity contributes the same flat Power to its governed attacks")
 	var magic := GameplayEffectDefinition.new()
+	magic.executions = [GameplayEffectDamageExecution.new()]
 	magic.damage_type = GameplayEffectDefinition.DamageType.MAGIC
 	magic.base_magnitude = 10.0
 	magic.power_coefficient = 1.5
@@ -66,6 +70,7 @@ func _test_seeded_damage() -> void:
 		var coefficient := _random.randf_range(0.0, 5.0)
 		var tags := PackedStringArray()
 		var effect := GameplayEffectDefinition.new()
+		effect.executions = [GameplayEffectDamageExecution.new()]
 		effect.base_magnitude = base
 		effect.power_coefficient = coefficient
 		match iteration % 3:
@@ -92,6 +97,7 @@ func _test_target_health_independence() -> void:
 	var source := _actor()
 	var target := _actor()
 	var effect := GameplayEffectDefinition.new()
+	effect.executions = [GameplayEffectDamageExecution.new()]
 	effect.damage_type = GameplayEffectDefinition.DamageType.MAGIC
 	effect.base_magnitude = 25.0
 	effect.power_coefficient = 2.0

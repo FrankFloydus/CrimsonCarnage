@@ -92,7 +92,7 @@ static func get_source_power(
 static func raw_effect_magnitude(
 		definition: GameplayEffectDefinition, context: GameplayEffectContext
 ) -> float:
-	if definition == null or context == null or definition.kind != GameplayEffectDefinition.Kind.DAMAGE \
+	if definition == null or context == null or not definition.is_damage_effect() \
 			or not definition.get_validation_error().is_empty():
 		return 0.0
 	var tags := definition.get_context_tags(context.ability_tags)
@@ -105,7 +105,7 @@ static func raw_effect_magnitude(
 	return maxf(0.0, definition.base_magnitude + power * definition.power_coefficient)
 
 
-## Returns direct damage after Armor or matching school Resistance, independently of Accuracy.
+## Returns resolved damage after Armor or matching school Resistance, independently of Accuracy.
 static func resolve_effect(
 		definition: GameplayEffectDefinition,
 		context: GameplayEffectContext,
@@ -134,7 +134,7 @@ static func resolve_effect_result(
 	var critical_multiplier := 1.0
 	var critical_damage := 0.0
 	if is_instance_valid(target) and definition != null and context != null \
-			and definition.kind == GameplayEffectDefinition.Kind.DAMAGE \
+			and definition.is_damage_effect() \
 			and definition.get_validation_error().is_empty():
 		critical = context.is_critical
 		if critical:

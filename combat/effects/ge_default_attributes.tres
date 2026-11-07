@@ -1,0 +1,108 @@
+[gd_resource type="Resource" script_class="GameplayEffectDefinition" format=3 uid="uid://dw1y7tn21fqbi"]
+
+[ext_resource type="Script" uid="uid://u8g6qa0kpol1" path="res://combat/effects/gameplay_effect_definition.gd" id="1_effect"]
+[ext_resource type="Script" uid="uid://bv4s17m8a60kn" path="res://combat/effects/gameplay_effect_component.gd" id="1_jtcsl"]
+[ext_resource type="Script" uid="uid://bmu4hnn0quf7l" path="res://combat/attributes/attribute_modifier.gd" id="2_modifier"]
+[ext_resource type="Script" uid="uid://divtubtmdgcq4" path="res://combat/effects/gameplay_effect_execution.gd" id="2_qliue"]
+
+[sub_resource type="Resource" id="MaxHealth"]
+script = ExtResource("2_modifier")
+attribute = 1
+operation = 2
+value = 100.0
+required_context_tags = PackedStringArray()
+excluded_context_tags = PackedStringArray()
+
+[sub_resource type="Resource" id="MaxStamina"]
+script = ExtResource("2_modifier")
+attribute = 3
+operation = 2
+value = 50.0
+required_context_tags = PackedStringArray()
+excluded_context_tags = PackedStringArray()
+
+[sub_resource type="Resource" id="MaxMana"]
+script = ExtResource("2_modifier")
+attribute = 5
+operation = 2
+value = 50.0
+required_context_tags = PackedStringArray()
+excluded_context_tags = PackedStringArray()
+
+[sub_resource type="Resource" id="Strength"]
+script = ExtResource("2_modifier")
+attribute = 6
+operation = 2
+value = 10.0
+required_context_tags = PackedStringArray()
+excluded_context_tags = PackedStringArray()
+
+[sub_resource type="Resource" id="Dexterity"]
+script = ExtResource("2_modifier")
+attribute = 7
+operation = 2
+value = 10.0
+required_context_tags = PackedStringArray()
+excluded_context_tags = PackedStringArray()
+
+[sub_resource type="Resource" id="Intellect"]
+script = ExtResource("2_modifier")
+attribute = 8
+operation = 2
+value = 10.0
+required_context_tags = PackedStringArray()
+excluded_context_tags = PackedStringArray()
+
+[sub_resource type="Resource" id="Vitality"]
+script = ExtResource("2_modifier")
+attribute = 9
+operation = 2
+value = 10.0
+required_context_tags = PackedStringArray()
+excluded_context_tags = PackedStringArray()
+
+[sub_resource type="Resource" id="HealthRegeneration"]
+script = ExtResource("2_modifier")
+attribute = 10
+operation = 2
+required_context_tags = PackedStringArray()
+excluded_context_tags = PackedStringArray()
+
+[sub_resource type="Resource" id="StaminaRegeneration"]
+script = ExtResource("2_modifier")
+attribute = 11
+operation = 2
+value = 10.0
+required_context_tags = PackedStringArray()
+excluded_context_tags = PackedStringArray()
+
+[sub_resource type="Resource" id="ManaRegeneration"]
+script = ExtResource("2_modifier")
+attribute = 12
+operation = 2
+value = 5.0
+required_context_tags = PackedStringArray()
+excluded_context_tags = PackedStringArray()
+
+[sub_resource type="Resource" id="CarryCapacity"]
+script = ExtResource("2_modifier")
+attribute = 38
+operation = 2
+value = 80.0
+required_context_tags = PackedStringArray()
+excluded_context_tags = PackedStringArray()
+
+[resource]
+resource_name = "GE_DefaultAttributes"
+script = ExtResource("1_effect")
+effect_id = &"Effect.DefaultAttributes"
+display_name = "Default Attributes"
+asset_tags = PackedStringArray()
+gameplay_cue_tags = PackedStringArray()
+damage_tags = PackedStringArray()
+granted_tags = PackedStringArray()
+required_target_tags = PackedStringArray()
+blocked_target_tags = PackedStringArray()
+ongoing_required_target_tags = PackedStringArray()
+ongoing_blocked_target_tags = PackedStringArray()
+modifiers = Array[ExtResource("2_modifier")]([SubResource("MaxHealth"), SubResource("MaxStamina"), SubResource("MaxMana"), SubResource("Strength"), SubResource("Dexterity"), SubResource("Intellect"), SubResource("Vitality"), SubResource("HealthRegeneration"), SubResource("StaminaRegeneration"), SubResource("ManaRegeneration"), SubResource("CarryCapacity")])

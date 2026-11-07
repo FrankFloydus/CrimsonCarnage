@@ -15,5 +15,6 @@ required_tags = PackedStringArray()
 blocked_tags = PackedStringArray("State.Dead", "State.Movement.Sprinting")
 activation_tags = PackedStringArray()
 interruption_tags = PackedStringArray("State.Dead")
-cost_attribute = -1
+cancel_ability_tags = PackedStringArray()
+block_ability_tags = PackedStringArray()
 execution = SubResource("Execution_jump")

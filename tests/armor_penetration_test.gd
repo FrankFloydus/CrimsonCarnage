@@ -1,6 +1,8 @@
 extends SceneTree
 ## Source percentage penetration uses full target Armor before the Physical mitigation curve.
 
+const ATTRIBUTE_FIXTURE = preload("res://tests/attribute_fixture.gd")
+
 var _checks: int = 0
 var _failures: int = 0
 var _actors: Array[ActorAttributes] = []
@@ -27,7 +29,7 @@ func _run() -> void:
 
 
 func _actor() -> ActorAttributes:
-	var actor := ActorAttributes.new()
+	var actor := ATTRIBUTE_FIXTURE.new_attributes()
 	actor.set_base_value(CombatAttributes.Id.MAX_HEALTH, 10000.0)
 	actor.restore_resources()
 	_actors.append(actor)
@@ -41,6 +43,7 @@ func _context(source: ActorAttributes, spell: bool = false) -> GameplayEffectCon
 
 func _physical(amount: float = 100.0) -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
+	effect.executions = [GameplayEffectDamageExecution.new()]
 	effect.effect_id = &"Effect.PenetrationPhysicalTest"
 	effect.base_magnitude = amount
 	return effect

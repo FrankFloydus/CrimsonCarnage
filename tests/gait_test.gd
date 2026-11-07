@@ -4,6 +4,7 @@ extends SceneTree
 
 const CONTROLLER = preload("res://player/first_person_controller.tscn")
 const SPRINT_FIXTURE = preload("res://tests/sprint_fixture.gd")
+const ATTRIBUTE_FIXTURE = preload("res://tests/attribute_fixture.gd")
 
 var _world: Node3D
 var _player: CharacterBody3D
@@ -90,6 +91,7 @@ func _test_instance_isolation() -> void:
 	await _start_fixture()
 	var second: CharacterBody3D = CONTROLLER.instantiate()
 	second.position = Vector3(8.0, 0.03, 0.0)
+	ATTRIBUTE_FIXTURE.configure(second.get_node("AbilitySystem") as AbilitySystem)
 	_world.add_child(second)
 	_disable_automatic_processing(second)
 	var other_gait: FirstPersonGait = (second as FirstPersonController)._gait
@@ -120,8 +122,7 @@ func _test_exhaustion_and_release() -> void:
 	await _step(Vector2.RIGHT, true)
 	_check(_gait.sprint_requires_release and _movement.effective_gait == FirstPersonGait.Gait.RUN,
 			"Draining Sprint switches to running and requires Shift release")
-	system.advance(SPRINT_FIXTURE.EXHAUSTION_DURATION + 0.1)
-	attributes.advance_regeneration(1.0)
+	system.advance(SPRINT_FIXTURE.EXHAUSTION_DURATION + 1.0)
 	await _step(Vector2.RIGHT, true)
 	_check(system.get_activation_failure(&"sprint").is_empty() and _gait.sprint_requires_release
 			and _movement.effective_gait == FirstPersonGait.Gait.RUN,
@@ -247,6 +248,7 @@ func _start_fixture() -> void:
 	_player.position = Vector3(0.0, 0.03, 0.0)
 	var system := _player.get_node("AbilitySystem") as AbilitySystem
 	SPRINT_FIXTURE.configure(system)
+	ATTRIBUTE_FIXTURE.configure(system)
 	var attributes := _player.get_node("Attributes") as ActorAttributes
 	attributes.initial_modifiers = []
 	_world.add_child(_player)
@@ -276,7 +278,7 @@ func _end_fixture() -> void:
 
 func _disable_automatic_processing(player: CharacterBody3D) -> void:
 	player.set_physics_process(false)
-	player.get_node("Attributes").set_physics_process(false)
+	player.get_node("AbilitySystem").set_process(false)
 	player.get_node("Crouch").set_process(false)
 	player.get_node("Look").set_process(false)
 	player.get_node("Look").set_process_unhandled_input(false)
@@ -288,7 +290,7 @@ func _step(direction: Vector2 = Vector2.ZERO, sprint_held: bool = false,
 	(_player as FirstPersonController).advance_locomotion(
 			_delta, direction, jump_requested, crouch_pressed, crouch_pressed, sprint_held, walk_held
 	)
-	_movement.attributes.advance_regeneration(_delta)
+	(_player.get_node("AbilitySystem") as AbilitySystem).advance(_delta)
 	_crouch._process(_delta)
 	_look._process(_delta)
 

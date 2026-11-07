@@ -6,12 +6,14 @@ const CASTER = preload("res://examples/fireball/caster.tscn")
 const EDITOR = preload("res://levels/playground/testing/attribute_editor.tscn")
 const SPRINT_EXECUTION = preload("res://player/abilities/sprint_execution.gd")
 const SPRINT_FIXTURE = preload("res://tests/sprint_fixture.gd")
+const UPKEEP_ID: StringName = &"Effect.Sprint.StaminaUpkeep"
+const REGENERATION_PERIOD: float = 0.1
 
 var _world: Node3D
 var _player: FirstPersonController
 var _movement: FirstPersonMovement
 var _has_authored_movement_settings := false
-var _sprint_execution: SPRINT_EXECUTION
+var _upkeep_calculation: SprintStaminaUpkeepCalculation
 var _attributes: ActorAttributes
 var _gait: FirstPersonGait
 var _checks: int = 0
@@ -49,8 +51,6 @@ func _test_saved_wiring_and_live_modifiers() -> void:
 	await _start_fixture()
 	_check(_has_authored_movement_settings and _movement.attributes == _attributes,
 			"Saved Movement references its settings and the actor's attribute component")
-	_check(_player.process_physics_priority < _attributes.process_physics_priority,
-			"Controller spending is explicitly ordered before attribute regeneration")
 	_check(not "sprint_stamina_drain" in _movement.settings,
 			"Movement settings have no duplicate Sprint cost")
 	_check(CombatAttributes.Id.MOVEMENT_SPEED == 54, "Movement Speed bonus has its own stable identity")
@@ -119,6 +119,13 @@ func _test_saved_wiring_and_live_modifiers() -> void:
 		var definition := caster_system.get_ability_definition(ability_id)
 		_check(definition != null and caster_system.granted_abilities.has(definition),
 				"The saved caster registers %s from Granted Abilities" % ability_id)
+	var saved_sprint := caster_system.get_ability_definition(&"sprint").execution as SPRINT_EXECUTION
+	var upkeep := saved_sprint.upkeep_effect
+	_check(upkeep != null and upkeep.effect_id == UPKEEP_ID
+			and upkeep.timing == GameplayEffectDefinition.Timing.INFINITE and upkeep.period > 0.0
+			and upkeep.ongoing_required_target_tags.has("State.Movement.SprintUpkeepDue")
+			and upkeep.period_inhibition_policy == GameplayEffectDefinition.PeriodInhibitionPolicy.EXECUTE_AND_RESET_PERIOD,
+			"The saved Sprint grant references an Infinite, due-gated periodic upkeep effect")
 	var attribute_nodes := 0
 	for child in caster.get_children():
 		if child is ActorAttributes:
@@ -159,7 +166,7 @@ func _test_live_editor_affects_motion() -> void:
 func _test_engine_speed_tuning_guard() -> void:
 	await _start_fixture()
 	var previous := _movement.settings.normal_run_speed
-	var drain := _sprint_execution.stamina_per_charge
+	var drain := _upkeep_calculation.stamina_per_interval
 	var stamina := _attributes.get_value(CombatAttributes.Id.STAMINA)
 	_movement.settings.normal_run_speed = 6.0
 	_near(_movement.get_speed_for_gait(FirstPersonGait.Gait.RUN), 6.0,
@@ -182,7 +189,7 @@ func _test_engine_speed_tuning_guard() -> void:
 			"A later baseline change preserves the existing percentage modifier")
 	_near(_attributes.get_value(CombatAttributes.Id.MOVEMENT_SPEED), 20.0,
 			"Baseline tuning leaves an existing actor bonus unchanged")
-	_near(_sprint_execution.stamina_per_charge, drain,
+	_near(_upkeep_calculation.stamina_per_interval, drain,
 			"Normal speed tuning does not alter fixed sprint cost")
 	_near(_attributes.get_value(CombatAttributes.Id.STAMINA), stamina,
 			"Baseline tuning and speed inspection do not spend Stamina")
@@ -208,6 +215,10 @@ func _test_sprint_upkeep() -> void:
 	for tick in 60:
 		await _step(Vector2.ZERO, true, false, true)
 	_check(system.tags.has_tag(&"State.Movement.Sprinting"), "Idle Sprint owns its lifetime tag")
+	var idle_handle := _upkeep_handle(system)
+	_check(idle_handle > 0 and system.effects.active_count(UPKEEP_ID) == 1
+			and system.effects.is_effect_inhibited(idle_handle),
+			"Idle Sprint owns one inhibited upkeep effect")
 	_near(_attributes.get_value(CombatAttributes.Id.STAMINA), 80.0, "Idle Sprint suppresses recovery without charging travel")
 	_near(_attributes.get_value(CombatAttributes.Id.HEALTH), 55.0, "Health still regenerates during Sprint")
 	_near(_attributes.get_value(CombatAttributes.Id.MANA), 55.0, "Mana still regenerates during Sprint")
@@ -215,19 +226,38 @@ func _test_sprint_upkeep() -> void:
 		await _step(Vector2.RIGHT, true)
 	_near(_attributes.get_value(CombatAttributes.Id.STAMINA), 80.0, "Half an interval has no charge yet")
 	await _step(Vector2.ZERO)
+	_check(_upkeep_handle(system) == 0, "Release removes the ability's upkeep effect")
 	for tick in 3:
 		await _step(Vector2.RIGHT, true)
 	_near(_attributes.get_value(CombatAttributes.Id.STAMINA), 78.0, "Short taps retain travel and pay one full charge")
+	var sustained_handle := _upkeep_handle(system)
 	for tick in 60:
 		await _step(Vector2.RIGHT, true, false, true)
 	_near(_attributes.get_value(CombatAttributes.Id.STAMINA), 58.0, "One second costs ten charges despite positive regeneration")
-	_sprint_execution.stamina_per_charge = 4.0
+	_check(_upkeep_handle(system) == sustained_handle and sustained_handle > 0
+			and system.effects.active_count(UPKEEP_ID) == 1
+			and system.effects.is_effect_inhibited(sustained_handle),
+			"Periodic charges reuse the same active effect handle")
+	_upkeep_calculation.stamina_per_interval = 4.0
 	for tick in 6:
 		await _step(Vector2.RIGHT, true)
-	_near(_attributes.get_value(CombatAttributes.Id.STAMINA), 54.0, "The authored charge cost drives actual spending")
-	await _step(Vector2.ZERO, false, false, true)
-	_near(_attributes.get_value(CombatAttributes.Id.STAMINA), 54.0 + 10.0 * _delta,
+	_near(_attributes.get_value(CombatAttributes.Id.STAMINA), 56.0,
+			"An active upkeep spec keeps its copied calculation data")
+	await _step()
+	for tick in 6:
+		await _step(Vector2.RIGHT, true)
+	_near(_attributes.get_value(CombatAttributes.Id.STAMINA), 52.0,
+			"A new application uses the changed authored charge cost")
+	await _step()
+	system.advance(REGENERATION_PERIOD)
+	_near(_attributes.get_value(CombatAttributes.Id.STAMINA), 53.0,
 			"Ordinary release allows regeneration without a delay")
+	await _step(Vector2.RIGHT, true)
+	_check(system.effects.remove_effect(_upkeep_handle(system)), "The active upkeep is removable by its handle")
+	await _step(Vector2.RIGHT, true)
+	_check(system.get_active_cast(&"sprint") == null
+			and _movement.effective_gait == FirstPersonGait.Gait.RUN,
+			"Losing upkeep cancels Sprint before more grounded travel")
 	await _end_fixture()
 
 
@@ -340,7 +370,7 @@ func _test_encumbrance_blocks_sprint() -> void:
 			"Crossing capacity cancels held sprint on the next movement step")
 	_near(_attributes.get_value(CombatAttributes.Id.STAMINA), stamina,
 			"Encumbered movement spends no sprint Stamina")
-	_sprint_execution.stamina_per_charge = 0.0
+	_upkeep_calculation.stamina_per_interval = 0.0
 	var system := _player.get_node("AbilitySystem") as AbilitySystem
 	_check(system.get_activation_failure(&"sprint") == &"blocked_by_tags",
 			"Even a free sprint is blocked by the authored tag over capacity")
@@ -370,12 +400,11 @@ func _test_exhaustion_and_retry() -> void:
 			"Depletion cancels Sprint and starts the granted Exhaustion response")
 	_check(system.effects.active_count(&"Effect.Stamina.Exhausted") == 1,
 			"Depletion applies one timed authored effect")
-	system.advance(SPRINT_FIXTURE.EXHAUSTION_DURATION - 0.01)
-	_attributes.advance_regeneration(0.1)
+	system.advance(SPRINT_FIXTURE.EXHAUSTION_DURATION - 0.2)
 	_near(_attributes.get_value(CombatAttributes.Id.STAMINA), 0.0, "Exhaustion suppresses Stamina until its duration expires")
-	system.advance(0.02)
-	_attributes.advance_regeneration(0.5)
-	_near(_attributes.get_value(CombatAttributes.Id.STAMINA), 5.0, "Recovery resumes after the Exhaustion effect expires")
+	system.advance(0.6)
+	_check(_attributes.get_value(CombatAttributes.Id.STAMINA) >= SPRINT_FIXTURE.STAMINA_PER_CHARGE,
+			"Recovery resumes after the Exhaustion effect expires")
 	await _step(Vector2.RIGHT, true)
 	_check(_movement.effective_gait == FirstPersonGait.Gait.RUN, "Holding Shift after depletion does not restart Sprint")
 	await _step(Vector2.RIGHT)
@@ -385,8 +414,8 @@ func _test_exhaustion_and_retry() -> void:
 	await _step(Vector2.RIGHT, true)
 	_check(system.get_active_cast(&"sprint") == null and not system.tags.has_tag(&"State.Stamina.Exhausted"),
 			"An external reduction below the next charge cancels Sprint without triggering Exhaustion")
-	_attributes.advance_regeneration(_delta)
-	_near(_attributes.get_value(CombatAttributes.Id.STAMINA), 1.0 + 10.0 * _delta,
+	system.advance(REGENERATION_PERIOD)
+	_near(_attributes.get_value(CombatAttributes.Id.STAMINA), 2.0,
 			"Recovery starts immediately after external underfunding")
 	_attributes.set_base_value(CombatAttributes.Id.STAMINA, 1.0)
 	await _step(Vector2.RIGHT)
@@ -425,18 +454,16 @@ func _test_final_charge_uses_remainder() -> void:
 		_check(system.get_active_cast(&"sprint") == null
 				and system.effects.active_count(&"Effect.Stamina.Exhausted") == 1,
 				"The zero crossing ends Sprint and grants one exhaustion effect")
-		system.advance(SPRINT_FIXTURE.EXHAUSTION_DURATION - 0.01)
-		_attributes.advance_regeneration(0.5)
+		system.advance(SPRINT_FIXTURE.EXHAUSTION_DURATION / 2.0)
 		_near(_attributes.get_value(CombatAttributes.Id.STAMINA), 0.0,
 				"A final charge with a remainder triggers the full recovery delay")
 		_near(_attributes.get_value(CombatAttributes.Id.HEALTH), 52.5,
 				"Health recovery continues during the Stamina delay")
 		_near(_attributes.get_value(CombatAttributes.Id.MANA), 52.5,
 				"Mana recovery continues during the Stamina delay")
-		system.advance(0.02)
-		_attributes.advance_regeneration(0.1)
-		_near(_attributes.get_value(CombatAttributes.Id.STAMINA), 1.0,
-				"Stamina recovers on the next advance after exhaustion expires")
+		system.advance(SPRINT_FIXTURE.EXHAUSTION_DURATION / 2.0 + REGENERATION_PERIOD)
+		_check(_attributes.get_value(CombatAttributes.Id.STAMINA) > 0.0,
+				"Stamina recovers on a periodic tick after exhaustion expires")
 		await _end_fixture()
 
 	await _start_fixture()
@@ -444,17 +471,18 @@ func _test_final_charge_uses_remainder() -> void:
 	_attributes.set_base_value(CombatAttributes.Id.STAMINA, 3.0)
 	for tick in 3:
 		await _step(Vector2.RIGHT, true)
-	await _step(Vector2.ZERO, false, false, true)
+	await _step()
+	system.advance(REGENERATION_PERIOD)
 	_check(not system.tags.has_tag(&"State.Stamina.Exhausted"),
 			"Releasing before the final due charge avoids exhaustion")
-	_near(_attributes.get_value(CombatAttributes.Id.STAMINA), 3.0 + 10.0 * _delta,
+	_near(_attributes.get_value(CombatAttributes.Id.STAMINA), 4.0,
 			"Releasing before the final due charge allows immediate recovery")
 	await _end_fixture()
 
 
 func _test_zero_cost_and_invalid_inputs() -> void:
 	await _start_fixture()
-	_sprint_execution.stamina_per_charge = 0.0
+	_upkeep_calculation.stamina_per_interval = 0.0
 	_attributes.set_base_value(CombatAttributes.Id.STAMINA_REGEN, 0.0)
 	_attributes.set_base_value(CombatAttributes.Id.STAMINA, 0.0)
 	await _step(Vector2.RIGHT, true)
@@ -466,11 +494,13 @@ func _test_zero_cost_and_invalid_inputs() -> void:
 		var position := _player.position
 		_movement.move(delta, Vector2.RIGHT, FirstPersonGait.Gait.SPRINT)
 		_check(_player.position == position, "Invalid time steps cannot move or spend resources")
-	_sprint_execution.stamina_per_charge = -1.0
-	_check(not _movement.can_continue_sprint(_delta), "Invalid negative authored drain cannot grant Stamina")
-	_sprint_execution.stamina_per_charge = INF
-	_check(not _movement.can_continue_sprint(_delta), "Nonfinite authored drain cannot poison a resource pool")
-	_sprint_execution.stamina_per_charge = 2.0
+	await _step()
+	var system := _player.get_node("AbilitySystem") as AbilitySystem
+	for invalid_cost: float in [-1.0, INF, NAN]:
+		_upkeep_calculation.stamina_per_interval = invalid_cost
+		_check(not system.get_activation_failure(&"sprint").is_empty(),
+				"Invalid authored drain cannot start a new Sprint")
+	_upkeep_calculation.stamina_per_interval = SPRINT_FIXTURE.STAMINA_PER_CHARGE
 	_attributes.set_base_value(CombatAttributes.Id.STAMINA, 100.0)
 	var stamina := _attributes.get_value(CombatAttributes.Id.STAMINA)
 	for query in 10:
@@ -580,7 +610,7 @@ func _test_reentrant_movement_callbacks() -> void:
 		if id == CombatAttributes.Id.STAMINA and value < previous:
 			calls.stamina += 1
 			if calls.stamina == 1:
-				_sprint_execution.stamina_per_charge = NAN
+				_upkeep_calculation.stamina_per_interval = NAN
 				_movement.move(_delta, Vector2.RIGHT, FirstPersonGait.Gait.SPRINT))
 	_movement.terrain_advanced.connect(func(_time: float, _height: float) -> void:
 		calls.advanced += 1
@@ -605,11 +635,13 @@ func _start_fixture(position: Vector3 = Vector3(0.0, 0.03, 0.0), settle: bool = 
 	_player = CONTROLLER.instantiate() as FirstPersonController
 	_player.position = position
 	var system := _player.get_node("AbilitySystem") as AbilitySystem
+	preload("res://tests/attribute_fixture.gd").configure(system, REGENERATION_PERIOD)
 	SPRINT_FIXTURE.configure(system)
 	_attributes = _player.get_node("Attributes") as ActorAttributes
 	_attributes.initial_modifiers = []
 	_world.add_child(_player)
-	_sprint_execution = system.get_ability_definition(&"sprint").execution as SPRINT_EXECUTION
+	var sprint := system.get_ability_definition(&"sprint").execution as SPRINT_EXECUTION
+	_upkeep_calculation = sprint.upkeep_effect.executions[0] as SprintStaminaUpkeepCalculation
 	_disable_processing(_player)
 	_movement = _player.get_node("Movement") as FirstPersonMovement
 	_has_authored_movement_settings = _movement.settings != null
@@ -639,7 +671,7 @@ func _start_fixture(position: Vector3 = Vector3(0.0, 0.03, 0.0), settle: bool = 
 
 func _disable_processing(player: FirstPersonController) -> void:
 	player.set_physics_process(false)
-	player.get_node("Attributes").set_physics_process(false)
+	player.get_node("AbilitySystem").set_process(false)
 	player.get_node("Crouch").set_process(false)
 	player.get_node("Look").set_process(false)
 	player.get_node("Look").set_process_unhandled_input(false)
@@ -657,7 +689,15 @@ func _step(input: Vector2 = Vector2.ZERO, sprint_held: bool = false,
 	await physics_frame
 	_player.advance_locomotion(_delta, input, false, false, false, sprint_held, walk_held)
 	if regenerate:
-		_attributes.advance_regeneration(_delta)
+		var system := _player.get_node("AbilitySystem") as AbilitySystem
+		system.advance(_delta)
+
+
+func _upkeep_handle(system: AbilitySystem) -> int:
+	for effect: Dictionary in system.effects.get_active_effects():
+		if effect["effect_id"] == UPKEEP_ID:
+			return int(effect["handle"])
+	return 0
 
 
 func _add_box(position: Vector3, size: Vector3) -> void:

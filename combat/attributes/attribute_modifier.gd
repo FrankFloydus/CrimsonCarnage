@@ -12,9 +12,11 @@ enum Operation {
 	SET_BASE = 2,
 	## Applies an independent multiplier; 20 means multiply by 1.20.
 	MORE_PERCENT = 3,
+	## Adds a live contribution to the foundation before an explicit base override.
+	ADD_TO_FOUNDATION = 4,
 }
 
-## Attribute changed by this adjustment. Current pools use explicit resource changes.
+## Attribute changed by this adjustment. Instant and periodic effects can change current pools.
 ## Inspector choices contain only active Combat 2.0 attributes.
 @export var attribute: CombatAttributes.Id = CombatAttributes.Id.MAGIC_POWER
 
@@ -27,20 +29,29 @@ enum Operation {
 ## Increased/More use relative percentages (20 means 20%).
 @export var value: float = 0.0
 
+## Optional live target attribute captured for this modifier's magnitude. None uses only Value.
+@export var capture_attribute: CombatAttributes.Id = CombatAttributes.Id.NONE
+## Units added to Value per point of the captured target attribute.
+@export var capture_coefficient: float = 1.0
+## Optional per-application magnitude key. Value is the fallback if the spec has no entry.
+@export var set_by_caller_tag: StringName = &""
+
 ## All listed context tags must match; a parent tag matches its descendants.
 @export var required_context_tags: PackedStringArray = PackedStringArray()
 
 ## Any matching context tag prevents this adjustment from participating.
 @export var excluded_context_tags: PackedStringArray = PackedStringArray()
 
+var stack_count: int = 1
+
 
 func _validate_property(property: Dictionary) -> void:
-	if property.name == &"attribute":
+	if property.name == &"attribute" or property.name == &"capture_attribute":
 		property.hint = PROPERTY_HINT_ENUM
-		property.hint_string = CombatAttributes.inspector_hint()
+		property.hint_string = CombatAttributes.inspector_hint(property.name == &"capture_attribute")
 	elif property.name == &"operation":
 		property.hint = PROPERTY_HINT_ENUM
-		property.hint_string = "Add Flat:0,Increased Percent:1,Set Base:2,More Percent:3"
+		property.hint_string = "Add Flat:0,Increased Percent:1,Set Base:2,More Percent:3,Add to Derived Base:4"
 
 
 func matches_context(context_tags: PackedStringArray) -> bool:
@@ -53,13 +64,30 @@ func matches_context(context_tags: PackedStringArray) -> bool:
 	return true
 
 
+func get_magnitude(target: ActorAttributes, context_tags: PackedStringArray) -> float:
+	var magnitude := value
+	if capture_attribute != CombatAttributes.Id.NONE and capture_attribute != attribute:
+		magnitude += target.get_value(capture_attribute, context_tags) * capture_coefficient
+	if stack_count > 1:
+		match operation:
+			Operation.ADD, Operation.ADD_PERCENT, Operation.ADD_TO_FOUNDATION:
+				magnitude *= stack_count
+			Operation.MORE_PERCENT:
+				magnitude = (pow(maxf(0.0, 1.0 + magnitude / 100.0), stack_count) - 1.0) * 100.0
+	return magnitude if is_finite(magnitude) else 0.0
+
+
 func copy() -> AttributeModifier:
 	var result := AttributeModifier.new()
 	result.attribute = attribute
 	result.operation = operation
 	result.value = value
+	result.capture_attribute = capture_attribute
+	result.capture_coefficient = capture_coefficient
+	result.set_by_caller_tag = set_by_caller_tag
 	result.required_context_tags = required_context_tags.duplicate()
 	result.excluded_context_tags = excluded_context_tags.duplicate()
+	result.stack_count = stack_count
 	return result
 
 

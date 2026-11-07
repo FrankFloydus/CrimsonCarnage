@@ -154,7 +154,7 @@ func _apply_overrides() -> void:
 
 func _clear_effects() -> void:
 	if _has_actor() and actor.effects != null:
-		actor.effects.clear()
+		actor.clear_transient_effects()
 	_refresh_all()
 
 

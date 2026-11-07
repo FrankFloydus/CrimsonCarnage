@@ -6,6 +6,10 @@
 [ext_resource type="Script" uid="uid://bmu4hnn0quf7l" path="res://combat/attributes/attribute_modifier.gd" id="4_modifier"]
 [ext_resource type="PackedScene" path="res://examples/fireball/damage_number.tscn" id="5_number"]
 [ext_resource type="PackedScene" path="res://examples/fireball/dummy_health_bar.tscn" id="6_health_bar"]
+[ext_resource type="Script" path="res://combat/effects/gameplay_effect_definition.gd" id="7_effect"]
+[ext_resource type="Resource" path="res://combat/effects/ge_default_attributes.tres" id="8_default_attributes"]
+[ext_resource type="Resource" path="res://combat/effects/ge_attribute_derivations.tres" id="9_derivations"]
+[ext_resource type="Resource" path="res://combat/effects/ge_resource_regeneration.tres" id="10_regeneration"]
 
 [sub_resource type="CapsuleShape3D" id="Shape_dummy"]
 radius = 0.55
@@ -48,6 +52,7 @@ initial_modifiers = Array[ExtResource("4_modifier")]([SubResource("Modifier_heal
 script = ExtResource("3_system")
 attributes = NodePath("../Attributes")
 actor_body = NodePath("..")
+startup_effects = Array[ExtResource("7_effect")]([ExtResource("8_default_attributes"), ExtResource("9_derivations"), ExtResource("10_regeneration")])
 initial_tags = PackedStringArray()
 
 [node name="HealthBar" parent="." unique_id=123987975 node_paths=PackedStringArray("attributes") instance=ExtResource("6_health_bar")]

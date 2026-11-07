@@ -1,6 +1,8 @@
 extends SceneTree
 ## Combat 2.0 resource bounds, ownership, modifier order and point redistribution checks.
 
+const ATTRIBUTE_FIXTURE = preload("res://tests/attribute_fixture.gd")
+
 var _checks: int = 0
 var _failures: int = 0
 
@@ -532,17 +534,17 @@ func _test_automatic_recovery() -> void:
 	actor.modify_current(CombatAttributes.Id.HEALTH, -20.0)
 	actor.modify_current(CombatAttributes.Id.STAMINA, -20.0)
 	actor.modify_current(CombatAttributes.Id.MANA, -20.0)
-	actor.advance_regeneration(1.0)
+	var runtime := GameplayEffectRuntime.new(actor)
+	_check(ATTRIBUTE_FIXTURE.attach_regeneration(runtime, actor) > 0, "The regeneration fixture applies")
+	runtime.advance(1.0)
 	_close(actor.get_value(CombatAttributes.Id.HEALTH), 180.0, "Health requires explicit recovery investment")
-	_close(actor.get_value(CombatAttributes.Id.STAMINA), 90.0, "Stamina recovers continuously at ten per second")
-	_close(actor.get_value(CombatAttributes.Id.MANA), 85.0, "Mana recovers continuously at five per second")
+	_close(actor.get_value(CombatAttributes.Id.STAMINA), 90.0, "Stamina recovers at ten per second of effect periods")
+	_close(actor.get_value(CombatAttributes.Id.MANA), 85.0, "Mana recovers at five per second of effect periods")
 	actor.free()
 
 
 func _actor() -> ActorAttributes:
-	var actor := ActorAttributes.new()
-	actor.initialize()
-	return actor
+	return ATTRIBUTE_FIXTURE.new_attributes()
 
 
 func _modifier(id: int, amount: float,

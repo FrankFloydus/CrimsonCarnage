@@ -300,7 +300,7 @@ Movement multiplier = max(0, 1 + Movement Speed bonus / 100)
 
 An item reading **+20% Movement Speed** supplies **20 native bonus percentage points**, using Add Flat. Increased and more modifiers scale the accumulated bonus itself, exactly as for Critical Damage: an Increased modifier alone leaves a zero bonus at zero. Zero bonus means normal movement. A −100% bonus requests no horizontal movement; ordinary braking and collision physics still apply. Jump height and gravity are independent.
 
-F3 displays the bonus percentage, **0%** by default, rather than engine m/s or an implicit 100% total multiplier. Active code identity 54 is retained; retired Combat 1.0 identity 27 stays inactive. `base_movement_speed` supplies the default zero, and `movement_speed_min_percent` / `movement_speed_max_percent` supply the −100 / +25 bounds. Clamp after all flat, increased and more modifiers; raw overcap bonuses still count before a later debuff is evaluated. The normal engine movement baseline is the editable **Normal Run Speed** under **Movement → Settings → Movement Baseline** in the Inspector. It defines 100% normal movement, while the attribute stores only the bonus above that. Movement Settings owns gait ratios. Sprint's execution owns upkeep tuning.
+F3 displays the bonus percentage, **0%** by default, rather than engine m/s or an implicit 100% total multiplier. Active code identity 54 is retained; retired Combat 1.0 identity 27 stays inactive. The bonus defaults to zero, and `movement_speed_min_percent` / `movement_speed_max_percent` supply the −100 / +25 bounds. Clamp after all flat, increased and more modifiers; raw overcap bonuses still count before a later debuff is evaluated. The normal engine movement baseline is the editable **Normal Run Speed** under **Movement → Settings → Movement Baseline** in the Inspector. It defines 100% normal movement, while the attribute stores only the bonus above that. Movement Settings owns gait ratios. GE_StaminaUpkeep owns upkeep tuning.
 
 ### Attack Speed and Cast Speed
 
@@ -484,15 +484,15 @@ Activation requires Current Mana ≥ Authored Mana cost
 
 **Limits:** minimum **0**; maximum **current Maximum Mana**.
 
-Mana regenerates continuously while alive, including during casting. A miss or resist does not refund the authored activation cost. Mana Efficiency is not part of the foundation.
+Mana regenerates periodically while alive, including during casting. A miss or resist does not refund the cost effect. Mana Efficiency is outside the foundation.
 
 ## Resource regeneration
 
 The same flat-points-per-second rules apply to player and AI actors. Regeneration uses the ordinary flat, increased and more modifier pipeline and is independent of level, primary attributes and maximum resource capacity.
 
-### Continuous recovery
+### Resource recovery
 
-Health and Mana recover continuously while alive. Stamina also recovers continuously outside active Sprint and Stamina Exhaustion. Ordinary spending above zero adds no delay. A positive-to-zero Stamina transition starts the authored exhaustion effect through an ability event. The effect asset owns the duration.
+The startup Resource Regeneration effect executes periodically and restores Health and Mana while alive. It also restores Stamina outside active Sprint and Stamina Exhaustion. Ordinary spending above zero adds no delay. A positive-to-zero Stamina transition starts the exhaustion effect through an ability event. The effect asset owns the duration.
 
 Each resource remains clamped to its maximum. Recovery beyond a full pool is discarded instead of saved for later. Changing a capacity or regeneration rate does not immediately refill the pool. No resource regenerates at zero Health, and Health Regeneration cannot resurrect an actor.
 
@@ -535,7 +535,7 @@ Target horizontal speed = Engine run speed × Gait multiplier × Encumbrance spe
 
 The +25% cap applies to the character bonus before gait multipliers. With the default 4 m/s baseline and 1.5 Sprint ratio, the maximum bonus produces 5 m/s running and 7.5 m/s sprinting at or below Carry Capacity.
 
-**Movement → Settings** owns the physical gait settings. **Sprint → Execution** owns Stamina per Charge and Charge Interval. The defaults charge **2 Stamina per 0.1 seconds** of actual grounded sprint travel with directional input. Movement preserves unpaid travel across pauses and activations. Idle, walking, crouching, blocked travel and falling add no chargeable time.
+**Movement → Settings** owns the physical gait settings. **Sprint → Execution → Upkeep Effect** links to GE_StaminaUpkeep. Its **Period** and **Stamina per Interval** default to **2 Stamina per 0.1 seconds** of actual grounded sprint travel with directional input. Movement preserves unpaid travel across pauses and activations. Idle, walking, crouching, blocked travel and falling add no chargeable time.
 
 ```text
 Default Stamina cost per second of grounded sprint travel = 2 / 0.1 = 20

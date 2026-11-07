@@ -3,7 +3,7 @@ class_name AbilityDefinition
 extends Resource
 ## Authored ability configuration, shared by player input and AI activation requests.
 
-## Stable identifier used to grant, activate, and track this ability's cooldown.
+## Stable identifier used to grant and activate this ability.
 @export var ability_id: StringName = &""
 ## Human-readable name shown by interfaces and debugging tools.
 @export var display_name: String = "Ability"
@@ -20,18 +20,20 @@ extends Resource
 @export var interruption_tags: PackedStringArray = PackedStringArray([
 	"State.Dead"
 ])
+## Matching asset tags on other active abilities cancel those activations when this ability starts.
+@export var cancel_ability_tags: PackedStringArray = PackedStringArray()
+## Blocks other abilities with matching asset tags while this ability is active.
+@export var block_ability_tags: PackedStringArray = PackedStringArray()
 @export_group("Gameplay Events")
 ## An incoming gameplay event with this tag or a child tag starts this grant. Empty allows direct requests.
 @export var activation_event_tag: StringName = &""
-@export_group("Activation Cost", "cost_")
-## Current resource charged once when this ability activates. None skips that upfront charge.
-@export var cost_attribute: CombatAttributes.Id = CombatAttributes.Id.MANA
-## Flat amount of the activation resource charged at the start. Ongoing costs belong to execution.
-@export_range(0.0, 10000.0, 0.1, "or_greater") var cost_amount: float = 0.0
+@export_group("Commit Effects")
+## Optional instant effect with additive current-pool debits, applied once at commit.
+@export var cost_effect: GameplayEffectDefinition
+## Optional finite effect that grants cooldown tags. Abilities sharing those tags share the cooldown.
+@export var cooldown_effect: GameplayEffectDefinition
 @export_group("")
-## Base cooldown in seconds, started when activation commits successfully.
-@export_range(0.0, 600.0, 0.01, "or_greater") var cooldown: float = 0.0
-## Inline reusable execution behavior and its Inspector configuration; not a scene.
+## Reusable GDScript behavior with its own Inspector configuration.
 @export var execution: AbilityExecution
 
 
@@ -49,19 +51,36 @@ func get_context_tags() -> PackedStringArray:
 func get_validation_error() -> StringName:
 	if execution == null:
 		return &"missing_execution"
-	if not is_finite(cost_amount) or cost_amount < 0.0:
-		return &"invalid_cost_amount"
-	if cost_attribute != CombatAttributes.Id.NONE and not CombatAttributes.is_current_resource(cost_attribute):
-		return &"invalid_cost_attribute"
-	if not is_finite(cooldown) or cooldown < 0.0:
-		return &"invalid_cooldown"
+	if cost_effect != null and not _has_valid_cost_effect():
+		return &"invalid_cost_effect"
+	if cooldown_effect != null and not _has_valid_cooldown_effect():
+		return &"invalid_cooldown_effect"
 	return &""
 
 
-func _validate_property(property: Dictionary) -> void:
-	if property.name == &"cost_attribute":
-		var choices := PackedStringArray(["None:%d" % CombatAttributes.Id.NONE])
-		for id: int in [CombatAttributes.Id.HEALTH, CombatAttributes.Id.STAMINA, CombatAttributes.Id.MANA]:
-			choices.append("%s:%d" % [CombatAttributes.display_name(id), id])
-		property.hint = PROPERTY_HINT_ENUM
-		property.hint_string = ",".join(choices)
+func _has_valid_cost_effect() -> bool:
+	if cost_effect.is_damage_effect() \
+			or cost_effect.timing != GameplayEffectDefinition.Timing.INSTANT \
+			or not cost_effect.executions.is_empty() or cost_effect.modifiers.is_empty() \
+			or not cost_effect.get_validation_error().is_empty():
+		return false
+	for modifier in cost_effect.modifiers:
+		if not CombatAttributes.is_current_resource(modifier.attribute) \
+				or modifier.operation != AttributeModifier.Operation.ADD:
+			return false
+		if modifier.value > 0.0 and modifier.capture_attribute == CombatAttributes.Id.NONE \
+				and modifier.set_by_caller_tag.is_empty():
+			return false
+	return true
+
+
+func _has_valid_cooldown_effect() -> bool:
+	if cooldown_effect.timing != GameplayEffectDefinition.Timing.DURATION \
+			or cooldown_effect.duration <= 0.0 or cooldown_effect.period > 0.0 \
+			or cooldown_effect.granted_tags.is_empty() \
+			or not cooldown_effect.get_validation_error().is_empty():
+		return false
+	for tag in cooldown_effect.granted_tags:
+		if tag.is_empty():
+			return false
+	return true

@@ -7,6 +7,11 @@ func get_validation_error(_system: AbilitySystem) -> StringName:
 	return &""
 
 
+## Override to choose a later commit point. The execution then calls cast.commit() itself.
+func should_commit_on_activation() -> bool:
+	return true
+
+
 func begin(cast: AbilityCast) -> void:
 	cast.finish()
 

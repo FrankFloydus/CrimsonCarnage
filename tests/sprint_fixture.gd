@@ -18,8 +18,13 @@ static func configure(system: AbilitySystem) -> void:
 		if definition.ability_id == &"sprint" and definition.execution is SprintExecution:
 			var copy := definition.duplicate() as AbilityDefinition
 			var execution := definition.execution.duplicate() as SprintExecution
-			execution.stamina_per_charge = STAMINA_PER_CHARGE
-			execution.charge_interval = CHARGE_INTERVAL
+			if execution.upkeep_effect != null:
+				execution.upkeep_effect = execution.upkeep_effect.duplicate_deep(
+						Resource.DEEP_DUPLICATE_ALL) as GameplayEffectDefinition
+				execution.upkeep_effect.period = CHARGE_INTERVAL
+				for calculation: GameplayEffectExecution in execution.upkeep_effect.executions:
+					if calculation is SprintStaminaUpkeepCalculation:
+						calculation.stamina_per_interval = STAMINA_PER_CHARGE
 			copy.execution = execution
 			grants[index] = copy
 		elif definition.ability_id == &"stamina_exhaustion" \

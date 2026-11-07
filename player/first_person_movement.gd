@@ -27,10 +27,11 @@ var _stepped_last_tick: bool = false
 var _last_position: Vector3
 var _has_last_position: bool = false
 var _sprint_request: AbilityCast
-var _quote_sprint_step: Callable
-var _commit_sprint_step: Callable
+var _can_afford_sprint_upkeep: Callable
+var _report_sprint_upkeep_due: Callable
 var _sprint_charge_interval: float = 0.0
 var _unpaid_sprint_travel: float = 0.0
+var _sprint_upkeep_due: bool = false
 var _airborne_sprint_takeoff_speed: float = 0.0
 var _jump_request: AbilityCast
 
@@ -46,16 +47,12 @@ func move(
 			or settings == null or not body.is_inside_tree():
 		return
 	_moving = true
-	# Quote before callbacks can change tuning. The debit applies only to completed travel.
-	var sprint_cost := _get_sprint_step_cost(delta) if gait == FirstPersonGait.Gait.SPRINT else -1.0
 	var effective := gait
-	if gait == FirstPersonGait.Gait.SPRINT and sprint_cost < 0.0:
+	if gait == FirstPersonGait.Gait.SPRINT and not can_continue_sprint(delta):
 		effective = FirstPersonGait.Gait.RUN
 	var jump_cast := _jump_request
 	_jump_request = null
-	var launched := _advance_movement(
-			delta, movement_input, effective, sprint_cost, jump_cast
-	)
+	var launched := _advance_movement(delta, movement_input, effective, jump_cast)
 	if jump_cast != null and not jump_cast.finished:
 		if launched:
 			jump_cast.finish()
@@ -80,18 +77,21 @@ func can_move_in_sprint() -> bool:
 
 ## Checks whether the active Sprint can fund the next full travel charge.
 func can_continue_sprint(delta: float) -> bool:
-	return _get_sprint_step_cost(delta) >= 0.0
+	return is_finite(delta) and delta > 0.0 and _has_sprint_request() \
+			and can_move_in_sprint() and _can_afford_sprint_upkeep.call(0.0)
 
 
 ## Authorizes the sprint gait until this specific ability activation ends.
-func begin_sprint(cast: AbilityCast, interval: float, quote_step: Callable, commit_step: Callable) -> bool:
+func begin_sprint(
+		cast: AbilityCast, interval: float, can_afford: Callable, report_upkeep_due: Callable
+) -> bool:
 	if _has_sprint_request() or cast == null or cast.finished or not is_finite(interval) \
-			or interval < 0.01 or not quote_step.is_valid() or not commit_step.is_valid():
+			or interval < 0.01 or not can_afford.is_valid() or not report_upkeep_due.is_valid():
 		return false
 	_sprint_request = cast
 	_sprint_charge_interval = interval
-	_quote_sprint_step = quote_step
-	_commit_sprint_step = commit_step
+	_can_afford_sprint_upkeep = can_afford
+	_report_sprint_upkeep_due = report_upkeep_due
 	return true
 
 
@@ -100,8 +100,25 @@ func end_sprint(cast: AbilityCast) -> void:
 	if _sprint_request == cast:
 		_sprint_request = null
 		_sprint_charge_interval = 0.0
-		_quote_sprint_step = Callable()
-		_commit_sprint_step = Callable()
+		_can_afford_sprint_upkeep = Callable()
+		_set_sprint_upkeep_due(false)
+		_report_sprint_upkeep_due = Callable()
+
+
+## Counts completed intervals from the persistent grounded travel balance.
+func get_unpaid_sprint_intervals(interval: float, extra_travel: float = 0.0) -> int:
+	return floori((_unpaid_sprint_travel + extra_travel + 1.0e-9) / interval) if interval > 0.0 else 0
+
+
+## Clears only the settled portion, leaving partial or temporarily unpaid travel intact.
+func consume_sprint_upkeep_intervals(count: int) -> void:
+	_unpaid_sprint_travel = maxf(0.0, _unpaid_sprint_travel - count * _sprint_charge_interval)
+
+
+## Ends the current Sprint when a completed charge can no longer be funded.
+func cancel_sprint_upkeep() -> void:
+	if _has_sprint_request():
+		_sprint_request.cancel()
 
 
 ## Checks floor or coyote support and the physical height of the proposed takeoff.
@@ -175,7 +192,6 @@ func _advance_movement(
 		delta: float,
 		movement_input: Vector2,
 		gait: FirstPersonGait.Gait,
-		sprint_cost: float,
 		jump_cast: AbilityCast
 ) -> bool:
 	if not is_finite(movement_input.x) or not is_finite(movement_input.y):
@@ -197,6 +213,10 @@ func _advance_movement(
 	body.floor_max_angle = deg_to_rad(settings.max_slope_angle)
 	body.floor_snap_length = maxf(0.05, settings.max_step_height)
 	var grounded := is_grounded()
+	if grounded and _effective_gait == FirstPersonGait.Gait.SPRINT \
+			and not movement_input.is_zero_approx() and not _can_afford_sprint_upkeep.call(delta):
+		cancel_sprint_upkeep()
+		_effective_gait = FirstPersonGait.Gait.RUN
 	var support_before := _support_plane()
 	var start_position := body.global_position
 	if grounded:
@@ -251,7 +271,7 @@ func _advance_movement(
 		if not movement_input.is_zero_approx() and target_speed > 0.0 \
 				and Vector2(actual_travel.x, actual_travel.z).length_squared() > 1.0e-12 \
 				and _has_sprint_request() and _sprint_request == sprint_cast:
-			_pay_sprint_travel(delta, sprint_cost, sprint_cast)
+			_unpaid_sprint_travel += delta
 	var correction := 0.0
 	if grounded and (body.is_on_floor() or _stepped_last_tick) and not rising:
 		var displacement := body.global_position - start_position
@@ -264,9 +284,10 @@ func _advance_movement(
 		)
 		if not continuous:
 			correction = displacement.y
-	terrain_advanced.emit(delta, correction)
 	_last_position = body.global_position
 	_has_last_position = true
+	_refresh_sprint_upkeep_due()
+	terrain_advanced.emit(delta, correction)
 	return launched
 
 
@@ -274,21 +295,19 @@ func _has_sprint_request() -> bool:
 	return _sprint_request != null and not _sprint_request.finished
 
 
-func _get_sprint_step_cost(delta: float) -> float:
-	if not is_finite(delta) or delta <= 0.0 or not _has_sprint_request() or not can_move_in_sprint():
-		return -1.0
-	return _quote_sprint_step.call()
+func _refresh_sprint_upkeep_due() -> void:
+	_set_sprint_upkeep_due(_has_sprint_request() and is_grounded()
+			and get_unpaid_sprint_intervals(_sprint_charge_interval) > 0)
+	# The tag can synchronously execute and settle the effect's charge. Clear it after payment.
+	if _sprint_upkeep_due and get_unpaid_sprint_intervals(_sprint_charge_interval) == 0:
+		_set_sprint_upkeep_due(false)
 
 
-func _pay_sprint_travel(delta: float, cost: float, cast: AbilityCast) -> void:
-	if cost <= 0.0:
+func _set_sprint_upkeep_due(due: bool) -> void:
+	if due == _sprint_upkeep_due:
 		return
-	_unpaid_sprint_travel += delta
-	var interval := _sprint_charge_interval
-	while _sprint_request == cast and not cast.finished and _unpaid_sprint_travel + 1.0e-9 >= interval:
-		if not _commit_sprint_step.call(cost):
-			break
-		_unpaid_sprint_travel = maxf(0.0, _unpaid_sprint_travel - interval)
+	_sprint_upkeep_due = due
+	_report_sprint_upkeep_due.call(due)
 
 
 func _get_effective_jump_height(gait: FirstPersonGait.Gait) -> float:

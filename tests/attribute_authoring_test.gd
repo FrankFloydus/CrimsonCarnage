@@ -1,6 +1,8 @@
 extends SceneTree
 ## Verifies the active Inspector catalogue and stable modifier serialization.
 
+const ATTRIBUTE_FIXTURE = preload("res://tests/attribute_fixture.gd")
+
 const TEMP_MODIFIER = "res://.godot/attribute_authoring_modifier.tres"
 const EXPECTED_IDS: Array[int] = [
 	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 18, 19, 20, 21, 22,
@@ -18,11 +20,12 @@ func _initialize() -> void:
 func _run() -> void:
 	preload("res://tests/combat_rules_fixture.gd").install()
 	_test_inspector_catalogue()
-	_test_ability_cost_selector()
+	_test_ability_commit_effect_selectors()
 	_test_stale_metadata_refresh()
 	_test_modifier_roundtrips()
 	_test_legacy_movement_identity_roundtrip()
 	_test_operation_roundtrips()
+	_test_attribute_based_modifier_roundtrip()
 	await process_frame
 	print("Attribute authoring checks: %d passed, %d failed." % [_checks - _failures, _failures])
 	quit(0 if _failures == 0 else 1)
@@ -72,13 +75,13 @@ func _test_inspector_catalogue() -> void:
 	_check(optional.size() == 31 and optional.get(-1) == "None", "Optional selectors add only the None sentinel")
 
 
-func _test_ability_cost_selector() -> void:
+func _test_ability_commit_effect_selectors() -> void:
 	var ability := AbilityDefinition.new()
-	var choices := _choices(_property(ability, &"cost_attribute").get("hint_string", ""))
-	_check(ability.get_script().is_tool(), "Ability resource choices refresh in the editor")
-	_check(choices.size() == 4 and choices.get(-1) == "None" and choices.get(0) == "Health"
-			and choices.get(2) == "Stamina" and choices.get(4) == "Mana",
-			"Ability costs select a current Health/Stamina/Mana pool or None")
+	for property: StringName in [&"cost_effect", &"cooldown_effect"]:
+		var metadata := _property(ability, property)
+		_check(metadata.get("hint") == PROPERTY_HINT_RESOURCE_TYPE
+				and metadata.get("hint_string") == "GameplayEffectDefinition",
+				"%s selects an editable Gameplay Effect resource" % property)
 
 
 func _test_stale_metadata_refresh() -> void:
@@ -93,8 +96,9 @@ func _test_stale_metadata_refresh() -> void:
 			"Tool metadata refresh removes stale Combat 1.0 choices")
 	var operations := _choices(_property(AttributeModifier.new(), &"operation").hint_string)
 	_check(operations.get(0) == "Add Flat" and operations.get(1) == "Increased Percent"
-			and operations.get(2) == "Set Base" and operations.get(3) == "More Percent",
-			"Operation names explain flat, increased, base override and independent More")
+			and operations.get(2) == "Set Base" and operations.get(3) == "More Percent"
+			and operations.get(4) == "Add to Derived Base",
+			"Operation names distinguish derived base and ordinary flat modifiers")
 
 
 func _test_modifier_roundtrips() -> void:
@@ -122,38 +126,38 @@ func _test_modifier_roundtrips() -> void:
 		_check(loaded.attribute == id and loaded.operation == 2 and loaded.value == modifier.value,
 				"Saved IDs and modifier values survive resource reload")
 		if CombatAttributes.is_resistance(id):
-			var actor := ActorAttributes.new()
+			var actor := ATTRIBUTE_FIXTURE.new_attributes()
 			actor.set_modifiers(&"loaded_resistance", [loaded])
 			_close(actor.get_value(id, PackedStringArray(["Weapon.Finesse"])), -35.25,
 					"A saved negative Resistance modifier retains its signed runtime value")
 			actor.free()
 		elif id == CombatAttributes.Id.ARMOR:
-			var actor := ActorAttributes.new()
+			var actor := ATTRIBUTE_FIXTURE.new_attributes()
 			actor.set_modifiers(&"loaded_armor", [loaded])
 			_close(actor.get_value(id, PackedStringArray(["Weapon.Finesse"])), 2500.0,
 					"Saved Armor beyond the reduction cap retains its uncapped rating")
 			actor.free()
 		elif id == CombatAttributes.Id.ARMOR_PENETRATION:
-			var actor := ActorAttributes.new()
+			var actor := ATTRIBUTE_FIXTURE.new_attributes()
 			actor.set_modifiers(&"loaded_penetration", [loaded])
 			_close(actor.get_value(id, PackedStringArray(["Weapon.Finesse"])), 100.0,
 					"Saved over-cap Armor Penetration applies its effective percentage cap")
 			_close(loaded.value, 175.0, "Serialization preserves the underlying over-cap penetration value")
 			actor.free()
 		elif id in [CombatAttributes.Id.CRITICAL_CHANCE, CombatAttributes.Id.CRITICAL_DAMAGE]:
-			var actor := ActorAttributes.new()
+			var actor := ATTRIBUTE_FIXTURE.new_attributes()
 			actor.set_modifiers(&"loaded_critical", [loaded])
 			_close(actor.get_value(id, PackedStringArray(["Weapon.Finesse"])), modifier.value,
 					"Critical authoring units and uncapped Damage bonus survive resource reload")
 			actor.free()
 		elif id == CombatAttributes.Id.MOVEMENT_SPEED:
-			var actor := ActorAttributes.new()
+			var actor := ATTRIBUTE_FIXTURE.new_attributes()
 			actor.set_modifiers(&"loaded_movement", [loaded])
 			_close(actor.get_value(id, PackedStringArray(["Weapon.Finesse"])), -12.5,
 					"A saved Movement Speed modifier preserves a fractional negative bonus")
 			actor.free()
 		elif id == CombatAttributes.Id.CARRIED_WEIGHT:
-			var actor := ActorAttributes.new()
+			var actor := ATTRIBUTE_FIXTURE.new_attributes()
 			actor.set_modifiers(&"loaded_weight", [loaded])
 			_close(actor.get_value(id, PackedStringArray(["Weapon.Finesse"])), 137.25,
 					"A saved Carried Weight modifier retains fractional load above capacity")
@@ -178,7 +182,7 @@ func _test_legacy_movement_identity_roundtrip() -> void:
 	var loaded := ResourceLoader.load(TEMP_MODIFIER, "", ResourceLoader.CACHE_MODE_IGNORE) as AttributeModifier
 	_check(loaded != null and loaded.attribute == 27 and loaded.value == 25.0,
 			"Old Movement Speed data keeps its original identity and value")
-	var actor := ActorAttributes.new()
+	var actor := ATTRIBUTE_FIXTURE.new_attributes()
 	actor.set_modifiers(&"legacy_movement", [loaded])
 	_close(actor.get_value(CombatAttributes.Id.MOVEMENT_SPEED), 0.0,
 			"A legacy twenty-five-percent modifier cannot affect the new zero-base movement bonus")
@@ -189,9 +193,10 @@ func _test_legacy_movement_identity_roundtrip() -> void:
 
 func _test_operation_roundtrips() -> void:
 	_check(AttributeModifier.Operation.ADD == 0 and AttributeModifier.Operation.ADD_PERCENT == 1
-			and AttributeModifier.Operation.SET_BASE == 2 and AttributeModifier.Operation.MORE_PERCENT == 3,
+			and AttributeModifier.Operation.SET_BASE == 2 and AttributeModifier.Operation.MORE_PERCENT == 3
+			and AttributeModifier.Operation.ADD_TO_FOUNDATION == 4,
 			"Modifier operation identities remain stable")
-	for operation: int in range(4):
+	for operation: int in AttributeModifier.Operation.values():
 		var modifier := AttributeModifier.new()
 		modifier.attribute = CombatAttributes.Id.PHYSICAL_POWER
 		modifier.operation = operation
@@ -205,6 +210,29 @@ func _test_operation_roundtrips() -> void:
 				and loaded.excluded_context_tags == modifier.excluded_context_tags,
 				"Operation, Physical Power identity, value and scopes survive reload")
 	_check(DirAccess.remove_absolute(TEMP_MODIFIER) == OK, "Temporary operation fixture is removed")
+
+
+func _test_attribute_based_modifier_roundtrip() -> void:
+	var modifier := AttributeModifier.new()
+	modifier.attribute = CombatAttributes.Id.MAGIC_POWER
+	modifier.operation = AttributeModifier.Operation.ADD_TO_FOUNDATION
+	modifier.capture_attribute = CombatAttributes.Id.INTELLECT
+	modifier.capture_coefficient = 1.25
+	_check(ResourceSaver.save(modifier, TEMP_MODIFIER) == OK, "An Attribute Based modifier saves")
+	var loaded := ResourceLoader.load(TEMP_MODIFIER, "", ResourceLoader.CACHE_MODE_IGNORE) as AttributeModifier
+	_check(loaded != null and loaded.capture_attribute == CombatAttributes.Id.INTELLECT
+			and is_equal_approx(loaded.capture_coefficient, 1.25), "The captured stat and coefficient survive reload")
+	if loaded != null:
+		var actor := ATTRIBUTE_FIXTURE.new_attributes()
+		actor.set_modifiers(&"loaded_derivation", [loaded])
+		actor.set_base_value(CombatAttributes.Id.INTELLECT, 20.0)
+		_close(actor.get_value(CombatAttributes.Id.MAGIC_POWER), 65.0,
+				"The loaded modifier reads the changed target value and adds to the foundation")
+		actor.remove_modifiers(&"loaded_derivation")
+		_close(actor.get_value(CombatAttributes.Id.MAGIC_POWER), 40.0,
+				"Removing a retained derivation leaves the other derivation in place")
+		actor.free()
+	_check(DirAccess.remove_absolute(TEMP_MODIFIER) == OK, "The temporary capture fixture is removed")
 
 
 func _property(resource: Resource, name: StringName) -> Dictionary:

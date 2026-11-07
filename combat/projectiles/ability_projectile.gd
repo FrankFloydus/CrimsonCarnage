@@ -1,6 +1,6 @@
 class_name AbilityProjectile
 extends Node3D
-## Delivers ability-selected effects on the first swept collision along its path.
+## Carries outgoing Gameplay Effect Specs to the first swept collision along its path.
 
 signal impacted(collider: Node, world_position: Vector3)
 
@@ -12,7 +12,7 @@ signal impacted(collider: Node, world_position: Vector3)
 @export_flags_3d_physics var collision_mask: int = 1
 
 var _context: GameplayEffectContext
-var _effects: Array[GameplayEffectDefinition] = []
+var _specs: Array[GameplayEffectSpec] = []
 var _excluded: Array[RID] = []
 var _elapsed: float = 0.0
 var _launched: bool = false
@@ -21,11 +21,11 @@ var _direction: Vector3 = Vector3.FORWARD
 
 func launch(
 		context: GameplayEffectContext,
-		effects: Array[GameplayEffectDefinition],
+		specs: Array[GameplayEffectSpec],
 		excluded_body: CollisionObject3D = null
 ) -> void:
 	_context = context
-	_effects = effects.duplicate()
+	_specs = specs.duplicate()
 	_excluded.clear()
 	if is_instance_valid(excluded_body):
 		_excluded.append(excluded_body.get_rid())
@@ -49,8 +49,12 @@ func _physics_process(delta: float) -> void:
 		_launched = false
 		var collider := collision["collider"] as Node
 		var target := AbilitySystem.find_for(collider)
-		if target != null and target.effects != null:
-			target.receive_hit(_context, _effects)
+		if target != null and _context != null:
+			var hit_context := _context.duplicate_for_hit(0.5)
+			hit_context.hit_position = global_position
+			hit_context.hit_normal = collision["normal"]
+			hit_context.has_hit_result = true
+			target.receive_hit_specs(hit_context, _specs)
 		impacted.emit(collider, global_position)
 		queue_free()
 		return

@@ -33,20 +33,20 @@ func _start_fixture() -> bool:
 	(caster.get_node("Attributes") as ActorAttributes).initial_modifiers = []
 	_arena.add_child(caster)
 	_system = caster.get_node("AbilitySystem") as AbilitySystem
+	preload("res://tests/attribute_fixture.gd").configure(_system)
 	root.add_child(_arena)
 	current_scene = _arena
 	caster.set_physics_process(false)
 	caster.get_node("AbilityInput").set_process(false)
 	_system.set_process(false)
 	_system.set_physics_process(false)
-	_system.attributes.set_physics_process(false)
 	_system.attributes.set_base_value(CombatAttributes.Id.MAX_MANA, 100.0)
 	_system.attributes.set_base_value(CombatAttributes.Id.MANA, 100.0)
 	_animation = _system.animation_player
 	await physics_frame
 	await physics_frame
 	var valid := FIREBALL_FIXTURE.install(_system)
-	_check(valid, "The saved Fireball has valid animation, projectile, payload and origin wiring")
+	_check(valid, "The saved Fireball has valid playback, delivery and commit-effect wiring")
 	return valid
 
 
@@ -99,7 +99,7 @@ func _test_sampled_cast_speed() -> void:
 	_check(cast.released and _projectile_count() == 1, "Faster playback crosses the same release key")
 	_close(execution.get_windup_progress(cast), -1.0, "Release hides windup progress during recovery")
 	_system.advance_animation(clip.length)
-	_system.advance(cast.definition.cooldown + 0.001)
+	_system.advance(_system.get_cooldown_remaining(&"fireball") + 0.001)
 	_check(_system.try_activate(&"fireball"), "The next Fireball samples the changed stat")
 	cast = _system.get_active_cast(&"fireball")
 	_close(_animation.get_playing_speed(), 2.0, "Cast Speed caps at twice the authored rate")

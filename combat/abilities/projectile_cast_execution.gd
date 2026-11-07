@@ -3,13 +3,13 @@ extends AbilityExecution
 ## Plays an authored cast animation and delivers ability-selected effects through its release event.
 
 ## Animation containing the release method key and any authored cast presentation.
-@export var animation_name: StringName = &"cast_fireball"
-## Animation event that releases the projectile; repeated events are ignored for this cast.
-@export var release_event: StringName = &"release"
+@export var animation_name: StringName = &""
+## Gameplay event tag sent by the animation method key to release the projectile once.
+@export var release_event: StringName = &"Event.Combat.ProjectileRelease"
 ## Saved projectile scene containing an AbilityProjectile root, validated before spending costs.
 @export var projectile_scene: PackedScene
 ## Spawn offset in the casting origin's local coordinates, in meters.
-@export var spawn_offset: Vector3 = Vector3(0.25, -0.2, -0.6)
+@export var spawn_offset: Vector3 = Vector3.ZERO
 ## Crosshair aim trace length in meters. Zero launches along the aim origin’s forward axis.
 @export_range(0.0, 500.0, 0.1, "or_greater") var aim_trace_distance: float = 0.0
 ## Effects selected by this ability and supplied to the projectile at release.
@@ -68,9 +68,14 @@ func begin(cast: AbilityCast) -> void:
 		cast.cancel()
 		return
 	cast.data[&"release_time"] = release_time
+	var release_task := AbilityTaskWaitGameplayEvent.new(release_event)
+	release_task.event_received.connect(_on_release_event.bind(cast))
+	cast.start_task(release_task)
 	var speed := cast.get_animation_playback_rate(animation.length)
-	if not system.play_cast_animation(cast, speed, true):
-		cast.cancel()
+	var animation_task := AbilityTaskPlayAnimationAndWait.new(animation_name, speed, true)
+	animation_task.completed.connect(cast.finish)
+	animation_task.interrupted.connect(cast.cancel)
+	cast.start_task(animation_task)
 
 
 ## Reports actual animation windup progress, or -1 when there is no visible windup.
@@ -88,8 +93,8 @@ func get_windup_progress(cast: AbilityCast) -> float:
 	return clampf(player.current_animation_position / release_time, 0.0, 1.0)
 
 
-func handle_event(cast: AbilityCast, event_name: StringName) -> void:
-	if event_name != release_event or cast.released or cast.finished:
+func _on_release_event(_event_tag: StringName, _payload: Dictionary, cast: AbilityCast) -> void:
+	if cast.released or cast.finished:
 		return
 	var system := cast.get_system()
 	if system == null or system.cast_origin == null:
@@ -126,12 +131,15 @@ func handle_event(cast: AbilityCast, event_name: StringName) -> void:
 			projectile.free()
 			return
 	cast.context.prime_effects(on_hit_effects)
+	var specs: Array[GameplayEffectSpec] = []
+	for definition: GameplayEffectDefinition in on_hit_effects:
+		specs.append(cast.make_effect_spec(definition))
 	var world: Node = system.get_tree().current_scene
 	if world == null:
 		world = system.get_tree().root
 	world.add_child(projectile)
 	projectile.global_transform = transform
-	projectile.launch(cast.context, on_hit_effects, system.actor_body)
+	projectile.launch(cast.context, specs, system.actor_body)
 	cast.data[&"projectile"] = weakref(projectile)
 
 

@@ -2,7 +2,7 @@ class_name MaintainEffectExecution
 extends AbilityExecution
 ## Retains an authored effect on the actor for the lifetime of this activation.
 
-## Self effect maintained while active. Use a Duration modifier effect with zero duration.
+## Infinite Gameplay Effect maintained on the ability owner while active.
 @export var effect: GameplayEffectDefinition
 ## While active, finishes this execution on this event or a child tag. Empty leaves completion to its caller.
 @export var end_on_event_tag: StringName = &""
@@ -11,8 +11,9 @@ extends AbilityExecution
 func get_validation_error(_system: AbilitySystem) -> StringName:
 	if effect == null:
 		return &"missing_effect_payload"
-	if effect.kind != GameplayEffectDefinition.Kind.MODIFIERS \
-			or effect.timing != GameplayEffectDefinition.Timing.DURATION or effect.duration != 0.0:
+	var indefinite := effect.timing == GameplayEffectDefinition.Timing.INFINITE \
+			or (effect.timing == GameplayEffectDefinition.Timing.DURATION and effect.duration == 0.0)
+	if effect.is_damage_effect() or not indefinite:
 		return &"effect_must_be_indefinite"
 	return effect.get_validation_error()
 
@@ -65,7 +66,7 @@ func _ensure_effect(cast: AbilityCast) -> void:
 		return
 	cast.data.erase(&"effect_handle")
 	cast.data[&"applying_effect"] = true
-	handle = effects.apply_effect(effect, cast.context)
+	handle = effects.apply_effect_spec(cast.make_effect_spec(effect))
 	cast.data.erase(&"applying_effect")
 	if cast.finished:
 		effects.remove_effect(handle)

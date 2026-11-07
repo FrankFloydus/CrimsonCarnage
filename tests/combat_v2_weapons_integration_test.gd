@@ -2,6 +2,8 @@ extends SceneTree
 ## Exercises the Combat 2.0 weapon/attribute boundary without desktop interaction.
 ## Checks physical scaling, source/weapon snapshots, modifier scopes and reserved effect tags.
 
+const ATTRIBUTE_FIXTURE = preload("res://tests/attribute_fixture.gd")
+
 var _checks: int = 0
 var _failures: int = 0
 
@@ -23,8 +25,7 @@ func _run() -> void:
 
 
 func _actor() -> ActorAttributes:
-	var actor := ActorAttributes.new()
-	return actor
+	return ATTRIBUTE_FIXTURE.new_attributes()
 
 
 func _weapon(kind: WeaponDefinition.Kind, minimum: float, maximum: float,
@@ -39,6 +40,7 @@ func _weapon(kind: WeaponDefinition.Kind, minimum: float, maximum: float,
 
 func _effect() -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
+	effect.executions = [GameplayEffectDamageExecution.new()]
 	effect.use_weapon_damage = true
 	return effect
 

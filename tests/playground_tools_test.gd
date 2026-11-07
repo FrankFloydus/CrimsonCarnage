@@ -23,6 +23,8 @@ func _initialize() -> void:
 func _run() -> void:
 	preload("res://tests/combat_rules_fixture.gd").install()
 	_arena = PLAYGROUND.instantiate()
+	for path in ["Player/AbilitySystem", "Dummy/AbilitySystem"]:
+		preload("res://tests/attribute_fixture.gd").configure(_arena.get_node(path) as AbilitySystem)
 	for path in ["Player/Attributes", "Dummy/Attributes"]:
 		var profile := _arena.get_node(path) as ActorAttributes
 		profile.initial_modifiers = []
@@ -37,8 +39,6 @@ func _run() -> void:
 	_tools = _arena.get_node("CombatTestTools") as CombatTestTools
 	_source = _tools.player_system.attributes
 	_target = _tools.dummy.attributes
-	_source.set_physics_process(false)
-	_target.set_physics_process(false)
 	_arena.get_node("Player").set_physics_process(false)
 	_tools.ability_input.set_process(false)
 	_tools.player_system.set_process(false)
@@ -104,16 +104,7 @@ func _prepare_test_tuning() -> void:
 	movement.settings.min_speed_multiplier = 0.5
 
 	var player := _arena.get_node("Player/AbilitySystem") as AbilitySystem
-	for index in player.granted_abilities.size():
-		var saved := player.granted_abilities[index]
-		if saved == null or saved.ability_id != &"sprint" or saved.execution == null:
-			continue
-		var definition := saved.duplicate() as AbilityDefinition
-		var execution := saved.execution.duplicate() as AbilityExecution
-		execution.set("stamina_per_charge", 2.0)
-		execution.set("charge_interval", 0.1)
-		definition.execution = execution
-		player.granted_abilities[index] = definition
+	preload("res://tests/sprint_fixture.gd").configure(player)
 
 
 func _test_attribute_editors() -> void:
@@ -499,11 +490,13 @@ func _test_live_carry_load_edits() -> void:
 	utilities.get_popup().id_pressed.emit(LiveAttributeEditor.UtilityAction.CLEAR_EFFECTS)
 	await process_frame
 	var effects := system.effects.get_retained_effects()
-	_check(effects.size() == 1 and effects.values()[0].effect_id == &"Effect.Encumbered"
+	_check(system.effects.active_count(&"Effect.Encumbered") == 1
 			and effects.keys() != previous_effects.keys()
+			and system.effects.active_count(&"Effect.AttributeDerivations") == 1
+			and system.effects.active_count(&"Effect.ResourceRegeneration") == 1
 			and system.get_active_cast(ENCUMBERED_ACTION) != null
 			and system.tags.get_count(&"State.Encumbered") == 1 and debuffs.get_child_count() == 1,
-			"Clearing effects under load restores one action-owned effect and HUD icon with a new handle")
+			"Clearing effects restores the action-owned effect and preserves both startup effects")
 	_check(badge.is_visible_in_tree() and load_value.text == "150 / 100"
 			and speed_penalty.text.trim_suffix("%").replace("−", "-").to_float() == -43.75
 			and jump_penalty.text.trim_suffix("%").replace("−", "-").to_float() == -50.0,
@@ -522,7 +515,7 @@ func _test_live_carry_load_edits() -> void:
 			"Raising capacity clears both displayed penalties at the same weight")
 	_check(system.get_active_cast(ENCUMBERED_ACTION) == null
 			and system.tags.get_count(&"State.Encumbered") == 0
-			and system.effects.get_retained_effects().is_empty() and debuffs.get_child_count() == 0,
+			and system.effects.active_count(&"Effect.Encumbered") == 0 and debuffs.get_child_count() == 0,
 			"Raising capacity ends the action and removes its gameplay effect, tag and HUD icon")
 	_tools.show_attributes(1)
 	_check(not speed_penalty.is_visible_in_tree() and not jump_penalty.is_visible_in_tree(),

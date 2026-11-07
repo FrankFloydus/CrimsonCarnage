@@ -87,7 +87,7 @@ Carried Weight is editable in F3. Crossing above capacity sends the gameplay eve
 
 The base player grants Sprint, Jump, Crouch, Encumbered and Stamina Exhaustion. The caster adds Fireball. Press LMB or F to cast it. [Ability authoring](docs/ability_system.md)
 
-Sprint upkeep is configured under **Sprint → Execution**. The defaults charge 2 Stamina per 0.1 seconds of grounded sprint travel with input. Movement preserves unpaid travel across pauses. Idle, blocked and airborne travel cost nothing. Stamina recovery pauses throughout active Sprint. A paid travel charge consumes any positive remainder below the next full charge, reaching zero and applying the authored exhaustion effect. Release with Stamina left to recover normally. Health and Mana keep recovering while alive. Release Shift and press again after exhaustion.
+Sprint upkeep is configured in [GE_StaminaUpkeep](player/ge_stamina_upkeep.tres), linked from **Sprint → Execution → Upkeep Effect**. The defaults charge 2 Stamina per 0.1 seconds of grounded sprint travel with input. Movement preserves unpaid travel across pauses. Idle, blocked and airborne travel cost nothing. The startup regeneration effect pauses Stamina recovery throughout active Sprint and exhaustion. Health and Mana keep recovering while alive. Release Shift and press again after exhaustion.
 
 Hold Shift to sprint and release it to run. Directional input is still needed to move. Holding
 Ctrl temporarily walks; releasing Ctrl while Shift is held resumes affordable sprint. Crouching

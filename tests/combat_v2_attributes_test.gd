@@ -1,6 +1,8 @@
 extends SceneTree
 ## Combat 2.0 checks for governing attributes, flat foundations and independent More modifiers.
 
+const ATTRIBUTE_FIXTURE = preload("res://tests/attribute_fixture.gd")
+
 var _finesse := PackedStringArray(["Ability.Attack", "Weapon.Finesse"])
 var _brutality := PackedStringArray(["Ability.Attack", "Weapon.Brutality"])
 var _spell := PackedStringArray(["Ability.Spell", "Damage.Fire"])
@@ -207,9 +209,7 @@ func _test_progression_budget() -> void:
 
 
 func _actor() -> ActorAttributes:
-	var actor := ActorAttributes.new()
-	actor.initialize()
-	return actor
+	return ATTRIBUTE_FIXTURE.new_attributes()
 
 
 func _modifier(id: int, amount: float,

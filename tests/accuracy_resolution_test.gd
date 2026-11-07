@@ -2,6 +2,8 @@ extends SceneTree
 ## Shared attack/spell Accuracy anchors, probability boundaries and complete payload outcomes.
 ## Run headless with --script res://tests/accuracy_resolution_test.gd.
 
+const ATTRIBUTE_FIXTURE = preload("res://tests/attribute_fixture.gd")
+
 class WaitingExecution extends AbilityExecution:
 	func begin(_cast: AbilityCast) -> void:
 		pass
@@ -35,7 +37,7 @@ func _run() -> void:
 
 
 func _actor(level: int = 1) -> ActorAttributes:
-	var actor := ActorAttributes.new()
+	var actor := ATTRIBUTE_FIXTURE.new_attributes()
 	actor.level = level
 	actor.set_base_value(CombatAttributes.Id.MAX_HEALTH, 1000.0)
 	actor.restore_resources()
@@ -46,7 +48,7 @@ func _actor(level: int = 1) -> ActorAttributes:
 func _system() -> AbilitySystem:
 	var holder := Node.new()
 	holder.process_mode = Node.PROCESS_MODE_DISABLED
-	var attributes := ActorAttributes.new()
+	var attributes := ATTRIBUTE_FIXTURE.new_attributes()
 	var system := AbilitySystem.new()
 	system.attributes = attributes
 	holder.add_child(attributes)
@@ -62,6 +64,7 @@ func _context(source: ActorAttributes, tags: PackedStringArray) -> GameplayEffec
 
 func _damage(amount: float = 20.0) -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
+	effect.executions = [GameplayEffectDamageExecution.new()]
 	effect.effect_id = &"Effect.AccuracyDamage"
 	effect.base_magnitude = amount
 	return effect
@@ -255,8 +258,9 @@ func _test_system_events_costs_and_randomness() -> void:
 	var ability := AbilityDefinition.new()
 	ability.ability_id = &"accuracy_spell"
 	ability.ability_tags = PackedStringArray(["Ability.Spell"])
-	ability.cost_amount = 20.0
-	ability.cooldown = 3.0
+	var commit_effects := preload("res://tests/ability_effect_fixture.gd")
+	ability.cost_effect = commit_effects.make_cost(CombatAttributes.Id.MANA, 20.0)
+	ability.cooldown_effect = commit_effects.make_cooldown("Cooldown.AccuracyFixture", 3.0)
 	ability.execution = WaitingExecution.new()
 	source.grant_ability(ability)
 	var events: Array[Dictionary] = []

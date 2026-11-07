@@ -1,6 +1,8 @@
 extends SceneTree
 ## One action-scoped critical per successful damaging Hit, independent of Accuracy and weapon RNG.
 
+const ATTRIBUTE_FIXTURE = preload("res://tests/attribute_fixture.gd")
+
 var _checks: int = 0
 var _failures: int = 0
 var _actors: Array[ActorAttributes] = []
@@ -30,7 +32,7 @@ func _run() -> void:
 
 
 func _actor() -> ActorAttributes:
-	var actor := ActorAttributes.new()
+	var actor := ATTRIBUTE_FIXTURE.new_attributes()
 	actor.set_base_value(CombatAttributes.Id.MAX_HEALTH, 1000000.0)
 	actor.restore_resources()
 	_actors.append(actor)
@@ -44,6 +46,7 @@ func _context(source: ActorAttributes, spell: bool = true) -> GameplayEffectCont
 
 func _damage(amount: float = 100.0, magic: bool = false) -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
+	effect.executions = [GameplayEffectDamageExecution.new()]
 	effect.effect_id = &"Effect.CriticalTest"
 	effect.base_magnitude = amount
 	if magic:
@@ -72,7 +75,7 @@ func _buff() -> GameplayEffectDefinition:
 func _system(seed_value: int = 73913, before_ready: bool = false) -> AbilitySystem:
 	var holder := Node.new()
 	holder.process_mode = Node.PROCESS_MODE_DISABLED
-	var attributes := ActorAttributes.new()
+	var attributes := ATTRIBUTE_FIXTURE.new_attributes()
 	attributes.set_base_value(CombatAttributes.Id.MAX_HEALTH, 1000000.0)
 	attributes.restore_resources()
 	var system := AbilitySystem.new()

@@ -100,7 +100,6 @@ enum Id {
 }
 
 const MAX_LEVEL: int = 60
-const BASE_PRIMARY: float = 10.0
 const ACTIVE_IDS: Array[int] = [
 	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 18, 19, 20, 21, 22,
 	34, 38, 39, 40, 42, 44, 53, 54, 55, 56,
@@ -208,7 +207,7 @@ static func display_name(id: int) -> String:
 ## Designer-facing meaning, units and contribution of every active attribute.
 static func description(id: int) -> String:
 	if id == Id.NONE:
-		return "No attribute selected. A cost with no attribute spends no resource."
+		return "No attribute selected."
 	if id in RETIRED_IDS:
 		return "Retired identity reserved for old serialized data. It contributes zero."
 	if is_resistance(id):
@@ -218,36 +217,30 @@ static func description(id: int) -> String:
 			return ("Current Health points, from zero to maximum Health. Zero Health means death. "
 					+ "Damage removes Health directly; persistent modifiers change capacity or regeneration.")
 		Id.MAX_HEALTH:
-			return ("Health capacity: base Health plus %s flat Health per Vitality and other flat "
+			return ("Health capacity: startup base plus the authored Vitality derivation and other flat "
 					+ "bonuses, then increased and More modifiers. Minimum %s; no upper cap. "
-					+ "Increasing capacity does not restore current Health.") % [
-					CombatRules.get_number("vitality_health_per_point"),
-					CombatRules.get_number("minimum_capacity")]
+					+ "Increasing capacity does not restore current Health.") % CombatRules.get_number("minimum_capacity")
 		Id.STAMINA:
 			return ("Current Stamina points, from zero to maximum Stamina. Abilities spend "
 					+ "their authored costs. Active Sprint and Stamina Exhaustion pause Stamina recovery.")
 		Id.MAX_STAMINA:
-			return ("Stamina capacity: base Stamina plus %s flat Stamina per Vitality and other "
+			return ("Stamina capacity: startup base plus the authored Vitality derivation and other "
 					+ "flat bonuses, then increased and More modifiers. Minimum %s; no upper cap. "
-					+ "Increasing capacity does not refill Stamina.") % [
-					CombatRules.get_number("vitality_stamina_per_point"),
-					CombatRules.get_number("minimum_capacity")]
+					+ "Increasing capacity does not refill Stamina.") % CombatRules.get_number("minimum_capacity")
 		Id.MANA:
 			return ("Current Mana points, from zero to maximum Mana. Abilities spend their "
-					+ "authored costs; Mana Regen restores points continuously while alive, even casting.")
+					+ "authored costs; the regeneration effect restores Mana while alive, even casting.")
 		Id.MAX_MANA:
-			return ("Mana capacity: base Mana plus %s flat Mana per Intellect and other flat "
+			return ("Mana capacity: startup base plus the authored Intellect derivation and other flat "
 					+ "bonuses, then increased and More modifiers. Minimum %s; no upper cap. "
-					+ "Increasing capacity does not refill Mana.") % [
-					CombatRules.get_number("intellect_mana_per_point"),
-					CombatRules.get_number("minimum_capacity")]
+					+ "Increasing capacity does not refill Mana.") % CombatRules.get_number("minimum_capacity")
 		Id.STRENGTH:
 			return ("Primary for Brutality attacks. Each point grants %s Physical Power and %s "
-					+ "Accuracy Rating to those attacks, plus %s Carry Capacity. Uses the full "
+					+ "Accuracy Rating to those attacks. Also contributes to Carry Capacity through the "
+					+ "Attribute Derivations effect. Uses the full "
 					+ "primary value, including gear bonuses. Nonnegative and uncapped.") % [
 					CombatRules.get_number("strength_physical_power_per_point"),
-					CombatRules.get_number("governing_accuracy_per_point"),
-					CombatRules.get_number("strength_capacity_per_point")]
+					CombatRules.get_number("governing_accuracy_per_point")]
 		Id.DEXTERITY:
 			return ("Primary for Finesse attacks, including bow shots. Each point grants %s "
 					+ "Physical Power and %s Accuracy Rating to those attacks. Uses the full "
@@ -255,68 +248,56 @@ static func description(id: int) -> String:
 					CombatRules.get_number("dexterity_physical_power_per_point"),
 					CombatRules.get_number("governing_accuracy_per_point")]
 		Id.INTELLECT:
-			return ("Primary for spells. Each point grants %s Magic Power, %s maximum Mana "
-					+ "and %s spell Accuracy Rating. These flat derived contributions receive "
-					+ "their applicable modifiers. Nonnegative and uncapped.") % [
-					CombatRules.get_number("intellect_magic_power_per_point"),
-					CombatRules.get_number("intellect_mana_per_point"),
-					CombatRules.get_number("governing_accuracy_per_point")]
+			return ("Primary for spells. Each point grants %s spell Accuracy Rating. Magic Power "
+					+ "and maximum Mana receive flat contributions from the Attribute Derivations effect. "
+					+ "Nonnegative and uncapped.") % CombatRules.get_number("governing_accuracy_per_point")
 		Id.VITALITY:
-			return ("Survival primary. Each point grants %s flat maximum Health and %s flat "
-					+ "maximum Stamina. These contributions receive applicable capacity "
-					+ "modifiers. Nonnegative and uncapped.") % [
-					CombatRules.get_number("vitality_health_per_point"),
-					CombatRules.get_number("vitality_stamina_per_point")]
+			return ("Survival primary. Grants flat maximum Health and maximum Stamina through the "
+					+ "Attribute Derivations effect. Nonnegative and uncapped.")
 		Id.HEALTH_REGEN:
-			return _regeneration_description("Health", "base_health_regen")
+			return _regeneration_description("Health")
 		Id.STAMINA_REGEN:
-			return _regeneration_description("Stamina", "base_stamina_regen") \
+			return _regeneration_description("Stamina") \
 					+ " Active Sprint and Stamina Exhaustion pause this recovery."
 		Id.MANA_REGEN:
-			return _regeneration_description("Mana", "base_mana_regen")
+			return _regeneration_description("Mana")
 		Id.CRITICAL_CHANCE:
 			return ("Percentage chance for a successful direct damage hit to critically strike. "
-					+ "Base %s%% with no primary or level contribution. Add Flat 20 adds twenty "
+					+ "No primary or level contribution. Add Flat 20 adds twenty "
 					+ "percentage points; increased and More scale the combined value before "
 					+ "clamping to %s%%..%s%%. Applies to attacks and spells after Accuracy succeeds; "
 					+ "it does not turn a miss or resist into a hit.") % [
-					CombatRules.get_number("base_critical_chance"),
 					CombatRules.get_number("critical_chance_min_percent"),
 					CombatRules.get_number("critical_chance_max_percent")]
 		Id.CRITICAL_DAMAGE:
 			return ("Bonus percentage points added to the base critical damage multiplier, "
-					+ "not the total damage percentage. Base bonus %s percentage points; minimum zero and no upper cap. "
+					+ "not the total damage percentage. Minimum zero and no upper cap. "
 					+ "Zero bonus deals %s%% total damage on a critical; +50 bonus deals %s%%. "
 					+ "Flat bonuses add percentage points; increased and More scale the bonus value. "
 					+ "No primary or level contribution. Applies to critical damage from attacks and spells.") % [
-					CombatRules.get_number("base_critical_damage"),
 					CombatRules.get_number("base_critical_multiplier") * 100.0,
 					CombatRules.get_number("base_critical_multiplier") * 100.0 + 50.0]
 		Id.ARMOR:
 			return ("Nonnegative, uncapped rating that reduces incoming Physical damage from attacks "
-					+ "or spells. Base %s plus flat bonuses, then combined increased and independent More. "
+					+ "or spells. Flat bonuses apply before combined increased and independent More. "
 					+ "No primary or level contribution. Damage reduction has diminishing returns and "
 					+ "caps at %s%% at %s rating; extra rating remains available to offset later debuffs. "
 					+ "Incoming Armor Penetration can reduce its effective rating for each Physical component. "
 					+ "It does not reduce Magic damage or change Accuracy.") % [
-					CombatRules.get_number("base_armor"),
 					CombatRules.get_number("armor_max_reduction") * 100.0,
 					CombatRules.get_number("armor_rating_at_cap")]
 		Id.ARMOR_PENETRATION:
 			return ("Percentage of the target's Armor ignored by outgoing Physical damage from "
-					+ "attacks or spells, before the Armor reduction curve. Base %s%% with no primary "
+					+ "attacks or spells, before the Armor reduction curve. No primary "
 					+ "or level contribution. Add Flat 20 adds twenty percentage points; increased and "
 					+ "More scale the combined value before clamping to %s%%..%s%%. "
 					+ "Does not permanently reduce target Armor, affect Magic damage or change Accuracy.") % [
-					CombatRules.get_number("base_armor_penetration"),
 					CombatRules.get_number("armor_penetration_min_percent"),
 					CombatRules.get_number("armor_penetration_max_percent")]
 		Id.CARRY_CAPACITY:
-			return ("Weight threshold for encumbrance. Base capacity plus %s flat units per Strength "
+			return ("Weight threshold for encumbrance. Startup base plus the authored Strength derivation "
 					+ "and other flat bonuses, then increased and More modifiers. Minimum %s with "
-					+ "no upper cap. Movement slows when Carried Weight exceeds this threshold.") % [
-					CombatRules.get_number("strength_capacity_per_point"),
-					CombatRules.get_number("minimum_capacity")]
+					+ "no upper cap. Movement slows when Carried Weight exceeds this threshold.") % CombatRules.get_number("minimum_capacity")
 		Id.CARRIED_WEIGHT:
 			return ("Actual carried weight in weight units. Starts at zero, with no primary or level "
 					+ "contribution. Flat weight adjustments apply before increased and More modifiers. "
@@ -329,10 +310,10 @@ static func description(id: int) -> String:
 					+ "check uses level-based chance ceilings; a target ten levels higher caps at 10%%.") \
 					% CombatRules.get_number("governing_accuracy_per_point")
 		Id.MAGIC_POWER:
-			return ("Flat offensive power for spells. Each Intellect supplies %s points before "
+			return ("Flat offensive power for spells. The Attribute Derivations effect supplies Intellect's contribution before "
 					+ "other flat bonuses, combined increased percentages and independent More "
 					+ "multipliers. Authored effect coefficients convert power into damage. "
-					+ "Nonnegative and uncapped.") % CombatRules.get_number("intellect_magic_power_per_point")
+					+ "Nonnegative and uncapped.")
 		Id.PHYSICAL_POWER:
 			return ("Flat physical power for the relevant attack. Brutality receives %s per "
 					+ "Strength; Finesse, including bows, receives %s per Dexterity. Only one "
@@ -341,14 +322,13 @@ static func description(id: int) -> String:
 					CombatRules.get_number("strength_physical_power_per_point"),
 					CombatRules.get_number("dexterity_physical_power_per_point")]
 		Id.MOVEMENT_SPEED:
-			return ("Bonus percentage points to normal movement speed. Base %s%%; zero is normal, "
+			return ("Bonus percentage points to normal movement speed. Zero is normal, "
 					+ "+20%% is twenty percent faster, and -100%% requests zero horizontal movement speed. "
 					+ "Add Flat 1 adds one percentage point. Combined increased and independent More "
 					+ "scale the accumulated bonus itself: 20 bonus with 20%% increased becomes 24, "
 					+ "while zero bonus remains zero. Clamp only the final bonus to %s%%..+%s%%; "
 					+ "underlying over-cap values remain available to offset later debuffs. "
 					+ "No automatic primary/level contribution. Other gaits retain their authored proportions.") % [
-					CombatRules.get_number("base_movement_speed"),
 					CombatRules.get_number("movement_speed_min_percent"),
 					CombatRules.get_number("movement_speed_max_percent")]
 		Id.ATTACK_SPEED, Id.CAST_SPEED:
@@ -358,43 +338,6 @@ static func description(id: int) -> String:
 					display_name(id).get_slice(" ", 0).to_lower(),
 					CombatRules.get_number("action_speed_max_percent")]
 	return "Unknown attribute ID. No behavior is defined for this value."
-
-
-static func default_value(id: int, _actor_level: int) -> float:
-	if not is_active(id):
-		return 0.0
-	if is_resistance(id):
-		return CombatRules.get_number("base_resistance")
-	match id:
-		Id.MAX_HEALTH:
-			return CombatRules.get_number("base_health")
-		Id.MAX_STAMINA:
-			return CombatRules.get_number("base_stamina")
-		Id.MAX_MANA:
-			return CombatRules.get_number("base_mana")
-		Id.STRENGTH, Id.DEXTERITY, Id.INTELLECT, Id.VITALITY:
-			return CombatRules.get_number("base_primary")
-		Id.CARRY_CAPACITY:
-			return CombatRules.get_number("base_carry_capacity")
-		Id.ARMOR:
-			return CombatRules.get_number("base_armor")
-		Id.ARMOR_PENETRATION:
-			return CombatRules.get_number("base_armor_penetration")
-		Id.CRITICAL_CHANCE:
-			return CombatRules.get_number("base_critical_chance")
-		Id.CRITICAL_DAMAGE:
-			return CombatRules.get_number("base_critical_damage")
-		Id.MOVEMENT_SPEED:
-			return CombatRules.get_number("base_movement_speed")
-		Id.ATTACK_SPEED, Id.CAST_SPEED:
-			return CombatRules.get_number("base_action_speed")
-		Id.HEALTH_REGEN:
-			return CombatRules.get_number("base_health_regen")
-		Id.STAMINA_REGEN:
-			return CombatRules.get_number("base_stamina_regen")
-		Id.MANA_REGEN:
-			return CombatRules.get_number("base_mana_regen")
-	return 0.0
 
 
 static func clamp_value(id: int, value: float) -> float:
@@ -419,21 +362,20 @@ static func clamp_value(id: int, value: float) -> float:
 	return maxf(0.0, value)
 
 
-static func _regeneration_description(resource_name: String, base_key: String) -> String:
-	return ("%s points restored per second while alive. Base %s plus flat bonuses, then "
+static func _regeneration_description(resource_name: String) -> String:
+	return ("%s points restored per second while alive. Startup base plus flat bonuses, then "
 			+ "combined increased percentages and independent More multipliers. Minimum zero; "
 			+ "no upper cap. Applies in and out of combat. "
 			+ "Primary attributes and maximum capacity do not increase this rate. "
-			+ "Stops at capacity; cannot resurrect a dead actor.") % [
-			resource_name, CombatRules.get_number(base_key)]
+			+ "Stops at capacity; cannot resurrect a dead actor.") % resource_name
 
 
 static func _resistance_description(school: String) -> String:
 	return ("Percentage reduction to incoming %s magic damage from attacks or spells. "
-			+ "Base %s%%, with no primary contribution; apply flat percentage-point bonuses, "
+			+ "No primary contribution. Apply flat percentage-point bonuses, "
 			+ "combined increased and independent More modifiers before clamping to %s%%..%s%%. "
 			+ "Zero is neutral, positive values reduce damage and negative values amplify it. "
 			+ "It does not affect physical damage or the Accuracy check that can display RESIST.") % [
-			school, CombatRules.get_number("base_resistance"),
+			school,
 			CombatRules.get_number("resistance_min_percent"),
 			CombatRules.get_number("resistance_max_percent")]

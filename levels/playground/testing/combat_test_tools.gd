@@ -176,7 +176,7 @@ func _add_hit_preview(
 		return
 	var damage_effects: Array[GameplayEffectDefinition] = []
 	for effect in execution.get_effect_payload():
-		if effect != null and effect.kind == GameplayEffectDefinition.Kind.DAMAGE \
+		if effect != null and effect.is_damage_effect() \
 				and target_system.effects.can_apply_effect(effect):
 			damage_effects.append(effect)
 	if damage_effects.is_empty():

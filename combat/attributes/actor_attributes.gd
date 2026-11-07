@@ -1,6 +1,6 @@
 class_name ActorAttributes
 extends Node
-## Owns Combat 2.0 primary allocations, resources, continuous recovery and removable modifiers.
+## Owns Combat 2.0 base attributes, primary allocations, pools and modifier aggregation.
 
 signal attribute_changed(attribute: int, previous: float, value: float)
 
@@ -45,57 +45,19 @@ signal attribute_changed(attribute: int, previous: float, value: float)
 @export var initial_modifiers: Array[AttributeModifier] = []
 ## Gameplay events published as final attribute values cross their authored thresholds.
 @export var gameplay_event_rules: Array[AttributeGameplayEventRule] = []
-## Any matching actor tag pauses Stamina recovery while other pools recover normally.
-@export var stamina_regeneration_blocked_tags: PackedStringArray = []
 
 var _initialized: bool = false
 var _updating_allocations: bool = false
 var _currents: Dictionary[int, float] = {}
+var _base_values: Dictionary[int, float] = {}
 var _base_overrides: Dictionary[int, float] = {}
 var _authored_modifiers: Array[AttributeModifier] = []
 var _runtime_modifiers: Dictionary[StringName, Array] = {}
-var _regenerating: bool = false
-var _regeneration_tags: GameplayTagSet
+var _evaluating: Dictionary[int, bool] = {}
 
 
 func _ready() -> void:
 	initialize()
-
-
-func _physics_process(delta: float) -> void:
-	advance_regeneration(delta)
-
-
-## Supplies the actor’s counted tags for the authored Stamina recovery conditions.
-func bind_regeneration_tags(tags: GameplayTagSet) -> void:
-	_regeneration_tags = tags
-
-
-## Restores living actors continuously in points per second, subject to authored recovery conditions.
-## Manual callers advance only actors outside automatic physics processing to avoid double steps.
-func advance_regeneration(delta: float) -> void:
-	if _regenerating or not is_finite(delta) or delta <= 0.0:
-		return
-	initialize()
-	if get_value(CombatAttributes.Id.HEALTH) <= 0.0:
-		return
-	_regenerating = true
-	for id: int in CombatAttributes.current_ids():
-		# Resource-change listeners may kill the actor or change a later pool's modifiers.
-		if get_value(CombatAttributes.Id.HEALTH) <= 0.0:
-			break
-		if id == CombatAttributes.Id.STAMINA and _regeneration_tags != null \
-				and _regeneration_tags.has_any(stamina_regeneration_blocked_tags):
-			continue
-		var rate := get_value(CombatAttributes.regeneration_for(id))
-		if not is_finite(rate) or rate <= 0.0:
-			continue
-		var missing := maxf(0.0, get_value(CombatAttributes.maximum_for(id)) - get_value(id))
-		# Clamp overflow from a very large finite rate/delta before applying resource changes.
-		var recovered := minf(rate * delta, missing)
-		if is_finite(recovered) and recovered > 0.0:
-			modify_current(id, recovered)
-	_regenerating = false
 
 
 func initialize() -> void:
@@ -113,7 +75,12 @@ func get_value(id: int, context_tags: PackedStringArray = PackedStringArray()) -
 		return 0.0
 	if CombatAttributes.is_current_resource(id):
 		return _currents.get(id, 0.0)
+	# An invalid capture cycle cannot recurse indefinitely or count its own magnitude twice.
+	if _evaluating.has(id):
+		return 0.0
+	_evaluating[id] = true
 	var totals := _modifier_totals(id, context_tags)
+	_evaluating.erase(id)
 	var value: float = (float(totals.base) + float(totals.additive)) \
 			* maxf(0.0, 1.0 + float(totals.percentage)) * float(totals.more)
 	return CombatAttributes.clamp_value(id, value)
@@ -128,6 +95,35 @@ func get_base_value(id: int, context_tags: PackedStringArray = PackedStringArray
 	return _base_value(id, context_tags)
 
 
+## Intrinsic base before allocations, retained modifiers and developer overrides.
+func get_numeric_base_value(id: int) -> float:
+	initialize()
+	if CombatAttributes.is_current_resource(id):
+		return _currents.get(id, 0.0)
+	return _base_values.get(id, 0.0)
+
+
+func set_numeric_base_value(id: int, value: float) -> void:
+	apply_numeric_base_values({id: value})
+
+
+## Commits an instant or periodic effect's base outputs before notifying listeners.
+func apply_numeric_base_values(values: Dictionary[int, float]) -> void:
+	if values.is_empty():
+		return
+	initialize()
+	var previous := _capture_values()
+	for id: int in values:
+		if CombatAttributes.is_active(id) and not CombatAttributes.is_current_resource(id) \
+				and is_finite(values[id]):
+			_base_values[id] = values[id]
+	for id: int in CombatAttributes.current_ids():
+		if values.has(id) and is_finite(values[id]):
+			_currents[id] = maxf(0.0, values[id])
+	_after_change(previous, true)
+
+
+## Replaces the derived foundation for an authored actor or a Playground override.
 func set_base_value(id: int, value: float) -> void:
 	initialize()
 	if not is_finite(value) or not CombatAttributes.is_active(id):
@@ -229,29 +225,31 @@ func _modifier_totals(id: int, context_tags: PackedStringArray) -> Dictionary:
 			continue
 		match modifier.operation:
 			AttributeModifier.Operation.ADD:
-				additive += modifier.value
+				additive += modifier.get_magnitude(self, context_tags)
 			AttributeModifier.Operation.ADD_PERCENT:
-				percentage += modifier.value / 100.0
+				percentage += modifier.get_magnitude(self, context_tags) / 100.0
 			AttributeModifier.Operation.MORE_PERCENT:
-				more *= maxf(0.0, 1.0 + modifier.value / 100.0)
+				more *= maxf(0.0, 1.0 + modifier.get_magnitude(self, context_tags) / 100.0)
 	for owner: StringName in _runtime_modifiers:
 		for modifier: AttributeModifier in _runtime_modifiers[owner]:
 			if modifier.attribute != id or not modifier.matches_context(context_tags):
 				continue
 			match modifier.operation:
 				AttributeModifier.Operation.SET_BASE:
-					base = modifier.value
+					base = modifier.get_magnitude(self, context_tags)
 				AttributeModifier.Operation.ADD:
-					additive += modifier.value
+					additive += modifier.get_magnitude(self, context_tags)
 				AttributeModifier.Operation.ADD_PERCENT:
-					percentage += modifier.value / 100.0
+					percentage += modifier.get_magnitude(self, context_tags) / 100.0
 				AttributeModifier.Operation.MORE_PERCENT:
-					more *= maxf(0.0, 1.0 + modifier.value / 100.0)
+					more *= maxf(0.0, 1.0 + modifier.get_magnitude(self, context_tags) / 100.0)
 	return {"base": base, "additive": additive, "percentage": percentage, "more": more}
 
 
 func _base_value(id: int, context_tags: PackedStringArray) -> float:
-	var value := CombatAttributes.default_value(id, level)
+	if _base_overrides.has(id):
+		return _base_overrides[id]
+	var value := get_numeric_base_value(id)
 	var governing := CombatAttributes.governing_attribute(context_tags)
 	match id:
 		CombatAttributes.Id.STRENGTH:
@@ -262,18 +260,6 @@ func _base_value(id: int, context_tags: PackedStringArray) -> float:
 			value += allocated_intellect
 		CombatAttributes.Id.VITALITY:
 			value += allocated_vitality
-		CombatAttributes.Id.MAX_HEALTH:
-			value += get_value(CombatAttributes.Id.VITALITY) \
-					* CombatRules.get_number("vitality_health_per_point")
-		CombatAttributes.Id.MAX_STAMINA:
-			value += get_value(CombatAttributes.Id.VITALITY) \
-					* CombatRules.get_number("vitality_stamina_per_point")
-		CombatAttributes.Id.MAX_MANA:
-			value += get_value(CombatAttributes.Id.INTELLECT) \
-					* CombatRules.get_number("intellect_mana_per_point")
-		CombatAttributes.Id.MAGIC_POWER:
-			value += get_value(CombatAttributes.Id.INTELLECT, context_tags) \
-					* CombatRules.get_number("intellect_magic_power_per_point")
 		CombatAttributes.Id.PHYSICAL_POWER:
 			if governing == CombatAttributes.Id.STRENGTH:
 				value += get_value(governing, context_tags) \
@@ -285,14 +271,16 @@ func _base_value(id: int, context_tags: PackedStringArray) -> float:
 			if governing != CombatAttributes.Id.NONE:
 				value += get_value(governing, context_tags) \
 						* CombatRules.get_number("governing_accuracy_per_point")
-		CombatAttributes.Id.CARRY_CAPACITY:
-			value += get_value(CombatAttributes.Id.STRENGTH) \
-					* CombatRules.get_number("strength_capacity_per_point")
+	for modifiers: Array in _runtime_modifiers.values():
+		for modifier: AttributeModifier in modifiers:
+			if modifier.attribute == id and modifier.operation == AttributeModifier.Operation.ADD_TO_FOUNDATION \
+					and modifier.matches_context(context_tags):
+				value += modifier.get_magnitude(self, context_tags)
 	for modifier: AttributeModifier in _authored_modifiers:
 		if modifier.attribute == id and modifier.operation == AttributeModifier.Operation.SET_BASE \
 				and modifier.matches_context(context_tags):
-			value = modifier.value
-	return _base_overrides.get(id, value)
+			value = modifier.get_magnitude(self, context_tags)
+	return value
 
 
 func _copy_modifiers(modifiers: Array[AttributeModifier]) -> Array[AttributeModifier]:
@@ -303,7 +291,7 @@ func _copy_modifiers(modifiers: Array[AttributeModifier]) -> Array[AttributeModi
 		if CombatAttributes.is_current_resource(modifier.attribute):
 			push_warning("Persistent modifiers cannot target current pools; use explicit resource changes.")
 			continue
-		if not is_finite(modifier.value):
+		if not is_finite(modifier.value) or not is_finite(modifier.capture_coefficient):
 			continue
 		result.append(modifier.copy())
 	return result
@@ -313,7 +301,7 @@ func _before_change() -> Dictionary:
 	return _capture_values() if _initialized and not _updating_allocations else {}
 
 
-func _after_change(previous: Dictionary) -> void:
+func _after_change(previous: Dictionary, emit_small_pool_changes: bool = false) -> void:
 	if not _initialized or _updating_allocations:
 		return
 	for id: int in CombatAttributes.current_ids():
@@ -324,7 +312,8 @@ func _after_change(previous: Dictionary) -> void:
 		var old_value: float = previous.get(id, value)
 		if old_value == value:
 			continue
-		if not is_equal_approx(old_value, value) or _has_gameplay_event_rule_for(id):
+		if not is_equal_approx(old_value, value) or _has_gameplay_event_rule_for(id) \
+				or (emit_small_pool_changes and CombatAttributes.is_current_resource(id)):
 			attribute_changed.emit(id, old_value, value)
 
 

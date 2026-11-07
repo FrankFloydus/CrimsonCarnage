@@ -2,6 +2,8 @@ extends SceneTree
 ## Verifies damage feedback, the combat HUD, expiry and matchup inspection inside the menu.
 ## Run headless with --fixed-fps 60 --script res://tests/damage_numbers_test.gd.
 
+const ATTRIBUTE_FIXTURE = preload("res://tests/attribute_fixture.gd")
+
 const DUMMY_SCENE = preload("res://examples/fireball/dummy_actor.tscn")
 const FIREBALL = preload("res://examples/fireball/fireball.tres")
 const ARENA = preload("res://levels/playground/playground.tscn")
@@ -20,11 +22,12 @@ func _run() -> void:
 	preload("res://tests/combat_rules_fixture.gd").install()
 	var dummy := DUMMY_SCENE.instantiate() as DamageDummy
 	(dummy.get_node("Attributes") as ActorAttributes).initial_modifiers = []
+	ATTRIBUTE_FIXTURE.configure(dummy.get_node("AbilitySystem") as AbilitySystem)
 	root.add_child(dummy)
 	dummy.attributes.set_base_value(CombatAttributes.Id.MAX_HEALTH, 200.0)
 	dummy.attributes.restore_resources()
 	dummy.ability_system.set_process(false)
-	var source := ActorAttributes.new()
+	var source := ATTRIBUTE_FIXTURE.new_attributes()
 	root.add_child(source)
 	source.set_base_value(CombatAttributes.Id.INTELLECT, 20.0)
 	var context := GameplayEffectContext.capture(source, GameplayTagSet.new(),
@@ -32,6 +35,7 @@ func _run() -> void:
 	var execution := FIREBALL.execution as ProjectileCastExecution
 	var saved_impact := execution.on_hit_effects[0]
 	var impact := GameplayEffectDefinition.new()
+	impact.executions = [GameplayEffectDamageExecution.new()]
 	impact.damage_type = GameplayEffectDefinition.DamageType.MAGIC
 	impact.magic_school = GameplayEffectDefinition.MagicSchool.FIRE
 	impact.base_magnitude = 0.0
@@ -48,7 +52,8 @@ func _run() -> void:
 	var bar := dummy.get_node("HealthBar")
 	_near(float(bar.fill_ratio), 0.8, "The text-free Health bar follows the actual Health fraction")
 	_check(execution.on_hit_effects.size() == 1
-			and saved_impact.kind == GameplayEffectDefinition.Kind.DAMAGE
+			and saved_impact.executions.size() == 1
+			and saved_impact.executions[0] is GameplayEffectDamageExecution
 			and saved_impact.timing == GameplayEffectDefinition.Timing.INSTANT
 			and saved_impact.granted_tags.is_empty() and not dummy.has_node("BurnVisual"),
 			"The saved Fireball remains direct instant damage without an automatic ailment or Burn visual")
@@ -144,6 +149,8 @@ func _test_critical_damage_feedback(
 
 func _test_combat_hud() -> void:
 	var arena := ARENA.instantiate()
+	for path in ["Player/AbilitySystem", "Dummy/AbilitySystem"]:
+		ATTRIBUTE_FIXTURE.configure(arena.get_node(path) as AbilitySystem)
 	var source := arena.get_node("Player/Attributes") as ActorAttributes
 	var target := arena.get_node("Dummy/Attributes") as ActorAttributes
 	source.initial_modifiers = []
@@ -157,8 +164,9 @@ func _test_combat_hud() -> void:
 	root.add_child(arena)
 	arena.get_node("Player").set_physics_process(false)
 	arena.get_node("Player/AbilityInput").set_process(false)
-	source.set_physics_process(false)
 	var tools := arena.get_node("CombatTestTools") as CombatTestTools
+	tools.player_system.set_process(false)
+	tools.dummy.ability_system.set_process(false)
 	var hud := tools.get_node("Screen/HUD") as Control
 	var health := hud.get_node("Health") as ProgressBar
 	var mana := hud.get_node("Mana") as ProgressBar
@@ -180,11 +188,11 @@ func _test_combat_hud() -> void:
 	_check_bar(health, 175.0, 200.0, "Health after damage")
 	_check_bar(mana, 75.0, 100.0, "Mana after spending")
 	_check_bar(stamina, 70.0, 100.0, "Stamina after spending")
-	source.advance_regeneration(2.0)
-	_check_bar(mana, 85.0, 100.0, "Mana after continuous regeneration")
-	_check_bar(stamina, 90.0, 100.0, "Stamina after continuous regeneration")
+	tools.player_system.advance(2.0)
+	_check_bar(mana, 85.0, 100.0, "Mana after periodic regeneration")
+	_check_bar(stamina, 90.0, 100.0, "Stamina after periodic regeneration")
 	source.set_base_value(CombatAttributes.Id.HEALTH_REGEN, 5.0)
-	source.advance_regeneration(2.0)
+	tools.player_system.advance(2.0)
 	_check_bar(health, 185.0, 200.0, "Health after acquired regeneration")
 	source.set_base_value(CombatAttributes.Id.MAX_HEALTH, 400.0)
 	source.set_base_value(CombatAttributes.Id.MAX_MANA, 200.0)
@@ -193,14 +201,14 @@ func _test_combat_hud() -> void:
 	source.set_base_value(CombatAttributes.Id.MAX_STAMINA, 60.0)
 	_check_bar(stamina, 60.0, 60.0, "Reducing Stamina capacity updates and clamps the bar")
 	source.apply_damage(10000.0)
-	source.advance_regeneration(10.0)
+	tools.player_system.advance(10.0)
 	_check_bar(health, 0.0, 400.0, "Death empties Health and regeneration cannot restore it")
 	_check_bar(mana, 95.0, 200.0, "Mana stops recovering while the actor is dead")
 	source.restore_resources()
 	_check_bar(health, 400.0, 400.0, "Explicit restoration updates Health")
 	_check_bar(mana, 200.0, 200.0, "Explicit restoration updates Mana")
 	_check_bar(stamina, 60.0, 60.0, "Explicit restoration updates Stamina")
-	var replacement := ActorAttributes.new()
+	var replacement := ATTRIBUTE_FIXTURE.new_attributes()
 	root.add_child(replacement)
 	replacement.modify_current(CombatAttributes.Id.HEALTH, -100.0)
 	hud.bind_attributes(replacement)
@@ -334,10 +342,10 @@ func _test_effect_hud(hud: Control, system: AbilitySystem, dummy: AbilitySystem)
 	system.effects.advance(1.0)
 	_check(buffs.get_child_count() == 0 and debuffs.get_child_count() == 2,
 			"Expiry removes timed icons and preserves indefinite ones")
-	system.effects.clear()
+	system.clear_transient_effects()
 	_check(not strips.visible and debuffs.get_child_count() == 0,
 			"Clearing effects removes retained icons and collapses the empty strips")
-	dummy.effects.clear()
+	dummy.clear_transient_effects()
 	system.set_process(was_processing)
 
 	var attributes := system.attributes

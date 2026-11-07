@@ -35,7 +35,7 @@ A single governing primary contributes to each action. Context tags are `Weapon.
 
 ## Defaults and modifier order
 
-Numeric tuning is in [combat_rules.json](../combat/combat_rules.json), schema 3, model `2.0-foundation`.
+Starting base values are authored in [GE_DefaultAttributes](../combat/effects/ge_default_attributes.tres). [GE_AttributeDerivations](../combat/effects/ge_attribute_derivations.tres) applies the five persistent primary-to-attribute contributions. Combat bounds, level progression and context-specific combat coefficients are in [combat_rules.json](../combat/combat_rules.json).
 
 Characters start with 10 in each primary. Base capacities before primary contributions are 100 Health, 50 Stamina, 50 Mana and 80 Carry Capacity, producing starting totals of 200/100/100/100. Level is capped at 60; the validated allocation budget grants 2 points per gained level, 118 by level 60. Level alone does not raise damage or capacities.
 
@@ -137,27 +137,27 @@ School resistance adds no random roll. A matching 80% resistance produces a succ
 
 The target emits one `hit_outcome` event per eligible delivery, carrying `hit`, `miss` or `resist` and the resolved probability. Misses and resists apply no payload and refund no activation costs. Damage remains independent of level and maximum target Health. Spell classification comes from `Ability.Spell`, so a magical Attack still uses the attack outcome label. Weapon damage sampling, Accuracy and criticals use separate random streams; `configure_randomness()` provides repeatable tests/replays without making inspection consume randomness.
 
-## Continuous regeneration
+## Periodic regeneration
 
 Health Regeneration starts at **0/sec**, Stamina Regeneration at **10/sec**, and Mana Regeneration at **5/sec**. These nonnegative, uncapped stats use ordinary flat/increased/more modifiers. Primaries and maximum pools do not automatically raise the rates.
 
-`ActorAttributes._physics_process()` calls `advance_regeneration(delta)` once per physics tick. It restores fractional points while Health is positive and reports actual pool changes. Health and Mana keep their normal recovery during Sprint. The player pauses Stamina recovery while the active Sprint or Stamina Exhaustion tag is present. The exhaustion tag comes from a timed effect when Stamina crosses from positive to zero. An ordinary spend above zero adds no recovery delay. Capacity and rate changes preserve current pools, and regeneration stops at capacity or death.
+The ASC applies [GE_ResourceRegeneration](../combat/effects/ge_resource_regeneration.tres) at startup. Its execution reads live rates and restores `rate × period`, capped by missing capacity. It is inhibited while dead. `State.Stamina.RecoveryBlocked` pauses Stamina recovery. The Sprint ability owns that tag throughout activation, and the exhaustion effect grants it for its authored duration after Stamina crosses from positive to zero. Health and Mana recover independently. An ordinary spend above zero adds no recovery delay.
 
-The explicit advance method supports deterministic tests for actors whose automatic processing is disabled. `AbilitySystem.advance()` owns action/effect clocks and does not advance regeneration again. There is no extra scene component or duplicate Inspector tuning owner.
+`AbilitySystem.advance()` advances the effect clock and is also used for deterministic tests. Recovery survives a transient-effect clear and resumes after revival. The AttributeSet owns clamping and reports the resulting pool changes.
 
 ## Movement Speed and sprinting
 
 Movement Speed starts at **0% bonus**. The standard pipeline combines all modifiers and clamps the final value to **−100% to +25%**. Add Flat 20 gives +20%. Applying Increased Percent 20 to that bonus gives +24%, while an increased modifier alone leaves zero at zero. A raw +100% F3 override displays an effective +25%. The cap applies before gait multipliers, so the default 4 m/s baseline and 1.5× Sprint ratio yield 5 m/s Run and 7.5 m/s Sprint at the cap.
 
-F3 displays the bonus percentage. The JSON keys `base_movement_speed`, `movement_speed_min_percent` and `movement_speed_max_percent` supply the starting value and bounds. Older rule data that omits the maximum uses the +25% default. **Movement → Settings → Movement Baseline → Normal Run Speed** owns the physical baseline. Movement computes `settings.normal_run_speed × max(0, 1 + final_bonus/100) × gait_ratio × encumbrance_factor`. At a 6 m/s baseline and no overload, 0% and +20% give 6 and 7.2 m/s normal running. Active identity 54 represents the bonus. Identity 27 remains retired.
+F3 displays the bonus percentage. The bonus starts at zero. The JSON keys `movement_speed_min_percent` and `movement_speed_max_percent` supply its bounds. Older rule data that omits the maximum uses the +25% default. **Movement → Settings → Movement Baseline → Normal Run Speed** owns the physical baseline. Movement computes `settings.normal_run_speed × max(0, 1 + final_bonus/100) × gait_ratio × encumbrance_factor`. At a 6 m/s baseline and no overload, 0% and +20% give 6 and 7.2 m/s normal running. Active identity 54 represents the bonus. Identity 27 remains retired.
 
 The saved player owns one ActorAttributes node, inherited by the caster example. Movement references it explicitly and reads the live attribute each step. AbilitySystem also uses that component; if its explicit reference is empty, startup resolves the sibling `Attributes` node, preserving the single actor source after an inherited-scene resave. Explicit valid references take precedence. It never stores another base-speed setting. Gait settings supply Walk ×0.5, Sprint ×1.5 and Crouch ×0.6; crouch-walk combines Walk and Crouch. At the default attribute the speeds remain 4/2/6/2.4/1.2 m/s for run/walk/sprint/crouch/crouch-walk. Jump/gravity/acceleration/braking/terrain remain independent settings.
 
-**Sprint → Execution** owns **Stamina per Charge** and **Charge Interval**, defaulting to 2 points per 0.1 seconds. Grounded horizontal travel adds time only when Sprint is effective and there is movement input. Movement retains unpaid travel across activation boundaries. Idle, walking, crouching, blocked wall travel and falling add no chargeable time.
+**Sprint → Execution → Upkeep Effect** opens [GE_StaminaUpkeep](../player/ge_stamina_upkeep.tres). **Period** and **Executions → Stamina per Interval** default to 0.1 seconds and 2 points. Grounded horizontal travel adds time only when Sprint is effective and there is movement input. Movement retains unpaid travel across activation boundaries. Idle, walking, crouching, blocked wall travel and falling add no chargeable time.
 
 The base player grants Sprint, Jump, Crouch, Encumbered and Stamina Exhaustion. The caster adds Fireball. Hold Shift to request Sprint and release it to end Sprint. Sprint requires enough Stamina for the next full charge. If a paid grounded charge would leave a positive remainder smaller than the next full charge, that same debit spends the remainder and reaches zero. For example, a 2-point charge spends all 3 when the pool holds 3. A voluntary release with Stamina left or an affordability failure from a separate spend above zero ends Sprint and allows normal recovery. Exhaustion or encumbrance interruption requires a fresh press. Jump is blocked while Sprint owns `State.Movement.Sprinting`. Running off an edge preserves horizontal momentum, with airborne steering bounded by the normal air speed.
 
-The controller runs at physics priority −10 before ActorAttributes at 0. Movement reports actual travel and Sprint commits its due charge through the ASC. Active Sprint pauses Stamina regeneration even when stationary or in the air. The default 100 Stamina funds about five seconds of continuous grounded sprint travel. A positive-to-zero transition sends `Event.Stamina.Depleted`. The granted exhaustion action applies `State.Stamina.Exhausted` for the duration authored on the effect. Recovery resumes when neither blocker is present.
+Movement reports actual travel with the due tag. It enables the retained upkeep effect, which executes a charge and returns to its inhibited state. Active Sprint pauses Stamina regeneration even when stationary or in the air. The default 100 Stamina funds about five seconds of grounded sprint travel. A positive-to-zero transition sends `Event.Stamina.Depleted`. The granted exhaustion action applies its timed effect, which owns the recovery blocker until expiry.
 
 ## Encumbrance
 
@@ -171,9 +171,9 @@ The actor's carry rule publishes an enter event above capacity and an exit event
 
 ## Effects and delivery
 
-Player and AI share `AbilitySystem.try_activate()`. Ability definitions own execution, authored activation cost, cooldown and tag rules. The prototype grants Fireball directly. It owns `State.CombatAction` while the cast runs, and its animation release callback goes to the activation that started playback. Locomotion can overlap the cast. The projectile carries the authored impact effect and its application context.
+Player and AI share ASC activation. Ability definitions select GDScript execution behavior, cost and cooldown effects, and tag rules. The prototype grants Fireball directly. It owns `State.CombatAction` while the cast runs, and its animation release event goes to the activation that started playback. Locomotion can overlap the cast. The projectile carries the outgoing effect spec prepared at release.
 
-The effect runtime supports explicit direct Health damage and owned retained effects. Retained instances have independent handles and optional durations, with counted tags and cleanup on removal. An effect can grant tags without stat modifiers. Retained definitions can opt into HUD presentation with an icon and a Buff or Debuff category. There are no automatic ailments, periodic damage ticks or implicit reapplication rules.
+Gameplay Effects support instant, finite and infinite lifetimes, optional periodic executions, tag requirements and configurable stacking. An effect can grant tags without stat modifiers. Retained definitions can opt into HUD presentation with an icon and a Buff or Debuff category. Fireball's impact is instant.
 
 Dodge, Block, Absorption, cooldown recovery and consumable behavior remain design-only or outside the current prototype.
 

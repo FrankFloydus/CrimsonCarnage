@@ -7,6 +7,7 @@ const CLIP_LENGTH: float = 0.8
 const RELEASE_TIME: float = 0.33
 const COST: float = 15.0
 const COOLDOWN: float = 1.5
+const ABILITY_EFFECTS = preload("res://tests/ability_effect_fixture.gd")
 
 
 static func install(system: AbilitySystem) -> bool:
@@ -14,6 +15,7 @@ static func install(system: AbilitySystem) -> bool:
 	var authored := system.get_ability_definition(FIREBALL)
 	var saved_execution := authored.execution as ProjectileCastExecution if authored != null else null
 	var valid := saved_execution != null and authored.get_validation_error().is_empty() \
+			and authored.cost_effect != null and authored.cooldown_effect != null \
 			and saved_execution.get_validation_error(system).is_empty() \
 			and system.aim_origin != null
 	if not valid:
@@ -22,13 +24,13 @@ static func install(system: AbilitySystem) -> bool:
 	var definition := authored.duplicate() as AbilityDefinition
 	var execution := saved_execution.duplicate() as ProjectileCastExecution
 	definition.execution = execution
-	definition.cost_attribute = CombatAttributes.Id.MANA
-	definition.cost_amount = COST
-	definition.cooldown = COOLDOWN
+	definition.cost_effect = ABILITY_EFFECTS.make_cost(CombatAttributes.Id.MANA, COST)
+	definition.cooldown_effect = ABILITY_EFFECTS.make_cooldown("Cooldown.FireballFixture", COOLDOWN)
 	execution.animation_name = TEST_CLIP
 	execution.spawn_offset = Vector3.ZERO
 	execution.aim_trace_distance = 100.0
 	var effect := GameplayEffectDefinition.new()
+	effect.executions = [GameplayEffectDamageExecution.new()]
 	effect.base_magnitude = 20.0
 	effect.damage_type = GameplayEffectDefinition.DamageType.MAGIC
 	execution.on_hit_effects = [effect]

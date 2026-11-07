@@ -4,9 +4,15 @@ extends RefCounted
 
 var source_id: int = 0
 var source_name: String = ""
+## Optional source of the ability or effect, such as the Resource that supplied its grant.
+var source_object: Object
 var ability_id: StringName = &""
 var ability_name: String = ""
 var ability_tags := PackedStringArray()
+## Optional collision geometry available to impact executions and Gameplay Cues.
+var hit_position: Vector3 = Vector3.ZERO
+var hit_normal: Vector3 = Vector3.ZERO
+var has_hit_result: bool = false
 ## Snapshot of the weapon's authored base cycle, independent of flight time or extra holding.
 var weapon_power_coefficient: float = 0.0
 ## Resolved once for one delivered damaging Hit; fresh casts/deliveries start noncritical.
@@ -77,7 +83,7 @@ func create_combat_event(
 		"critical_multiplier": 1.0,
 		"critical_damage_percent": 0.0,
 	}
-	if definition == null or definition.kind == GameplayEffectDefinition.Kind.DAMAGE:
+	if definition == null or definition.is_damage_effect():
 		event["is_critical"] = is_critical
 		event["critical_multiplier"] = critical_multiplier if is_critical else 1.0
 		event["critical_damage_percent"] = critical_damage_percent if is_critical else 0.0
@@ -87,6 +93,9 @@ func create_combat_event(
 		event["damage_type"] = definition.damage_type
 		if definition.get_resistance_attribute() != CombatAttributes.Id.NONE:
 			event["magic_school"] = definition.magic_school
+	if has_hit_result:
+		event["hit_position"] = hit_position
+		event["hit_normal"] = hit_normal
 	return event
 
 
@@ -154,9 +163,14 @@ func duplicate_for_hit(weapon_roll: float = -1.0) -> GameplayEffectContext:
 	var context := GameplayEffectContext.new()
 	context.source_id = source_id
 	context.source_name = source_name
+	if is_instance_valid(source_object):
+		context.source_object = source_object
 	context.ability_id = ability_id
 	context.ability_name = ability_name
 	context.ability_tags = ability_tags.duplicate()
+	context.hit_position = hit_position
+	context.hit_normal = hit_normal
+	context.has_hit_result = has_hit_result
 	context._source_attributes = _source_attributes
 	context._source_tags = _source_tags
 	context._fallback_level = _fallback_level

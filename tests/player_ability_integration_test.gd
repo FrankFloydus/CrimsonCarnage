@@ -17,6 +17,7 @@ class EventProbeExecution extends MaintainEffectExecution:
 
 
 const PLAYGROUND = preload("res://levels/playground/playground.tscn")
+const ATTRIBUTE_FIXTURE = preload("res://tests/attribute_fixture.gd")
 const ENCUMBERED = preload("res://player/encumbered_effect.tres")
 const SPRINT_FIXTURE = preload("res://tests/sprint_fixture.gd")
 const FIREBALL_FIXTURE = preload("res://tests/fireball_fixture.gd")
@@ -28,6 +29,9 @@ const CROUCH: StringName = &"crouch"
 const JUMP: StringName = &"jump"
 const FORWARD := Vector2(0.0, -1.0)
 const STEP: float = 1.0 / 60.0
+const REGEN_PERIOD: float = 0.1
+const DERIVATIONS: StringName = &"Effect.AttributeDerivations"
+const REGENERATION: StringName = &"Effect.ResourceRegeneration"
 
 var _arena: Node3D
 var _player: FirstPersonController
@@ -47,6 +51,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	preload("res://tests/combat_rules_fixture.gd").install()
+	_test_saved_startup_effects()
 	await _start_fixture()
 	await _test_saved_caster_stamina_regeneration()
 	await _end_fixture()
@@ -84,6 +89,8 @@ func _start_fixture(starting_weight: float = 0.0) -> void:
 		var attributes := _arena.get_node(path) as ActorAttributes
 		attributes.initial_modifiers = []
 		attributes.level = 1
+	for path in ["Player/AbilitySystem", "Dummy/AbilitySystem"]:
+		ATTRIBUTE_FIXTURE.configure(_arena.get_node(path) as AbilitySystem, REGEN_PERIOD)
 	var player_attributes := _player.get_node("Attributes") as ActorAttributes
 	player_attributes.set_base_value(CombatAttributes.Id.CARRY_CAPACITY, 100.0)
 	player_attributes.set_base_value(CombatAttributes.Id.CARRIED_WEIGHT, starting_weight)
@@ -97,12 +104,10 @@ func _start_fixture(starting_weight: float = 0.0) -> void:
 	_check(FIREBALL_FIXTURE.install(_system), "The saved Fireball grant has valid authoring")
 	_system.set_process(false)
 	_system.set_physics_process(false)
-	_system.attributes.set_physics_process(false)
 	_system.attributes.set_base_value(CombatAttributes.Id.ACCURACY_RATING, 30.0)
 	_movement = _player.get_node("Movement") as FirstPersonMovement
 	_crouch = _player.get_node("Crouch") as FirstPersonCrouch
 	_dummy.ability_system.set_process(false)
-	_dummy.attributes.set_physics_process(false)
 	_dummy.attributes.set_base_value(CombatAttributes.Id.MAX_HEALTH, 1000.0)
 	_dummy.attributes.restore_resources()
 	_fireball_hits = 0
@@ -124,21 +129,29 @@ func _test_saved_caster_stamina_regeneration() -> void:
 	var attributes := _system.attributes
 	attributes.set_base_value(CombatAttributes.Id.STAMINA, 50.0)
 	attributes.set_base_value(CombatAttributes.Id.STAMINA_REGEN, 30.0)
+	attributes.set_base_value(CombatAttributes.Id.HEALTH, 50.0)
+	attributes.set_base_value(CombatAttributes.Id.HEALTH_REGEN, 10.0)
+	attributes.set_base_value(CombatAttributes.Id.MANA, 50.0)
+	attributes.set_base_value(CombatAttributes.Id.MANA_REGEN, 10.0)
 	await _step(Vector2.ZERO, true)
-	attributes.set_physics_process(true)
-	for interval in 6:
-		await _step(Vector2.ZERO, true)
+	_system.advance(REGEN_PERIOD)
 	_check(_system.get_active_cast(SPRINT) != null
 			and is_equal_approx(attributes.get_value(CombatAttributes.Id.STAMINA), 50.0),
 			"Idle Sprint suppresses positive Stamina recovery on the saved Playground player")
+	_check(is_equal_approx(attributes.get_value(CombatAttributes.Id.HEALTH), 51.0)
+			and is_equal_approx(attributes.get_value(CombatAttributes.Id.MANA), 51.0),
+			"The same period still restores Health and Mana during Sprint")
 	for interval in 6:
 		await _step(FORWARD, true)
+		_system.advance(STEP)
 	_check(_system.get_active_cast(SPRINT) != null
 			and is_equal_approx(attributes.get_value(CombatAttributes.Id.STAMINA), 48.0),
 			"Moving Sprint on the saved Playground player applies upkeep without recovery")
 	attributes.set_base_value(CombatAttributes.Id.STAMINA, 3.0)
 	for interval in 12:
 		await _step(FORWARD, true)
+		if _system.get_active_cast(SPRINT) == null:
+			break
 	_check(_system.get_active_cast(SPRINT) == null
 			and _system.tags.has_tag(&"State.Stamina.Exhausted")
 			and is_zero_approx(attributes.get_value(CombatAttributes.Id.STAMINA)),
@@ -148,11 +161,36 @@ func _test_saved_caster_stamina_regeneration() -> void:
 	await _step()
 	_check(is_zero_approx(attributes.get_value(CombatAttributes.Id.STAMINA)),
 			"The saved Playground player stays exhausted until the authored duration elapses")
-	_system.advance(duration * 0.11)
-	await _step()
-	await _step()
+	_system.advance(duration * 0.11 + REGEN_PERIOD)
 	_check(attributes.get_value(CombatAttributes.Id.STAMINA) > 0.0,
 			"Stamina recovery resumes on the saved Playground player after exhaustion")
+	_system.clear_transient_effects()
+	attributes.set_base_value(CombatAttributes.Id.HEALTH, 0.0)
+	_system.advance(REGEN_PERIOD * 2.0)
+	_check(_system.effects.active_count(DERIVATIONS) == 1 and _system.effects.active_count(REGENERATION) == 1
+			and is_zero_approx(attributes.get_value(CombatAttributes.Id.HEALTH)),
+			"Clearing effects and dying preserve the standing effects without recovering while dead")
+	attributes.restore_resources()
+	attributes.set_base_value(CombatAttributes.Id.STAMINA, 50.0)
+	_system.advance(REGEN_PERIOD * 2.0)
+	_check(attributes.get_value(CombatAttributes.Id.STAMINA) > 50.0,
+			"The retained regeneration effect resumes on revival")
+
+
+func _test_saved_startup_effects() -> void:
+	var arena := PLAYGROUND.instantiate()
+	var player_attributes := arena.get_node("Player/Attributes") as ActorAttributes
+	_check(not "stamina_regeneration_blocked_tags" in player_attributes,
+			"The caster has no per-scene Stamina recovery blocker property to override on save")
+	for path in ["Player/AbilitySystem", "Dummy/AbilitySystem"]:
+		var system := arena.get_node(path) as AbilitySystem
+		var ids: Array[StringName] = []
+		for effect in system.startup_effects:
+			if effect != null and effect.get_validation_error().is_empty():
+				ids.append(effect.effect_id)
+		_check(ids == [&"Effect.DefaultAttributes", DERIVATIONS, REGENERATION],
+				"The saved %s has valid startup effect wiring" % path)
+	arena.free()
 
 
 func _test_sprint_through_fireball() -> void:
@@ -241,7 +279,7 @@ func _test_encumbrance_interrupts_sprint() -> void:
 	attributes.set_base_value(CombatAttributes.Id.CARRIED_WEIGHT, capacity + 0.0001)
 	var encumbered := _system.get_active_cast(ENCUMBERED_ACTION)
 	var effects := _system.effects.get_retained_effects()
-	_check(encumbered != null and effects.size() == 1 and effects.values()[0] == ENCUMBERED
+	_check(encumbered != null and _system.effects.active_count(ENCUMBERED.effect_id) == 1
 			and _system.tags.get_count(ENCUMBERED_TAG) == 1,
 			"A fractional overload activates the granted action and applies one authored effect")
 	_check(_system.get_active_cast(SPRINT) == null and sprint != null and sprint.finished
@@ -259,7 +297,7 @@ func _test_encumbrance_interrupts_sprint() -> void:
 	attributes.set_base_value(CombatAttributes.Id.CARRY_CAPACITY, load)
 	_check(encumbered != null and encumbered.finished
 			and _system.get_active_cast(ENCUMBERED_ACTION) == null
-			and _system.effects.get_retained_effects().is_empty()
+			and _system.effects.active_count(ENCUMBERED.effect_id) == 0
 			and _system.tags.get_count(ENCUMBERED_TAG) == 0,
 			"Raising capacity to the current weight ends the action and removes its effect immediately")
 	await _step(FORWARD, true)
@@ -300,7 +338,7 @@ func _test_startup_and_revive_encumbrance() -> void:
 	attributes.set_base_value(CombatAttributes.Id.HEALTH, 0.0)
 	_check(_system.tags.has_tag(&"State.Dead") and _system.tags.get_count(ENCUMBERED_TAG) == 0
 			and encumbered != null and encumbered.finished and _system.get_active_cast(ENCUMBERED_ACTION) == null
-			and _system.effects.get_retained_effects().is_empty() and _system.get_animation_cast() == null,
+			and _system.effects.active_count(ENCUMBERED.effect_id) == 0 and _system.get_animation_cast() == null,
 			"Dying clears Fireball and Encumbered even while the load remains above capacity")
 	attributes.restore_resources()
 	var revived := _system.get_active_cast(ENCUMBERED_ACTION)
@@ -319,7 +357,7 @@ func _test_revoke_encumbered_grant() -> void:
 			attributes.get_value(CombatAttributes.Id.CARRY_CAPACITY) + 50.0)
 	_check(_system.get_ability_definition(ENCUMBERED_ACTION) == null
 			and encumbered != null and encumbered.finished and _system.get_active_cast(ENCUMBERED_ACTION) == null
-			and _system.effects.get_retained_effects().is_empty() and _system.tags.get_count(ENCUMBERED_TAG) == 0,
+			and _system.effects.active_count(ENCUMBERED.effect_id) == 0 and _system.tags.get_count(ENCUMBERED_TAG) == 0,
 			"Revoking Encumbered removes its effect and prevents a new cast on another load change")
 	_check(_system.grant_ability(definition) and _system.get_active_cast(ENCUMBERED_ACTION) != null
 			and _system.tags.get_count(ENCUMBERED_TAG) == 1,
@@ -341,7 +379,7 @@ func _test_interrupt_encumbrance_application() -> void:
 	_system.tags.changed.disconnect(interrupt_on_apply)
 	_check(interrupted.size() == 1 and interrupted[0] != null and interrupted[0].finished
 			and _system.get_active_cast(ENCUMBERED_ACTION) == null
-			and _system.effects.get_retained_effects().is_empty() and _system.tags.get_count(ENCUMBERED_TAG) == 0,
+			and _system.effects.active_count(ENCUMBERED.effect_id) == 0 and _system.tags.get_count(ENCUMBERED_TAG) == 0,
 			"Resolving load during the tag notification cancels the cast without leaking the in-flight effect")
 	attributes.set_base_value(CombatAttributes.Id.CARRIED_WEIGHT, capacity + 1.0)
 	_check(_system.get_active_cast(ENCUMBERED_ACTION) != null
