@@ -1,0 +1,12 @@
+{
+  "description": "Sixty independent budget contexts. Cross each level with each gear/talent pair below. High gear on low levels is an adversarial affordability stress case, not a real loot progression.",
+  "levels": [1, 15, 30, 45, 60],
+  "gear_talent_pairs": [
+    {"gear_budget": 0, "talent_budgets": [0, 5]},
+    {"gear_budget": 10, "talent_budgets": [0, 5]},
+    {"gear_budget": 20, "talent_budgets": [5, 10]},
+    {"gear_budget": 40, "talent_budgets": [10, 20]},
+    {"gear_budget": 60, "talent_budgets": [0, 20]},
+    {"gear_budget": 100, "talent_budgets": [5, 20]}
+  ]
+}

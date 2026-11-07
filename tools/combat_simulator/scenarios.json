@@ -1,0 +1,215 @@
+{
+  "description": "Provisional equal-budget experiments, not implemented item or talent budgets. Gameplay formula constants come exclusively from combat/combat_rules.json.",
+  "seeds": [
+    104729,
+    130363
+  ],
+  "affix_slots": 20,
+  "talent_block_per_point": 3,
+  "talent_damage_per_point": 2,
+  "talent_health_per_point": 8,
+  "preference_concentration": 0.18,
+  "cost_models": {
+    "initial": {},
+    "defense_cost_review": {
+      "health_regen": 8,
+      "armor": 1.5,
+      "evasion": 1.5,
+      "block": 2,
+      "resistance": 6,
+      "critical_multiplier": 1.5
+    }
+  },
+  "affixes": {
+    "health": 15,
+    "stamina": 10,
+    "mana": 10,
+    "spell_power": 12,
+    "attack_power": 12,
+    "armor": 65,
+    "evasion": 65,
+    "resistance": 10,
+    "critical_chance": 5,
+    "critical_multiplier": 0.15,
+    "health_regen": 2,
+    "mana_regen_percent": 5,
+    "stamina_regen_percent": 5,
+    "general_damage": 5,
+    "elemental_damage": 7,
+    "dot_damage": 8,
+    "penetration": 7,
+    "block": 7.5,
+    "attack_speed_rating": 3,
+    "cast_speed_rating": 3,
+    "cost_efficiency": 3,
+    "cooldown_recovery": 3
+  },
+  "slot_groups": {
+    "armor": {
+      "count": 8,
+      "allowed": [
+        "health",
+        "stamina",
+        "mana",
+        "armor",
+        "evasion",
+        "resistance",
+        "stamina_regen_percent",
+        "mana_regen_percent"
+      ]
+    },
+    "jewelry": {
+      "count": 8,
+      "allowed": [
+        "health",
+        "spell_power",
+        "attack_power",
+        "critical_chance",
+        "critical_multiplier",
+        "health_regen",
+        "general_damage",
+        "elemental_damage",
+        "dot_damage",
+        "attack_speed_rating",
+        "cast_speed_rating",
+        "cost_efficiency",
+        "cooldown_recovery"
+      ]
+    },
+    "main_hand": {
+      "count": 2,
+      "allowed": [
+        "spell_power",
+        "attack_power",
+        "general_damage",
+        "elemental_damage",
+        "dot_damage",
+        "penetration",
+        "critical_chance",
+        "critical_multiplier"
+      ]
+    },
+    "off_hand": {
+      "count": 2,
+      "allowed": [
+        "spell_power",
+        "attack_power",
+        "armor",
+        "evasion",
+        "resistance",
+        "block"
+      ]
+    }
+  },
+  "loadouts": {
+    "shield": {
+      "weight": 125,
+      "base_block": 0
+    },
+    "two_hand": {
+      "weight": 95,
+      "base_block": 0
+    }
+  },
+  "reference_abilities": {
+    "melee": {
+      "base_damage": 50,
+      "power_coefficient": 0.14,
+      "interval": 1,
+      "stamina_cost": 12,
+      "bleed_base_tick": 12,
+      "bleed_power_coefficient": 0.12,
+      "bleed_duration": 6,
+      "period": 2,
+      "minimum_action_duration": 0.4,
+      "accuracy_kind": "attack"
+    },
+    "fireball": {
+      "impact_base": 60,
+      "impact_power_coefficient": 0.5,
+      "burn_base_tick": 8,
+      "burn_power_coefficient": 0.05,
+      "burn_duration": 10,
+      "period": 2,
+      "cast_seconds": 0.8,
+      "cooldown": 1.5,
+      "mana_cost": 20,
+      "minimum_action_duration": 0.4,
+      "accuracy_kind": "spell"
+    },
+    "poison": {
+      "impact_base": 50,
+      "impact_power_coefficient": 0.3,
+      "base_tick": 4,
+      "power_coefficient": 0.04,
+      "duration": 10,
+      "period": 2,
+      "maximum_stacks": 5,
+      "interval": 1,
+      "stamina_cost": 12,
+      "minimum_action_duration": 0.4,
+      "accuracy_kind": "attack"
+    }
+  },
+  "encounter": {
+    "seconds": 60,
+    "step_seconds": 0.5,
+    "target_health": 1800,
+    "target_armor": 500,
+    "target_resistance": 40,
+    "target_armor_cases": [
+      0,
+      250,
+      500,
+      1000,
+      2000
+    ],
+    "target_resistance_cases": [
+      -20,
+      0,
+      40,
+      80
+    ],
+    "enemy_penetration_cases": [
+      0,
+      50,
+      100
+    ],
+    "enemy_hit_interval": 1,
+    "enemy_hit_damage": 120,
+    "enemy_penetration": 0,
+    "on_hit_burn_chance": 0.3,
+    "on_hit_burn_tick": 20,
+    "on_hit_burn_duration": 10,
+    "on_hit_burn_period": 2,
+    "level_gaps": [
+      -10,
+      0,
+      10
+    ],
+    "pressures": [
+      {
+        "name": "physical",
+        "physical_share": 0.85,
+        "unavoidable_poison_dps": 5
+      },
+      {
+        "name": "elemental",
+        "physical_share": 0.15,
+        "unavoidable_poison_dps": 5
+      },
+      {
+        "name": "dot",
+        "physical_share": 0.5,
+        "unavoidable_poison_dps": 60
+      },
+      {
+        "name": "mixed",
+        "physical_share": 0.5,
+        "unavoidable_poison_dps": 20
+      }
+    ],
+    "physical_accuracy_kind": "attack",
+    "elemental_accuracy_kind": "spell"
+  }
+}

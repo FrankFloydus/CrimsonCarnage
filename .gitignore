@@ -1,0 +1,30 @@
+# Godot editor cache and generated import data.
+.godot/
+
+# Generated Android Gradle build template.
+/android/build/
+
+# Godot native extension hot-reload copies.
+~*.dll
+
+# Generated translations; keep the source CSV files.
+*.translation
+
+# Export credentials must remain local.
+export_credentials.cfg
+
+# Project export output directories.
+/builds/
+/exports/
+
+# Temporary files and operating-system metadata.
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Keep *.import, *.uid, and export_presets.cfg under version control.
+
+# Local Python caches and generated benchmark archives.
+__pycache__/
+*.py[cod]
+/tools/combat_simulator/*results/

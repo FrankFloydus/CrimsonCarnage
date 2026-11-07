@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AbilityDefinition" format=3 uid="uid://bcsqor8fx8cwc"]
+
+[ext_resource type="Script" uid="uid://db5x8t6k0figb" path="res://combat/abilities/ability_definition.gd" id="1_ability"]
+[ext_resource type="Script" uid="uid://x78oqy07a3xw" path="res://player/abilities/crouch_execution.gd" id="2_execution"]
+
+[sub_resource type="Resource" id="Execution_crouch"]
+script = ExtResource("2_execution")
+
+[resource]
+script = ExtResource("1_ability")
+ability_id = &"crouch"
+display_name = "Crouch"
+ability_tags = PackedStringArray("Ability.Movement.Crouch")
+required_tags = PackedStringArray()
+blocked_tags = PackedStringArray("State.Dead")
+activation_tags = PackedStringArray()
+interruption_tags = PackedStringArray("State.Dead")
+cost_attribute = -1
+execution = SubResource("Execution_crouch")

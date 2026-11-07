@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="GameplayEffectDefinition" format=3]
+
+[ext_resource type="Script" uid="uid://u8g6qa0kpol1" path="res://combat/effects/gameplay_effect_definition.gd" id="1_effect"]
+
+[resource]
+script = ExtResource("1_effect")
+effect_id = &"Effect.Fireball.Impact"
+base_magnitude = 5.0
+power_coefficient = 1.0
+damage_type = 1
+blocked_target_tags = PackedStringArray("State.Dead")

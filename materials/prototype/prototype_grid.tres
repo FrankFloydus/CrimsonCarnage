@@ -1,0 +1,18 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://b2islhbhxuylt"]
+
+[ext_resource type="Shader" uid="uid://dfa5ek1bpnxqq" path="res://materials/prototype/prototype_grid.gdshader" id="1_grid"]
+
+[resource]
+resource_name = "Prototype Grid"
+render_priority = 0
+shader = ExtResource("1_grid")
+shader_parameter/base_color = Color(0, 0.22900277, 0.40167376, 1)
+shader_parameter/minor_spacing = 1.0
+shader_parameter/minor_thickness = 0.012
+shader_parameter/minor_color = Color(0.48, 0.56, 0.61, 1)
+shader_parameter/major_spacing = 4.0
+shader_parameter/major_thickness = 0.014000000665
+shader_parameter/major_color = Color(0.72, 0.8, 0.84, 1)
+shader_parameter/roughness = 0.85
+shader_parameter/use_roughness_map = false
+shader_parameter/roughness_map_scale = 1.0

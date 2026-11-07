@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AbilityDefinition" format=3 uid="uid://6ntdv52cxde8"]
+
+[ext_resource type="Script" uid="uid://db5x8t6k0figb" path="res://combat/abilities/ability_definition.gd" id="1_ability"]
+[ext_resource type="Script" uid="uid://qn1dglntnsr5" path="res://player/abilities/sprint_execution.gd" id="2_execution"]
+
+[sub_resource type="Resource" id="Execution_sprint"]
+script = ExtResource("2_execution")
+
+[resource]
+script = ExtResource("1_ability")
+ability_id = &"sprint"
+display_name = "Sprint"
+ability_tags = PackedStringArray("Ability.Movement.Sprint")
+required_tags = PackedStringArray()
+blocked_tags = PackedStringArray("State.Dead", "State.Encumbered")
+activation_tags = PackedStringArray("State.Movement.Sprinting")
+interruption_tags = PackedStringArray("State.Dead", "State.Encumbered")
+cost_attribute = -1
+execution = SubResource("Execution_sprint")

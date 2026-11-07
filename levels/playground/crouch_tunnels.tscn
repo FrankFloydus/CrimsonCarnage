@@ -1,0 +1,85 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Material" path="res://materials/prototype/parkour_grid.tres" id="1_grid"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_roof"]
+material = ExtResource("1_grid")
+size = Vector3(2.6, 0.3, 6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_roof"]
+size = Vector3(2.6, 0.3, 6)
+
+[sub_resource type="BoxMesh" id="BoxMesh_low_wall"]
+material = ExtResource("1_grid")
+size = Vector3(0.3, 1.25, 6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_low_wall"]
+size = Vector3(0.3, 1.25, 6)
+
+[sub_resource type="BoxMesh" id="BoxMesh_high_wall"]
+material = ExtResource("1_grid")
+size = Vector3(0.3, 1.45, 6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_high_wall"]
+size = Vector3(0.3, 1.45, 6)
+
+[node name="CrouchTunnels" type="Node3D"]
+
+[node name="LowTunnel" type="Node3D" parent="."]
+
+[node name="LeftWall" type="StaticBody3D" parent="LowTunnel"]
+position = Vector3(-1.15, 0.625, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="LowTunnel/LeftWall"]
+mesh = SubResource("BoxMesh_low_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="LowTunnel/LeftWall"]
+shape = SubResource("BoxShape3D_low_wall")
+
+[node name="RightWall" type="StaticBody3D" parent="LowTunnel"]
+position = Vector3(1.15, 0.625, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="LowTunnel/RightWall"]
+mesh = SubResource("BoxMesh_low_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="LowTunnel/RightWall"]
+shape = SubResource("BoxShape3D_low_wall")
+
+[node name="Roof" type="StaticBody3D" parent="LowTunnel"]
+position = Vector3(0, 1.4, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="LowTunnel/Roof"]
+mesh = SubResource("BoxMesh_roof")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="LowTunnel/Roof"]
+shape = SubResource("BoxShape3D_roof")
+
+[node name="HighTunnel" type="Node3D" parent="."]
+position = Vector3(5, 0, 0)
+
+[node name="LeftWall" type="StaticBody3D" parent="HighTunnel"]
+position = Vector3(-1.15, 0.725, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="HighTunnel/LeftWall"]
+mesh = SubResource("BoxMesh_high_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HighTunnel/LeftWall"]
+shape = SubResource("BoxShape3D_high_wall")
+
+[node name="RightWall" type="StaticBody3D" parent="HighTunnel"]
+position = Vector3(1.15, 0.725, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="HighTunnel/RightWall"]
+mesh = SubResource("BoxMesh_high_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HighTunnel/RightWall"]
+shape = SubResource("BoxShape3D_high_wall")
+
+[node name="Roof" type="StaticBody3D" parent="HighTunnel"]
+position = Vector3(0, 1.6, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="HighTunnel/Roof"]
+mesh = SubResource("BoxMesh_roof")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HighTunnel/Roof"]
+shape = SubResource("BoxShape3D_roof")

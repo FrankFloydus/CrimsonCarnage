@@ -1,0 +1,15 @@
+# Combat simulation
+
+Follow the root [project instructions](../../AGENTS.md). The [guide](README.md) describes current tools; [lab/AGENTS.md](lab/AGENTS.md) adds the offline interface's ownership rules.
+
+**Combat 2.0 compatibility:** Godot now implements the settled parts of [the new foundation](../../docs/combat_system_2_0.md). These Python tools retain the previous model, using `legacy_combat_rules_v1.json` and the bundled schema-2 Godot snapshot. They do not simulate Physical Power, governing weapon attributes or the new modifier order. Reject schema-3/current-game imports rather than silently approximating them. Existing reports and snapshots remain frozen and do not validate 2.0.
+
+- Current first-pass balance analysis measures outgoing TTK and enemy TTK separately with **no Health restoration**. Disable the passive actor's actions rather than inflating its Health. Keep Stamina/Mana regeneration and Absorption recovery active.
+- Consumables are not implemented. Do not invent charges, restoration amounts, cooldowns or replenishment and use them to recommend game changes. Earlier policy experiments and their withdrawn recommendations remain exploratory records.
+- Use the frozen legacy rules and shared legacy mathematical helpers until a simulator migration is requested. Do not replace frozen defaults with the live Godot rules. Experiments must not write gameplay resources. Keep inputs serializable and record seeds, exact trials, distinct profiles, source hashes, horizons and timing assumptions.
+- Report unobserved kills as censored. Conditional TTK percentiles describe kills only; a horizon-restricted mean is explicitly capped observation time, not true unobserved TTK. Never call a finite-horizon survivor immortal.
+- Budget tiers, stat prices, weapon damage/cadence and enemy packets are experimental controls, not approved itemization or campaign content. Separate coherent, inefficient and deliberate corner-case profiles. Testing a build against one sampled opponent does not prove it succeeds against every opponent.
+- Preserve frozen reports and snapshots. Mark older rules or invalid interpretations clearly; do not blend their counts with new evidence. Source must remain stable through a run.
+- Tests should check independent math, direction isolation, resources, ailments, censoring and provenance. No GUI operation without explicit permission. No native integration without asking.
+- Dexterity allocation tools test an offline proposal, not live gameplay. Keep proposed +1 Hit/+1 Attack/Cast Speed per Dexterity and absent Evasion isolated from the current rules file. Block Power behavior is undecided. Compare identical primary budgets, disclose spell coefficients and other bonuses, and separate deterministic allocation evaluations from stochastic outcome counts.
+- The frozen catalogue uses Resolve (ID24, `resolve_max`) and retires Stamina/Mana Cost Efficiency IDs28/29. Legacy experiments pay authored costs; Cooldown Recovery still uses its reciprocal. Preserve earlier snapshots with their original names and mark them historical rather than rewriting their provenance.

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="AbilityDefinition" format=3 uid="uid://dx6fsrmh0wo2b"]
+
+[ext_resource type="Script" uid="uid://db5x8t6k0figb" path="res://combat/abilities/ability_definition.gd" id="1_ability"]
+[ext_resource type="Script" uid="uid://b35fbo0sojddd" path="res://combat/abilities/timed_self_effect_execution.gd" id="2_execution"]
+[ext_resource type="Resource" uid="uid://jdc4yu6ouogr" path="res://player/stamina_exhausted_effect.tres" id="3_effect"]
+
+[sub_resource type="Resource" id="Execution_exhaustion"]
+script = ExtResource("2_execution")
+effect = ExtResource("3_effect")
+
+[resource]
+script = ExtResource("1_ability")
+ability_id = &"stamina_exhaustion"
+display_name = "Stamina Exhaustion"
+ability_tags = PackedStringArray("Ability.Status.StaminaExhaustion")
+required_tags = PackedStringArray()
+blocked_tags = PackedStringArray("State.Dead")
+activation_tags = PackedStringArray()
+interruption_tags = PackedStringArray("State.Dead")
+activation_event_tag = &"Event.Stamina.Depleted"
+cost_attribute = -1
+execution = SubResource("Execution_exhaustion")

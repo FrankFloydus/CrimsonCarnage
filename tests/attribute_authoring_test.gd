@@ -1,0 +1,238 @@
+extends SceneTree
+## Verifies the active Inspector catalogue and stable modifier serialization.
+
+const TEMP_MODIFIER = "res://.godot/attribute_authoring_modifier.tres"
+const EXPECTED_IDS: Array[int] = [
+	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 18, 19, 20, 21, 22,
+	34, 38, 39, 40, 42, 44, 53, 54, 55, 56,
+]
+
+var _checks: int = 0
+var _failures: int = 0
+
+
+func _initialize() -> void:
+	_run.call_deferred()
+
+
+func _run() -> void:
+	preload("res://tests/combat_rules_fixture.gd").install()
+	_test_inspector_catalogue()
+	_test_ability_cost_selector()
+	_test_stale_metadata_refresh()
+	_test_modifier_roundtrips()
+	_test_legacy_movement_identity_roundtrip()
+	_test_operation_roundtrips()
+	await process_frame
+	print("Attribute authoring checks: %d passed, %d failed." % [_checks - _failures, _failures])
+	quit(0 if _failures == 0 else 1)
+
+
+func _test_inspector_catalogue() -> void:
+	var modifier := AttributeModifier.new()
+	_check(modifier.get_script().is_tool(), "Modifier metadata executes in the editor")
+	var metadata := _property(modifier, &"attribute")
+	_check(metadata.get("hint") == PROPERTY_HINT_ENUM, "Attribute selection has explicit enum choices")
+	var choices := _choices(metadata.get("hint_string", ""))
+	_check(choices.size() == 30, "Exactly thirty attributes are available for authoring")
+	_check(CombatAttributes.all_ids() == EXPECTED_IDS, "The catalogue has the agreed saved identities")
+	for id: int in EXPECTED_IDS:
+		_check(choices.has(id), "Every current attribute is available: %d" % id)
+		_check(not CombatAttributes.description(id).is_empty(), "Every current attribute has a description: %d" % id)
+	_check(choices.get(39) == "Carried Weight", "Carried Weight restores its original saved identity")
+	_check(choices.get(40) == "Accuracy Rating", "Accuracy Rating retains stable ID40")
+	_check(choices.get(53) == "Physical Power", "Physical Power uses the appended ID53")
+	_check(choices.get(54) == "Movement Speed" and not choices.has(27),
+			"Movement Speed keeps identity fifty-four for the live bonus and hides retired slot twenty-seven")
+	_check(CombatAttributes.Id.MOVEMENT_SPEED == 54 and CombatAttributes.Id.LEGACY_MOVEMENT_SPEED_PERCENT == 27,
+			"The live Movement Speed bonus does not reuse a retired saved identity")
+	_check(choices.get(55) == "Attack Speed" and choices.get(56) == "Cast Speed"
+			and not choices.has(25) and not choices.has(26),
+			"Speed bonuses use new saved IDs while old ratings remain retired")
+	_check(CombatAttributes.uses_percentage_units(55) and CombatAttributes.uses_percentage_units(56),
+			"Both speed attributes use percentage-point authoring units")
+	_check(choices.get(18) == "Armor", "Armor restores its original saved identity")
+	_check(choices.get(34) == "Armor Penetration", "Armor Penetration restores its original saved identity")
+	_check(choices.get(14) == "Critical Chance" and choices.get(15) == "Critical Damage",
+			"Critical selectors retain their original identities and canonical designer names")
+	_check(CombatAttributes.Id.CRITICAL_MULTIPLIER == 15,
+			"The legacy critical multiplier spelling aliases the bonus-stat identity")
+	_check(CombatAttributes.uses_percentage_units(14) and CombatAttributes.uses_percentage_units(15),
+			"Both critical attributes use percentage-point authoring units")
+	_check(choices.get(19) == "Fire Resistance" and choices.get(20) == "Cold Resistance"
+			and choices.get(21) == "Lightning Resistance" and choices.get(22) == "Necrotic Resistance"
+			and choices.get(44) == "Void Resistance", "Resistance selectors use the five canonical school names")
+	_check(CombatAttributes.Id.FROST_RESISTANCE == 20 and CombatAttributes.Id.POISON_RESISTANCE == 22,
+			"Legacy Frost and Poison spellings preserve their saved identities")
+	_check(not choices.has(32), "Retired Attack Power is not reused as Physical Power")
+	_check(not choices.has(-1), "A modifier cannot select a missing attribute")
+	for id: int in CombatAttributes.RETIRED_IDS:
+		_check(not choices.has(id), "Old combat attributes are absent from new authoring: %d" % id)
+	var optional := _choices(CombatAttributes.inspector_hint(true))
+	_check(optional.size() == 31 and optional.get(-1) == "None", "Optional selectors add only the None sentinel")
+
+
+func _test_ability_cost_selector() -> void:
+	var ability := AbilityDefinition.new()
+	var choices := _choices(_property(ability, &"cost_attribute").get("hint_string", ""))
+	_check(ability.get_script().is_tool(), "Ability resource choices refresh in the editor")
+	_check(choices.size() == 4 and choices.get(-1) == "None" and choices.get(0) == "Health"
+			and choices.get(2) == "Stamina" and choices.get(4) == "Mana",
+			"Ability costs select a current Health/Stamina/Mana pool or None")
+
+
+func _test_stale_metadata_refresh() -> void:
+	var metadata := {"name": &"attribute", "hint": PROPERTY_HINT_ENUM,
+			"hint_string": "Old Burn Chance:47,Old Movement Percent:27,Old Critical Multiplier:15"}
+	AttributeModifier.new()._validate_property(metadata)
+	var choices := _choices(metadata.hint_string)
+	_check(choices.size() == 30 and choices.has(53) and choices.has(54) and choices.has(44) and choices.has(18) and choices.has(34)
+			and choices.get(39) == "Carried Weight"
+			and choices.get(14) == "Critical Chance" and choices.get(15) == "Critical Damage"
+			and not choices.has(13) and not choices.has(27) and not choices.has(47),
+			"Tool metadata refresh removes stale Combat 1.0 choices")
+	var operations := _choices(_property(AttributeModifier.new(), &"operation").hint_string)
+	_check(operations.get(0) == "Add Flat" and operations.get(1) == "Increased Percent"
+			and operations.get(2) == "Set Base" and operations.get(3) == "More Percent",
+			"Operation names explain flat, increased, base override and independent More")
+
+
+func _test_modifier_roundtrips() -> void:
+	for id: int in EXPECTED_IDS:
+		var modifier := AttributeModifier.new()
+		modifier.attribute = id
+		modifier.operation = AttributeModifier.Operation.SET_BASE
+		modifier.value = -35.25 if CombatAttributes.is_resistance(id) else 50.0
+		if id == CombatAttributes.Id.ARMOR:
+			modifier.value = 2500.0
+		elif id == CombatAttributes.Id.ARMOR_PENETRATION:
+			modifier.value = 175.0
+		elif id == CombatAttributes.Id.CRITICAL_DAMAGE:
+			modifier.value = 10000.0
+		elif id == CombatAttributes.Id.MOVEMENT_SPEED:
+			modifier.value = -12.5
+		elif id == CombatAttributes.Id.CARRIED_WEIGHT:
+			modifier.value = 137.25
+		modifier.required_context_tags = PackedStringArray(["Weapon.Finesse"])
+		_check(ResourceSaver.save(modifier, TEMP_MODIFIER) == OK, "Every current attribute modifier serializes")
+		var loaded := ResourceLoader.load(TEMP_MODIFIER, "", ResourceLoader.CACHE_MODE_IGNORE) as AttributeModifier
+		_check(loaded != null, "Every current attribute modifier reloads")
+		if loaded == null:
+			continue
+		_check(loaded.attribute == id and loaded.operation == 2 and loaded.value == modifier.value,
+				"Saved IDs and modifier values survive resource reload")
+		if CombatAttributes.is_resistance(id):
+			var actor := ActorAttributes.new()
+			actor.set_modifiers(&"loaded_resistance", [loaded])
+			_close(actor.get_value(id, PackedStringArray(["Weapon.Finesse"])), -35.25,
+					"A saved negative Resistance modifier retains its signed runtime value")
+			actor.free()
+		elif id == CombatAttributes.Id.ARMOR:
+			var actor := ActorAttributes.new()
+			actor.set_modifiers(&"loaded_armor", [loaded])
+			_close(actor.get_value(id, PackedStringArray(["Weapon.Finesse"])), 2500.0,
+					"Saved Armor beyond the reduction cap retains its uncapped rating")
+			actor.free()
+		elif id == CombatAttributes.Id.ARMOR_PENETRATION:
+			var actor := ActorAttributes.new()
+			actor.set_modifiers(&"loaded_penetration", [loaded])
+			_close(actor.get_value(id, PackedStringArray(["Weapon.Finesse"])), 100.0,
+					"Saved over-cap Armor Penetration applies its effective percentage cap")
+			_close(loaded.value, 175.0, "Serialization preserves the underlying over-cap penetration value")
+			actor.free()
+		elif id in [CombatAttributes.Id.CRITICAL_CHANCE, CombatAttributes.Id.CRITICAL_DAMAGE]:
+			var actor := ActorAttributes.new()
+			actor.set_modifiers(&"loaded_critical", [loaded])
+			_close(actor.get_value(id, PackedStringArray(["Weapon.Finesse"])), modifier.value,
+					"Critical authoring units and uncapped Damage bonus survive resource reload")
+			actor.free()
+		elif id == CombatAttributes.Id.MOVEMENT_SPEED:
+			var actor := ActorAttributes.new()
+			actor.set_modifiers(&"loaded_movement", [loaded])
+			_close(actor.get_value(id, PackedStringArray(["Weapon.Finesse"])), -12.5,
+					"A saved Movement Speed modifier preserves a fractional negative bonus")
+			actor.free()
+		elif id == CombatAttributes.Id.CARRIED_WEIGHT:
+			var actor := ActorAttributes.new()
+			actor.set_modifiers(&"loaded_weight", [loaded])
+			_close(actor.get_value(id, PackedStringArray(["Weapon.Finesse"])), 137.25,
+					"A saved Carried Weight modifier retains fractional load above capacity")
+			actor.free()
+		_check(loaded.required_context_tags == PackedStringArray(["Weapon.Finesse"]),
+				"Modifier scopes survive resource reload")
+	_check(DirAccess.remove_absolute(TEMP_MODIFIER) == OK, "Temporary current modifier fixture is removed")
+	var retired := AttributeModifier.new()
+	retired.attribute = CombatAttributes.Id.HEALING_POWER
+	_check(ResourceSaver.save(retired, TEMP_MODIFIER) == OK, "A legacy numeric identity can still be preserved")
+	var loaded := ResourceLoader.load(TEMP_MODIFIER, "", ResourceLoader.CACHE_MODE_IGNORE) as AttributeModifier
+	_check(loaded != null and loaded.attribute == 16, "A retired saved slot does not become a different stat")
+	_check(not CombatAttributes.is_active(loaded.attribute), "Loading an old identity does not reactivate it")
+	_check(DirAccess.remove_absolute(TEMP_MODIFIER) == OK, "Temporary retired modifier fixture is removed")
+
+
+func _test_legacy_movement_identity_roundtrip() -> void:
+	var legacy := AttributeModifier.new()
+	legacy.attribute = CombatAttributes.Id.LEGACY_MOVEMENT_SPEED_PERCENT
+	legacy.value = 25.0
+	_check(ResourceSaver.save(legacy, TEMP_MODIFIER) == OK, "A legacy percentage Movement Speed modifier still serializes")
+	var loaded := ResourceLoader.load(TEMP_MODIFIER, "", ResourceLoader.CACHE_MODE_IGNORE) as AttributeModifier
+	_check(loaded != null and loaded.attribute == 27 and loaded.value == 25.0,
+			"Old Movement Speed data keeps its original identity and value")
+	var actor := ActorAttributes.new()
+	actor.set_modifiers(&"legacy_movement", [loaded])
+	_close(actor.get_value(CombatAttributes.Id.MOVEMENT_SPEED), 0.0,
+			"A legacy twenty-five-percent modifier cannot affect the new zero-base movement bonus")
+	_close(actor.get_value(27), 0.0, "The retired percentage Movement Speed slot remains inactive")
+	actor.free()
+	_check(DirAccess.remove_absolute(TEMP_MODIFIER) == OK, "The temporary legacy Movement Speed fixture is removed")
+
+
+func _test_operation_roundtrips() -> void:
+	_check(AttributeModifier.Operation.ADD == 0 and AttributeModifier.Operation.ADD_PERCENT == 1
+			and AttributeModifier.Operation.SET_BASE == 2 and AttributeModifier.Operation.MORE_PERCENT == 3,
+			"Modifier operation identities remain stable")
+	for operation: int in range(4):
+		var modifier := AttributeModifier.new()
+		modifier.attribute = CombatAttributes.Id.PHYSICAL_POWER
+		modifier.operation = operation
+		modifier.value = 20.0
+		modifier.required_context_tags = PackedStringArray(["Weapon.Finesse"])
+		modifier.excluded_context_tags = PackedStringArray(["Ability.Disabled"])
+		_check(ResourceSaver.save(modifier, TEMP_MODIFIER) == OK, "Every modifier operation serializes")
+		var loaded := ResourceLoader.load(TEMP_MODIFIER, "", ResourceLoader.CACHE_MODE_IGNORE) as AttributeModifier
+		_check(loaded != null and loaded.attribute == 53 and loaded.operation == operation
+				and loaded.value == 20.0 and loaded.required_context_tags == modifier.required_context_tags
+				and loaded.excluded_context_tags == modifier.excluded_context_tags,
+				"Operation, Physical Power identity, value and scopes survive reload")
+	_check(DirAccess.remove_absolute(TEMP_MODIFIER) == OK, "Temporary operation fixture is removed")
+
+
+func _property(resource: Resource, name: StringName) -> Dictionary:
+	for property: Dictionary in resource.get_property_list():
+		if property.name == name:
+			return property
+	return {}
+
+
+func _choices(hint_string: String) -> Dictionary:
+	var choices: Dictionary = {}
+	for entry: String in hint_string.split(",", false):
+		var parts := entry.rsplit(":", true, 1)
+		_check(parts.size() == 2 and parts[1].is_valid_int(), "Every selector entry has an explicit saved ID")
+		if parts.size() != 2 or not parts[1].is_valid_int():
+			continue
+		var id := int(parts[1])
+		_check(not choices.has(id), "Selector saved IDs are unique")
+		choices[id] = parts[0]
+	return choices
+
+
+func _close(actual: float, expected: float, label: String) -> void:
+	_check(is_equal_approx(actual, expected), "%s: %.6f expected %.6f" % [label, actual, expected])
+
+
+func _check(condition: bool, label: String) -> void:
+	_checks += 1
+	if not condition:
+		_failures += 1
+		push_error(label)

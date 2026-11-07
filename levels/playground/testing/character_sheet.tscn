@@ -1,0 +1,830 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://levels/playground/testing/character_sheet.gd" id="1_sheet"]
+
+[node name="CharacterSheet" type="PanelContainer"]
+custom_minimum_size = Vector2(296, 0)
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_type_variation = &"PanelSurface"
+script = ExtResource("1_sheet")
+
+[node name="Layout" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Header" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ActorTitle" type="Label" parent="Layout/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelTitle"
+text = "Player"
+mouse_filter = 1
+
+[node name="Encumbered" type="Label" parent="Layout/Header"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+vertical_alignment = 1
+theme_type_variation = &"PanelAccent"
+text = "Encumbered"
+mouse_filter = 1
+tooltip_text = "Carried weight above capacity reduces movement speed and jump height and blocks sprinting."
+
+[node name="ActorLevel" type="Label" parent="Layout/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+vertical_alignment = 1
+theme_type_variation = &"PanelMuted"
+text = "Lv. 1"
+mouse_filter = 1
+
+[node name="Unavailable" type="Label" parent="Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+visible = false
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_type_variation = &"PanelMuted"
+text = "Attributes unavailable"
+mouse_filter = 1
+
+[node name="Scroll" type="ScrollContainer" parent="Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+clip_contents = true
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 4
+follow_focus = true
+
+[node name="Content" type="VBoxContainer" parent="Layout/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Resources" type="VBoxContainer" parent="Layout/Scroll/Content"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="Heading" type="Label" parent="Layout/Scroll/Content/Resources"]
+layout_mode = 2
+theme_type_variation = &"PanelHeading"
+text = "RESOURCES"
+mouse_filter = 1
+
+[node name="Health" type="VBoxContainer" parent="Layout/Scroll/Content/Resources"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Readout" type="HBoxContainer" parent="Layout/Scroll/Content/Resources/Health"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Resources/Health/Readout"]
+layout_mode = 2
+custom_minimum_size = Vector2(58, 0)
+text = "Health"
+mouse_filter = 1
+
+[node name="HealthValue" type="Label" parent="Layout/Scroll/Content/Resources/Health/Readout"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelValue"
+text = "200 / 200"
+mouse_filter = 1
+
+[node name="HealthRegenValue" type="Label" parent="Layout/Scroll/Content/Resources/Health/Readout"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(68, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelMuted"
+text = "0 /s"
+mouse_filter = 1
+
+[node name="HealthBar" type="ProgressBar" parent="Layout/Scroll/Content/Resources/Health"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 5)
+theme_type_variation = &"PanelResourceBar"
+mouse_filter = 2
+max_value = 1.0
+step = 0.0
+value = 1.0
+show_percentage = false
+
+[node name="Stamina" type="VBoxContainer" parent="Layout/Scroll/Content/Resources"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Readout" type="HBoxContainer" parent="Layout/Scroll/Content/Resources/Stamina"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Resources/Stamina/Readout"]
+layout_mode = 2
+custom_minimum_size = Vector2(58, 0)
+text = "Stamina"
+mouse_filter = 1
+
+[node name="StaminaValue" type="Label" parent="Layout/Scroll/Content/Resources/Stamina/Readout"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelValue"
+text = "100 / 100"
+mouse_filter = 1
+
+[node name="StaminaRegenValue" type="Label" parent="Layout/Scroll/Content/Resources/Stamina/Readout"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(68, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelMuted"
+text = "10 /s"
+mouse_filter = 1
+
+[node name="StaminaBar" type="ProgressBar" parent="Layout/Scroll/Content/Resources/Stamina"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 5)
+theme_type_variation = &"PanelResourceBar"
+mouse_filter = 2
+max_value = 1.0
+step = 0.0
+value = 1.0
+show_percentage = false
+
+[node name="Mana" type="VBoxContainer" parent="Layout/Scroll/Content/Resources"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Readout" type="HBoxContainer" parent="Layout/Scroll/Content/Resources/Mana"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Resources/Mana/Readout"]
+layout_mode = 2
+custom_minimum_size = Vector2(58, 0)
+text = "Mana"
+mouse_filter = 1
+
+[node name="ManaValue" type="Label" parent="Layout/Scroll/Content/Resources/Mana/Readout"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelValue"
+text = "100 / 100"
+mouse_filter = 1
+
+[node name="ManaRegenValue" type="Label" parent="Layout/Scroll/Content/Resources/Mana/Readout"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(68, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelMuted"
+text = "5 /s"
+mouse_filter = 1
+
+[node name="ManaBar" type="ProgressBar" parent="Layout/Scroll/Content/Resources/Mana"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 5)
+theme_type_variation = &"PanelResourceBar"
+mouse_filter = 2
+max_value = 1.0
+step = 0.0
+value = 1.0
+show_percentage = false
+
+[node name="Matchup" type="PanelContainer" parent="Layout/Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"PanelSurface"
+
+[node name="Layout" type="VBoxContainer" parent="Layout/Scroll/Content/Matchup"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Header" type="HBoxContainer" parent="Layout/Scroll/Content/Matchup/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Heading" type="Label" parent="Layout/Scroll/Content/Matchup/Layout/Header"]
+layout_mode = 2
+theme_type_variation = &"PanelHeading"
+text = "PLAYER → DUMMY"
+mouse_filter = 1
+
+[node name="MatchupAbility" type="Label" parent="Layout/Scroll/Content/Matchup/Layout/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelMuted"
+text = "Fireball"
+mouse_filter = 1
+
+[node name="Metrics" type="HBoxContainer" parent="Layout/Scroll/Content/Matchup/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Success" type="VBoxContainer" parent="Layout/Scroll/Content/Matchup/Layout/Metrics"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="SuccessLabel" type="Label" parent="Layout/Scroll/Content/Matchup/Layout/Metrics/Success"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Chance for the selected player ability to pass Accuracy against the dummy."
+theme_type_variation = &"PanelMuted"
+text = "Hit chance"
+mouse_filter = 1
+
+[node name="SuccessValue" type="Label" parent="Layout/Scroll/Content/Matchup/Layout/Metrics/Success"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Chance for the selected player ability to pass Accuracy against the dummy."
+theme_type_variation = &"PanelAccent"
+text = "80%"
+mouse_filter = 1
+
+[node name="Failure" type="VBoxContainer" parent="Layout/Scroll/Content/Matchup/Layout/Metrics"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="FailureLabel" type="Label" parent="Layout/Scroll/Content/Matchup/Layout/Metrics/Failure"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Chance for the selected player ability to fail Accuracy."
+theme_type_variation = &"PanelMuted"
+text = "Resist"
+mouse_filter = 1
+
+[node name="FailureValue" type="Label" parent="Layout/Scroll/Content/Matchup/Layout/Metrics/Failure"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Chance for the selected player ability to fail Accuracy."
+theme_type_variation = &"PanelValue"
+text = "20%"
+mouse_filter = 1
+
+[node name="HitDamage" type="VBoxContainer" parent="Layout/Scroll/Content/Matchup/Layout/Metrics"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.4
+theme_override_constants/separation = 2
+
+[node name="HitDamageLabel" type="Label" parent="Layout/Scroll/Content/Matchup/Layout/Metrics/HitDamage"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Damage from a normal hit after the dummy's defenses."
+theme_type_variation = &"PanelMuted"
+text = "Normal hit"
+mouse_filter = 1
+
+[node name="HitDamageValue" type="Label" parent="Layout/Scroll/Content/Matchup/Layout/Metrics/HitDamage"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Damage from a normal hit after the dummy's defenses."
+theme_type_variation = &"PanelValue"
+clip_text = true
+text_overrun_behavior = 3
+text = "—"
+mouse_filter = 1
+
+[node name="Attributes" type="VBoxContainer" parent="Layout/Scroll/Content"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Separator" type="HSeparator" parent="Layout/Scroll/Content/Attributes"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Heading" type="Label" parent="Layout/Scroll/Content/Attributes"]
+layout_mode = 2
+theme_type_variation = &"PanelHeading"
+text = "ATTRIBUTES"
+mouse_filter = 1
+
+[node name="Strength" type="HBoxContainer" parent="Layout/Scroll/Content/Attributes"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Attributes/Strength"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+text = "Strength"
+mouse_filter = 1
+
+[node name="StrengthValue" type="Label" parent="Layout/Scroll/Content/Attributes/Strength"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelValue"
+text = "10"
+mouse_filter = 1
+
+[node name="Dexterity" type="HBoxContainer" parent="Layout/Scroll/Content/Attributes"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Attributes/Dexterity"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+text = "Dexterity"
+mouse_filter = 1
+
+[node name="DexterityValue" type="Label" parent="Layout/Scroll/Content/Attributes/Dexterity"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelValue"
+text = "10"
+mouse_filter = 1
+
+[node name="Intellect" type="HBoxContainer" parent="Layout/Scroll/Content/Attributes"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Attributes/Intellect"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+text = "Intellect"
+mouse_filter = 1
+
+[node name="IntellectValue" type="Label" parent="Layout/Scroll/Content/Attributes/Intellect"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelValue"
+text = "10"
+mouse_filter = 1
+
+[node name="Vitality" type="HBoxContainer" parent="Layout/Scroll/Content/Attributes"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Attributes/Vitality"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+text = "Vitality"
+mouse_filter = 1
+
+[node name="VitalityValue" type="Label" parent="Layout/Scroll/Content/Attributes/Vitality"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelValue"
+text = "10"
+mouse_filter = 1
+
+[node name="Offense" type="VBoxContainer" parent="Layout/Scroll/Content"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Separator" type="HSeparator" parent="Layout/Scroll/Content/Offense"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Heading" type="Label" parent="Layout/Scroll/Content/Offense"]
+layout_mode = 2
+theme_type_variation = &"PanelHeading"
+text = "OFFENSE"
+mouse_filter = 1
+
+[node name="CriticalChance" type="HBoxContainer" parent="Layout/Scroll/Content/Offense"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Offense/CriticalChance"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+text = "Critical Chance"
+mouse_filter = 1
+
+[node name="CriticalChanceValue" type="Label" parent="Layout/Scroll/Content/Offense/CriticalChance"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelValue"
+text = "0%"
+mouse_filter = 1
+
+[node name="CriticalDamage" type="HBoxContainer" parent="Layout/Scroll/Content/Offense"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Offense/CriticalDamage"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+tooltip_text = "Total damage multiplier for a critical hit, including the Critical Damage bonus."
+text = "Critical damage"
+mouse_filter = 1
+
+[node name="CriticalDamageValue" type="Label" parent="Layout/Scroll/Content/Offense/CriticalDamage"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+tooltip_text = "Total damage multiplier for a critical hit, including the Critical Damage bonus."
+theme_type_variation = &"PanelValue"
+text = "150%"
+mouse_filter = 1
+
+[node name="ArmorPenetration" type="HBoxContainer" parent="Layout/Scroll/Content/Offense"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Offense/ArmorPenetration"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+text = "Armor Penetration"
+mouse_filter = 1
+
+[node name="ArmorPenetrationValue" type="Label" parent="Layout/Scroll/Content/Offense/ArmorPenetration"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelValue"
+text = "0%"
+mouse_filter = 1
+
+[node name="AttackSpeed" type="HBoxContainer" parent="Layout/Scroll/Content/Offense"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Offense/AttackSpeed"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+text = "Attack Speed"
+mouse_filter = 1
+
+[node name="AttackSpeedValue" type="Label" parent="Layout/Scroll/Content/Offense/AttackSpeed"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelValue"
+text = "0%"
+mouse_filter = 1
+
+[node name="CastSpeed" type="HBoxContainer" parent="Layout/Scroll/Content/Offense"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Offense/CastSpeed"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+text = "Cast Speed"
+mouse_filter = 1
+
+[node name="CastSpeedValue" type="Label" parent="Layout/Scroll/Content/Offense/CastSpeed"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelValue"
+text = "0%"
+mouse_filter = 1
+
+[node name="Defense" type="VBoxContainer" parent="Layout/Scroll/Content"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Separator" type="HSeparator" parent="Layout/Scroll/Content/Defense"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Heading" type="Label" parent="Layout/Scroll/Content/Defense"]
+layout_mode = 2
+theme_type_variation = &"PanelHeading"
+text = "DEFENSE"
+mouse_filter = 1
+
+[node name="PhysicalReduction" type="HBoxContainer" parent="Layout/Scroll/Content/Defense"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Defense/PhysicalReduction"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+tooltip_text = "Damage reduction from Armor before incoming Armor Penetration."
+text = "Physical damage reduction"
+mouse_filter = 1
+
+[node name="PhysicalReductionValue" type="Label" parent="Layout/Scroll/Content/Defense/PhysicalReduction"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(64, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+tooltip_text = "Damage reduction from Armor before incoming Armor Penetration."
+theme_type_variation = &"PanelValue"
+text = "0%"
+mouse_filter = 1
+
+[node name="FireResistance" type="HBoxContainer" parent="Layout/Scroll/Content/Defense"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Defense/FireResistance"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+text = "Fire Resistance"
+mouse_filter = 1
+
+[node name="FireResistanceValue" type="Label" parent="Layout/Scroll/Content/Defense/FireResistance"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelValue"
+text = "0%"
+mouse_filter = 1
+
+[node name="ColdResistance" type="HBoxContainer" parent="Layout/Scroll/Content/Defense"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Defense/ColdResistance"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+text = "Cold Resistance"
+mouse_filter = 1
+
+[node name="ColdResistanceValue" type="Label" parent="Layout/Scroll/Content/Defense/ColdResistance"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelValue"
+text = "0%"
+mouse_filter = 1
+
+[node name="LightningResistance" type="HBoxContainer" parent="Layout/Scroll/Content/Defense"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Defense/LightningResistance"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+text = "Lightning Resistance"
+mouse_filter = 1
+
+[node name="LightningResistanceValue" type="Label" parent="Layout/Scroll/Content/Defense/LightningResistance"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelValue"
+text = "0%"
+mouse_filter = 1
+
+[node name="NecroticResistance" type="HBoxContainer" parent="Layout/Scroll/Content/Defense"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Defense/NecroticResistance"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+text = "Necrotic Resistance"
+mouse_filter = 1
+
+[node name="NecroticResistanceValue" type="Label" parent="Layout/Scroll/Content/Defense/NecroticResistance"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelValue"
+text = "0%"
+mouse_filter = 1
+
+[node name="VoidResistance" type="HBoxContainer" parent="Layout/Scroll/Content/Defense"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Defense/VoidResistance"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+text = "Void Resistance"
+mouse_filter = 1
+
+[node name="VoidResistanceValue" type="Label" parent="Layout/Scroll/Content/Defense/VoidResistance"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelValue"
+text = "0%"
+mouse_filter = 1
+
+[node name="Mobility" type="VBoxContainer" parent="Layout/Scroll/Content"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Separator" type="HSeparator" parent="Layout/Scroll/Content/Mobility"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Heading" type="Label" parent="Layout/Scroll/Content/Mobility"]
+layout_mode = 2
+theme_type_variation = &"PanelHeading"
+text = "MOBILITY"
+mouse_filter = 1
+
+[node name="MovementSpeed" type="HBoxContainer" parent="Layout/Scroll/Content/Mobility"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Mobility/MovementSpeed"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+text = "Movement Speed"
+mouse_filter = 1
+
+[node name="MovementSpeedValue" type="Label" parent="Layout/Scroll/Content/Mobility/MovementSpeed"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelValue"
+text = "0%"
+mouse_filter = 1
+
+[node name="CarryLoad" type="HBoxContainer" parent="Layout/Scroll/Content/Mobility"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Mobility/CarryLoad"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+text = "Carry load"
+mouse_filter = 1
+
+[node name="CarryLoadValue" type="Label" parent="Layout/Scroll/Content/Mobility/CarryLoad"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(116, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelValue"
+text = "0 / 100"
+mouse_filter = 1
+
+[node name="MovementSpeedPenalty" type="HBoxContainer" parent="Layout/Scroll/Content/Mobility"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Mobility/MovementSpeedPenalty"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelMuted"
+text = "Movement speed penalty"
+mouse_filter = 1
+tooltip_text = "Change in gait speed due to carried weight."
+
+[node name="MovementSpeedPenaltyValue" type="Label" parent="Layout/Scroll/Content/Mobility/MovementSpeedPenalty"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(64, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelValue"
+text = "0%"
+mouse_filter = 1
+tooltip_text = "Change in gait speed due to carried weight."
+
+[node name="JumpHeightPenalty" type="HBoxContainer" parent="Layout/Scroll/Content/Mobility"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Mobility/JumpHeightPenalty"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelMuted"
+text = "Jump height penalty"
+mouse_filter = 1
+tooltip_text = "Change in standing and crouched jump height due to carried weight."
+
+[node name="JumpHeightPenaltyValue" type="Label" parent="Layout/Scroll/Content/Mobility/JumpHeightPenalty"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(64, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelValue"
+text = "0%"
+mouse_filter = 1
+tooltip_text = "Change in standing and crouched jump height due to carried weight."

@@ -1,0 +1,466 @@
+{
+  "version": 1,
+  "name": "Five-enemy Fireball matrix",
+  "rules": {
+    "schema_version": 2,
+    "max_level": 60,
+    "creation_points": 10,
+    "points_per_level": 2,
+    "base_primary": 10.0,
+    "base_health": 120.0,
+    "health_per_level": 8.0,
+    "base_stamina": 100.0,
+    "stamina_per_level": 2.0,
+    "base_mana": 100.0,
+    "mana_per_level": 2.0,
+    "vitality_health_per_point": 0.005,
+    "strength_stamina_per_point": 1.0,
+    "intellect_mana_per_point": 1.0,
+    "base_carry_capacity": 100.0,
+    "dexterity_evasion_per_point": 1.0,
+    "stamina_regen_base": 15.0,
+    "stamina_regen_per_level": 0.3,
+    "mana_regen_base": 6.0,
+    "mana_regen_per_level": 0.12,
+    "critical_chance_base": 5.0,
+    "critical_chance_max": 100.0,
+    "resistance_min": -100.0,
+    "resistance_max": 80.0,
+    "armor_damage_reduction_max": 0.75,
+    "evasion_chance_max": 0.75,
+    "defense_curve_numerator": 12.0,
+    "defense_curve_denominator_base": 3000.0,
+    "defense_curve_denominator_per_rating": 13.0,
+    "armor_penetration_max": 100.0,
+    "block_chance_max": 90.0,
+    "resolve_max": 40.0,
+    "speed_rating_min": -50.0,
+    "speed_rating_scale": 100.0,
+    "movement_speed_bonus_min": -100.0,
+    "movement_speed_bonus_max": 25.0,
+    "level_payload_per_level": 0.02,
+    "level_gap_advantage_max": 10.0,
+    "level_gap_width": 8.0,
+    "accuracy_chance_by_level_gap": [
+      0.8,
+      0.7835,
+      0.7362,
+      0.6635,
+      0.5736,
+      0.4757,
+      0.25,
+      0.18,
+      0.14,
+      0.115,
+      0.1
+    ],
+    "hit_rating_base_requirement": 50.0,
+    "hit_rating_requirement_per_level": 10.0,
+    "accuracy_rating_comfort_gap": 5.0,
+    "accuracy_rating_growth_per_level": 2.0,
+    "control_level_duration_min": 0.25,
+    "control_level_duration_width": 10.0,
+    "entropy_reset_seconds": 3.3333333333333335,
+    "encumbrance_multiplier_min": 0.5,
+    "final_attack_speed_rate_min": 0.5,
+    "final_movement_speed_rate_min": 0.0,
+    "final_movement_speed_rate_max": 1.25,
+    "minimum_capacity": 1.0,
+    "strength_physical_damage_per_point": 0.01,
+    "intellect_magic_power_per_point": 1.0,
+    "dexterity_hit_rating_per_point": 1.0,
+    "vitality_capacity_per_point": 1.0,
+    "critical_base_multiplier": 1.5,
+    "critical_damage_base": 0.0,
+    "critical_damage_min": 0.0,
+    "dot_damage_min": -100.0,
+    "ailment_chance_base": 20.0,
+    "absorption_recovery_delay": 3.0,
+    "absorption_recovery_fraction": 0.1,
+    "burn_duration": 4.0,
+    "burn_period": 1.0,
+    "bleed_duration": 6.0,
+    "bleed_period": 2.0,
+    "poison_duration": 6.0,
+    "poison_period": 1.0,
+    "chill_duration": 4.0,
+    "chill_slow_max": 0.2,
+    "zapped_duration": 4.0,
+    "zapped_critical_bonus": 5.0,
+    "hollowed_duration": 6.0,
+    "hollowed_recovery_reduction_max": 0.3,
+    "utility_threshold_base": 12.0,
+    "utility_threshold_per_level": 0.8,
+    "burn_damage_per_second_fraction": 0.25,
+    "bleed_damage_per_second_fraction": 0.16666666666666666,
+    "poison_damage_per_second_fraction": 0.08333333333333333
+  },
+  "curves": {
+    "melee": [
+      0.8,
+      0.7835,
+      0.7362,
+      0.6635,
+      0.5736,
+      0.4757,
+      0.25,
+      0.18,
+      0.14,
+      0.115,
+      0.1
+    ],
+    "spell": [
+      0.8,
+      0.7835,
+      0.7362,
+      0.6635,
+      0.5736,
+      0.4757,
+      0.25,
+      0.18,
+      0.14,
+      0.115,
+      0.1
+    ]
+  },
+  "players": [
+    {
+      "allocations": {
+        "dexterity": 0,
+        "intellect": 0,
+        "strength": 0,
+        "vitality": 0
+      },
+      "automatic_regeneration": true,
+      "base_values": {},
+      "id": "player",
+      "level": 1,
+      "modifiers": [
+        {
+          "attribute": 26,
+          "excluded_context_tags": [],
+          "operation": 2,
+          "required_context_tags": [],
+          "source": 0,
+          "value": 20000.0
+        },
+        {
+          "attribute": 34,
+          "excluded_context_tags": [],
+          "operation": 2,
+          "required_context_tags": [],
+          "source": 0,
+          "value": 15.0
+        }
+      ],
+      "name": "Saved player",
+      "pause_stamina_regeneration": false,
+      "tags": []
+    }
+  ],
+  "enemies": [
+    {
+      "allocations": {
+        "dexterity": 0,
+        "intellect": 0,
+        "strength": 0,
+        "vitality": 0
+      },
+      "automatic_regeneration": true,
+      "base_values": {},
+      "id": "saved_dummy",
+      "level": 1,
+      "modifiers": [
+        {
+          "attribute": 1,
+          "excluded_context_tags": [],
+          "operation": 2,
+          "required_context_tags": [],
+          "source": 0,
+          "value": 2000.0
+        },
+        {
+          "attribute": 19,
+          "excluded_context_tags": [],
+          "operation": 2,
+          "required_context_tags": [],
+          "source": 0,
+          "value": -20.0
+        }
+      ],
+      "name": "Saved dummy",
+      "pause_stamina_regeneration": false,
+      "tags": []
+    },
+    {
+      "id": "neutral",
+      "name": "Neutral target",
+      "level": 1,
+      "allocations": {
+        "strength": 0,
+        "dexterity": 0,
+        "intellect": 0,
+        "vitality": 0
+      },
+      "base_values": {
+        "1": 300.0
+      },
+      "modifiers": [],
+      "tags": []
+    },
+    {
+      "id": "armored",
+      "name": "Armored target",
+      "level": 3,
+      "allocations": {
+        "strength": 0,
+        "dexterity": 0,
+        "intellect": 0,
+        "vitality": 0
+      },
+      "base_values": {
+        "1": 500.0,
+        "18": 300.0
+      },
+      "modifiers": [],
+      "tags": []
+    },
+    {
+      "id": "elemental",
+      "name": "Elemental resistant target",
+      "level": 5,
+      "allocations": {
+        "strength": 0,
+        "dexterity": 0,
+        "intellect": 0,
+        "vitality": 0
+      },
+      "base_values": {
+        "1": 500.0,
+        "19": 40.0,
+        "20": 40.0,
+        "21": 40.0
+      },
+      "modifiers": [],
+      "tags": []
+    },
+    {
+      "id": "evasive",
+      "name": "Evasive / blocking target",
+      "level": 6,
+      "allocations": {
+        "strength": 0,
+        "dexterity": 0,
+        "intellect": 0,
+        "vitality": 0
+      },
+      "base_values": {
+        "1": 400.0,
+        "33": 250.0,
+        "37": 20.0
+      },
+      "modifiers": [],
+      "tags": []
+    }
+  ],
+  "abilities": [
+    {
+      "animation": "cast_fireball",
+      "automatic_ailments": true,
+      "base_duration": 0.8,
+      "blockable": true,
+      "blocked_tags": [
+        "State.Dead",
+        "State.Stunned",
+        "State.Silenced",
+        "State.PerformingAction"
+      ],
+      "cooldown": 1.5,
+      "cost_amount": 20.0,
+      "cost_attribute": 4,
+      "delivery": "projectile",
+      "dodgeable": true,
+      "effects": [
+        {
+          "ailment_family": "",
+          "application_chance": 100.0,
+          "base_damage": 60.0,
+          "blocked_target_tags": [
+            "State.Dead"
+          ],
+          "critical": true,
+          "damage_tags": [
+            "Damage.Fire",
+            "Damage.Direct"
+          ],
+          "damage_type": "fire",
+          "duration": 0.0,
+          "execute_on_application": false,
+          "granted_tags": [],
+          "id": "Effect.Fireball.Impact",
+          "maximum_stacks": 1,
+          "name": "",
+          "period": 0.0,
+          "periodic": false,
+          "power_coefficient": 0.5,
+          "reapplication": "refresh",
+          "required_target_tags": [],
+          "scale_with_level": true,
+          "scaling_attribute": -1,
+          "stack_per_owner": false,
+          "stack_per_source": true,
+          "strongest_wins": false
+        }
+      ],
+      "id": "fireball",
+      "kind": "spell",
+      "minimum_duration": 0.4,
+      "name": "Fireball",
+      "release_fraction": 0.416666679084301,
+      "required_tags": [],
+      "tags": [
+        "Ability.Spell",
+        "Ability.Fireball"
+      ],
+      "travel_time": 0.0
+    },
+    {
+      "animation": "melee_attack",
+      "automatic_ailments": true,
+      "base_duration": 1.0,
+      "blockable": true,
+      "blocked_tags": [
+        "State.Dead",
+        "State.Stunned",
+        "State.PerformingAction"
+      ],
+      "cooldown": 0.0,
+      "cost_amount": 12.0,
+      "cost_attribute": 2,
+      "delivery": "melee_trace",
+      "dodgeable": true,
+      "effects": [
+        {
+          "ailment_family": "",
+          "application_chance": 100.0,
+          "base_damage": 50.0,
+          "blocked_target_tags": [
+            "State.Dead"
+          ],
+          "critical": true,
+          "damage_tags": [],
+          "damage_type": "physical",
+          "duration": 0.0,
+          "execute_on_application": false,
+          "granted_tags": [],
+          "id": "Effect.BleedStrike.Impact",
+          "maximum_stacks": 1,
+          "name": "",
+          "period": 0.0,
+          "periodic": false,
+          "power_coefficient": 0.0,
+          "reapplication": "refresh",
+          "required_target_tags": [],
+          "scale_with_level": false,
+          "scaling_attribute": -1,
+          "stack_per_owner": false,
+          "stack_per_source": true,
+          "strongest_wins": false
+        }
+      ],
+      "id": "bleed_strike",
+      "kind": "melee",
+      "minimum_duration": 0.4,
+      "name": "Bleeding Strike",
+      "release_fraction": 0.25,
+      "required_tags": [],
+      "tags": [
+        "Ability.Attack",
+        "Ability.Melee"
+      ],
+      "travel_time": 0.0
+    },
+    {
+      "animation": "melee_attack",
+      "automatic_ailments": true,
+      "base_duration": 1.0,
+      "blockable": true,
+      "blocked_tags": [
+        "State.Dead",
+        "State.Stunned",
+        "State.PerformingAction"
+      ],
+      "cooldown": 0.0,
+      "cost_amount": 12.0,
+      "cost_attribute": 2,
+      "delivery": "melee_trace",
+      "dodgeable": true,
+      "effects": [
+        {
+          "ailment_family": "",
+          "application_chance": 100.0,
+          "base_damage": 50.0,
+          "blocked_target_tags": [
+            "State.Dead"
+          ],
+          "critical": true,
+          "damage_tags": [],
+          "damage_type": "necrotic",
+          "duration": 0.0,
+          "execute_on_application": false,
+          "granted_tags": [],
+          "id": "Effect.PoisonStrike.Impact",
+          "maximum_stacks": 1,
+          "name": "",
+          "period": 0.0,
+          "periodic": false,
+          "power_coefficient": 0.3,
+          "reapplication": "refresh",
+          "required_target_tags": [],
+          "scale_with_level": false,
+          "scaling_attribute": -1,
+          "stack_per_owner": false,
+          "stack_per_source": true,
+          "strongest_wins": false
+        }
+      ],
+      "id": "poison_strike",
+      "kind": "melee",
+      "minimum_duration": 0.4,
+      "name": "Poison Strike",
+      "release_fraction": 0.25,
+      "required_tags": [],
+      "tags": [
+        "Ability.Attack",
+        "Ability.Melee"
+      ],
+      "travel_time": 0.0
+    }
+  ],
+  "matrix": {
+    "player_ids": [],
+    "enemy_ids": [],
+    "ability_ids": [
+      "fireball"
+    ],
+    "player_levels": [],
+    "enemy_levels": [],
+    "sweeps": []
+  },
+  "run": {
+    "trials": 10000,
+    "horizon": 120.0,
+    "seed": 12345,
+    "batch_size": 4096,
+    "workers": 1
+  },
+  "import_notes": [
+    "Saved project data only; runtime GUI edits are not imported.",
+    "Deliveries are assumed to physically connect. No movement, aim, or AI simulation.",
+    "Projectile travel time defaults to zero; enter a fixed delay for an experiment.",
+    "Melee contact occurs at the first authored trace_start key, assuming a target in reach.",
+    "Attack and Spell Hits share Hit Rating. Direct damage automatically attempts school ailments.",
+    "Health restoration is consumables-only; there is no Healing Power or passive Health regeneration.",
+    "Lab targets do not use consumables. Finite-consumable survival experiments are separate."
+  ]
+}

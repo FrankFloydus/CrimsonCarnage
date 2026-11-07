@@ -1,0 +1,77 @@
+[gd_scene format=3 uid="uid://bx6r2r5geskx"]
+
+[ext_resource type="Script" uid="uid://3ry3r8c72k06" path="res://player/first_person_controller.gd" id="1_controller"]
+[ext_resource type="Script" uid="uid://dqtstqyhulsqh" path="res://player/first_person_movement.gd" id="2_movement"]
+[ext_resource type="Script" uid="uid://c4420ury171pa" path="res://player/first_person_look.gd" id="3_look"]
+[ext_resource type="Resource" uid="uid://cc31xas73uelj" path="res://player/default_movement_settings.tres" id="4_movement_settings"]
+[ext_resource type="Resource" uid="uid://b3hofdexb4c6v" path="res://player/default_look_settings.tres" id="5_look_settings"]
+[ext_resource type="Script" uid="uid://mlnpvjmwxo2e" path="res://player/first_person_crouch.gd" id="6_crouch"]
+[ext_resource type="Resource" uid="uid://t406r5ht26s5" path="res://player/default_crouch_settings.tres" id="7_crouch_settings"]
+[ext_resource type="Script" uid="uid://diddh658ft18s" path="res://combat/attributes/actor_attributes.gd" id="8_attributes"]
+[ext_resource type="Script" path="res://combat/abilities/ability_system.gd" id="9_system"]
+[ext_resource type="Script" path="res://combat/abilities/ability_definition.gd" id="10_ability"]
+[ext_resource type="Resource" path="res://player/abilities/sprint.tres" id="11_sprint"]
+[ext_resource type="Resource" path="res://player/abilities/jump.tres" id="12_jump"]
+[ext_resource type="Resource" path="res://player/abilities/crouch.tres" id="13_crouch"]
+[ext_resource type="Resource" path="res://player/abilities/encumbered.tres" id="15_encumbered"]
+[ext_resource type="Script" path="res://combat/abilities/attribute_gameplay_event_rule.gd" id="16_attribute_event"]
+[ext_resource type="Resource" path="res://player/abilities/stamina_exhaustion.tres" id="17_exhaustion"]
+
+[sub_resource type="Resource" id="AttributeEvent_carry"]
+script = ExtResource("16_attribute_event")
+attribute = 39
+threshold_attribute = 38
+entered_event = &"Event.Carry.Overloaded"
+exited_event = &"Event.Carry.WithinCapacity"
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
+radius = 0.35
+height = 1.8
+
+[node name="FirstPersonController" type="CharacterBody3D" unique_id=223682386]
+process_physics_priority = -10
+max_slides = 8
+floor_snap_length = 0.3
+script = ExtResource("1_controller")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1243220061]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_player")
+
+[node name="Crouch" type="Node" parent="." unique_id=1880628811 node_paths=PackedStringArray("body", "collision", "eye")]
+script = ExtResource("6_crouch")
+body = NodePath("..")
+collision = NodePath("../CollisionShape3D")
+eye = NodePath("../Look")
+settings = ExtResource("7_crouch_settings")
+
+[node name="Movement" type="Node" parent="." unique_id=1238766472 node_paths=PackedStringArray("body", "attributes")]
+script = ExtResource("2_movement")
+body = NodePath("..")
+attributes = NodePath("../Attributes")
+settings = ExtResource("4_movement_settings")
+
+[node name="Look" type="Node3D" parent="." unique_id=794868390 node_paths=PackedStringArray("body")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.62, 0)
+script = ExtResource("3_look")
+body = NodePath("..")
+settings = ExtResource("5_look_settings")
+
+[node name="Camera3D" type="Camera3D" parent="Look" unique_id=897164582]
+current = true
+fov = 80.0
+far = 600.0
+
+[node name="Attributes" type="Node" parent="." unique_id=567281778]
+script = ExtResource("8_attributes")
+gameplay_event_rules = Array[ExtResource("16_attribute_event")]([SubResource("AttributeEvent_carry")])
+stamina_regeneration_blocked_tags = PackedStringArray("State.Movement.Sprinting", "State.Stamina.Exhausted")
+
+[node name="AbilitySystem" type="Node" parent="." unique_id=1312116492 node_paths=PackedStringArray("attributes", "actor_body")]
+script = ExtResource("9_system")
+attributes = NodePath("../Attributes")
+actor_body = NodePath("..")
+granted_abilities = Array[ExtResource("10_ability")]([ExtResource("11_sprint"), ExtResource("12_jump"), ExtResource("13_crouch"), ExtResource("15_encumbered"), ExtResource("17_exhaustion")])
+
+[connection signal="terrain_advanced" from="Movement" to="Look" method="advance_terrain"]
+[connection signal="terrain_reset" from="Movement" to="Look" method="clear_stair_smoothing"]
