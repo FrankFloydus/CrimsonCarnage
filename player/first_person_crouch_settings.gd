@@ -2,7 +2,13 @@ class_name FirstPersonCrouchSettings
 extends Resource
 ## Editable crouch input, stance dimensions, and visual transition; runtime state is per player.
 
-enum Mode { TOGGLE, ONE_SHOT }
+## Maps crouch input to a stance request.
+enum Mode {
+	## A press changes the requested stance. Releasing the input leaves it selected.
+	TOGGLE,
+	## Holding the input requests crouching. Releasing it requests standing when clearance permits.
+	ONE_SHOT,
+}
 
 ## Toggle changes stance on each press; One Shot crouches while the action is held.
 @export var mode: Mode = Mode.TOGGLE

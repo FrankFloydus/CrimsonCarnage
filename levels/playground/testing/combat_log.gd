@@ -83,20 +83,80 @@ static func format_event(event: Dictionary) -> String:
 			message = "%s cannot use %s: %s." % [
 				source, ability, str(event.get("reason", "requirements not met")),
 			]
+			if event.has("actor_tags"):
+				message += " Actor tags: %s." % ", ".join(event["actor_tags"])
+		&"cast_reserved":
+			message = "%s reserves %s for %s." % [source, _describe_resources(event), ability]
+		&"cast_spent", &"cast_refunded":
+			var verb := "spends" if event["type"] == &"cast_spent" else "recovers"
+			message = "%s %s %s for %s." % [source, verb, _describe_resources(event), ability]
+		&"cast_phase":
+			message = "%s: %s phase %s." % [source, ability, str(event.get("phase_key", ""))]
+		&"target_batch":
+			message = "%s: %s selected %d targets (%s)." % [
+				source, ability, int(event.get("target_count", 0)),
+				str(event.get("reason", &"complete")),
+			]
+		&"cast_ended":
+			message = "%s: %s ends (%s)." % [source, ability, str(event.get("reason", ""))]
 		&"hit_outcome":
 			var outcome := StringName(event.get("outcome", &""))
-			if outcome in [&"miss", &"resist"]:
-				message = "%s → %s: %s %s." % [source, target, ability, str(outcome).to_upper()]
+			message = "%s → %s: %s %s." % [source, target, ability, str(outcome).to_upper()]
 		&"damage":
 			message = "%s → %s: %s deals %.1f damage%s." % [
 				source, target, ability, float(event.get("amount", 0.0)),
 				" (CRITICAL)" if bool(event.get("is_critical", false)) else "",
 			]
+			var blocked := float(event.get("blocked_amount", 0.0))
+			var absorbed := float(event.get("absorbed_amount", 0.0))
+			var resisted := float(event.get("effective_resistance_percent", 0.0))
+			var armor := float(event.get("effective_armor", 0.0))
+			if blocked != 0.0 or absorbed != 0.0 or resisted != 0.0 or armor != 0.0:
+				message += " Armor %.1f, resistance %.1f%%, blocked %.1f, absorbed %.1f." % [
+					armor, resisted, blocked, absorbed,
+				]
 		&"effect_applied":
 			message = "%s gains %s from %s (%s)." % [target, effect, source, ability]
 		&"effect_removed":
-			message = "%s: %s ends." % [target, effect]
+			var reason := int(event.get("removal_reason", -1))
+			var reasons := GameplayEffectRuntime.RemovalReason.keys()
+			var label := str(reasons[reason]).to_lower() if reason >= 0 and reason < reasons.size() \
+					else "removed"
+			message = "%s: %s ends (%s)." % [target, effect, label]
+		&"status_rejected", &"effect_rejected":
+			message = "%s rejects %s (%s)." % [target, effect, str(event.get("outcome", ""))]
+		&"healing":
+			message = "%s: %s restores %.1f Health (%.1f overheal)." % [
+				target, ability, float(event.get("actual_restoration", 0.0)),
+				float(event.get("overheal", 0.0)),
+			]
+		&"resource":
+			var pool := AmountDefinition.pool_attribute(int(event.get("resource", -1)))
+			message = "%s: %s changes %s by %+.1f." % [
+				target, ability, CombatAttributes.display_name(pool),
+				float(event.get("actual_delta", 0.0)),
+			]
+		&"reaction_suppressed":
+			message = "%s reaction skipped (%s)." % [ability, str(event.get("reason", ""))]
 	if message.is_empty():
 		return ""
+	var root_id := int(event.get("root_execution_id", 0))
+	if root_id > 0:
+		message += " [cast %d" % root_id
+		for field in ["event_id", "parent_event_id", "handle"]:
+			var value := int(event.get(field, 0))
+			if value > 0:
+				message += ", %s %d" % [field.trim_suffix("_id"), value]
+		message += "]"
 	var timestamp := float(event.get("timestamp", 0.0))
 	return "[%02d:%05.2f] %s" % [int(timestamp / 60.0), fmod(timestamp, 60.0), message]
+
+
+static func _describe_resources(event: Dictionary) -> String:
+	var entries := PackedStringArray()
+	var resources: Dictionary = event.get("resources", {})
+	for attribute: int in resources:
+		entries.append("%.2f %s" % [resources[attribute], CombatAttributes.display_name(attribute)])
+	if event.get("reserved_charge", false):
+		entries.append("one charge")
+	return ", ".join(entries)

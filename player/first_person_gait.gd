@@ -2,7 +2,19 @@ class_name FirstPersonGait
 extends RefCounted
 ## Per-controller gait selection with held sprint and an exhaustion release requirement.
 
-enum Gait { RUN, WALK, SPRINT, CROUCH, CROUCH_WALK }
+## Movement profile selected after resolving input, stance, and sprint eligibility.
+enum Gait {
+	## Uses the ordinary standing run speed.
+	RUN,
+	## Applies the walking speed multiplier while standing.
+	WALK,
+	## Applies the sprint speed multiplier while sprint is held and available.
+	SPRINT,
+	## Applies the crouch speed multiplier while physically crouched.
+	CROUCH,
+	## Combines the walking and crouch speed multipliers.
+	CROUCH_WALK,
+}
 
 ## Effective gait after walking, crouching, and input capture have been resolved.
 var current_gait: Gait:

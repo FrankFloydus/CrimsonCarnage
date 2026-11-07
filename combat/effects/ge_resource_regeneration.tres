@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://divtubtmdgcq4" path="res://combat/effects/gameplay_effect_execution.gd" id="2_execution"]
 [ext_resource type="Script" uid="uid://d4adoca7qvqjo" path="res://combat/effects/calculations/resource_regeneration_execution.gd" id="3_regeneration"]
 [ext_resource type="Script" uid="uid://bmu4hnn0quf7l" path="res://combat/attributes/attribute_modifier.gd" id="4_m5rde"]
+[ext_resource type="Script" uid="uid://0pha8yyuqu58" path="res://combat/outcomes/reaction_definition.gd" id="5_m5rde"]
 
 [sub_resource type="Resource" id="RegenerationExecution"]
 script = ExtResource("3_regeneration")

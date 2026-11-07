@@ -58,7 +58,7 @@ func _end_fixture() -> void:
 func _test_spell_release() -> void:
 	_check(_system.try_activate(&"fireball"), "The Fireball fixture begins")
 	var cast := _system.get_active_cast(&"fireball")
-	var execution := cast.definition.execution as ProjectileCastExecution
+	var execution := cast.definition.execution as PhasedAbilityExecution
 	var clip := _animation.get_animation(execution.animation_name)
 	_close(_animation.get_playing_speed(), 1.0, "Spell playback uses its authored animation timing")
 	_system.advance_animation(FIREBALL_FIXTURE.RELEASE_TIME - 0.001)
@@ -85,7 +85,7 @@ func _test_sampled_cast_speed() -> void:
 	_system.attributes.set_base_value(CombatAttributes.Id.CAST_SPEED, 50.0)
 	_check(_system.try_activate(&"fireball"), "Fireball starts with increased Cast Speed")
 	var cast := _system.get_active_cast(&"fireball")
-	var execution := cast.definition.execution as ProjectileCastExecution
+	var execution := cast.definition.execution as PhasedAbilityExecution
 	var clip := _animation.get_animation(execution.animation_name)
 	var windup := FIREBALL_FIXTURE.RELEASE_TIME / 1.5
 	_close(_animation.get_playing_speed(), 1.5, "Fireball only samples Cast Speed")
@@ -122,7 +122,7 @@ func _test_near_muzzle_cover() -> void:
 	await physics_frame
 	_check(_system.try_activate(&"fireball"), "Close cover does not change cast eligibility")
 	var cast := _system.get_active_cast(&"fireball")
-	var execution := cast.definition.execution as ProjectileCastExecution
+	var execution := cast.definition.execution as PhasedAbilityExecution
 	_system.advance_animation(FIREBALL_FIXTURE.RELEASE_TIME + 0.001)
 	_check(cast.released and _projectile_count() == 0,
 			"A crosshair hit between the camera and muzzle blocks the projectile")
@@ -144,7 +144,7 @@ func _test_authored_cooldown() -> void:
 	_system.advance_animation(FIREBALL_FIXTURE.CLIP_LENGTH + 0.001)
 	_system.advance(FIREBALL_FIXTURE.COOLDOWN / 2.0)
 	_check(_system.get_active_cast(&"fireball") == null, "The action can finish before its cooldown")
-	_check(_system.get_activation_failure(&"fireball") == &"on_cooldown",
+	_check(_system.get_activation_failure(&"fireball") == &"no_charges",
 			"Animation completion does not bypass the remaining cooldown")
 	_close(_system.get_cooldown_remaining(&"fireball"), FIREBALL_FIXTURE.COOLDOWN / 2.0,
 			"Cooldown time advances independently of animation time")

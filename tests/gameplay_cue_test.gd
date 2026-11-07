@@ -100,8 +100,9 @@ func _test_effect_lifecycle(spec: GameplayEffectSpec, attributes: ActorAttribute
 	attributes.set_base_value(CombatAttributes.Id.MAX_HEALTH, 100.0)
 	attributes.set_base_value(CombatAttributes.Id.HEALTH, 100.0)
 	var instant := spec.settings.duplicate() as GameplayEffectDefinition
-	instant.base_magnitude = 12.0
-	instant.executions = [GameplayEffectDamageExecution.new()]
+	var execution := GameplayEffectDamageExecution.new()
+	execution.amount = AmountDefinition.fixed(12.0)
+	instant.executions = [execution]
 	_check(runtime.apply_effect(instant, spec.context) > 0 and events == [GameplayCueRouter.Event.EXECUTED],
 			"An instant effect dispatches only Executed")
 	if not payloads.is_empty():
@@ -109,7 +110,6 @@ func _test_effect_lifecycle(spec: GameplayEffectSpec, attributes: ActorAttribute
 				"An instant damage cue receives the actual applied damage")
 	events.clear()
 	var period := GameplayEffectDefinition.new()
-	period.kind = GameplayEffectDefinition.Kind.MODIFIERS
 	period.timing = GameplayEffectDefinition.Timing.INFINITE
 	period.period = 0.25
 	period.gameplay_cue_tags = spec.settings.gameplay_cue_tags
@@ -174,7 +174,6 @@ func _test_startup_scene_cue() -> void:
 	attributes.name = &"Attributes"
 	actor.add_child(attributes)
 	var effect := GameplayEffectDefinition.new()
-	effect.kind = GameplayEffectDefinition.Kind.MODIFIERS
 	effect.timing = GameplayEffectDefinition.Timing.INFINITE
 	effect.gameplay_cue_tags = PackedStringArray([String(CUE_TAG)])
 	var system := SYSTEM.new()

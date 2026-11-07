@@ -2,6 +2,7 @@ class_name GameplayCueRouter
 extends RefCounted
 ## Routes presentation-only cue events to actor-scoped callbacks and saved scenes.
 
+## Presentation notification sent for a committed effect lifetime or execution.
 enum Event {
 	## A retained cue became active.
 	ACTIVE,

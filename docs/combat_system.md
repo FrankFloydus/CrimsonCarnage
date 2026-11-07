@@ -65,7 +65,9 @@ One min/max roll is shared by a delivered hit's weapon components. A new deliver
 
 Physical attack animations fit the authored weapon cycle when a weapon source supplies one. The Attack Speed multiplier then scales that playback rate. Cast Speed scales spell animation playback. Method keys control release or contact, and the weapon coefficient still uses its authored base cycle.
 
-Generic explicit damage effects use `base_magnitude + applicable Power × power_coefficient` before target mitigation. The saved Fireball is a simple direct Magic/Fire payload. The [impact effect](../examples/fireball/fireball_impact.tres) owns base damage 5 and Power Coefficient 1.0. Starting Magic Power 20 gives 25 raw damage. The [ability](../examples/fireball/fireball.tres) owns Mana cost and cooldown.
+The effect's Gameplay Effect Damage Execution adds its semantic Amount to applicable Power × Power Coefficient before target mitigation. The saved Fireball is a direct Magic/Fire payload. Its impact execution has a fixed Amount of 5 and Power Coefficient of 1.0. Starting Magic Power of 20 gives 25 raw damage. The ability definition owns Mana cost and cooldown. [Fireball impact](../examples/fireball/fireball_impact.tres) · [Fireball ability](../examples/fireball/fireball.tres)
+
+An optional Damage Profile selects explicit defenses. It may use the live Armor curve and multiply independent, ordered percentage resistance stages drawn from the existing resistance attributes. Each stage authors its effective bounds and direct Spell Penetration eligibility. A nonlethal profile caps Health loss after mitigation, absorption and routing, leaving a living recipient with at least one Health when it started above that threshold. Damage without a profile uses the standard Combat 2.0 path.
 
 ## Attack Speed and Cast Speed
 
@@ -155,6 +157,8 @@ The ASC applies [GE_ResourceRegeneration](../combat/effects/ge_resource_regenera
 
 Movement Speed starts at **0% bonus**. The standard pipeline combines all modifiers and clamps the final value to **−100% to +25%**. Add Flat 20 gives +20%. Applying Increased Percent 20 to that bonus gives +24%, while an increased modifier alone leaves zero at zero. A raw +100% F3 override displays an effective +25%. The cap applies before gait multipliers, so the default 4 m/s baseline and 1.5× Sprint ratio yield 5 m/s Run and 7.5 m/s Sprint at the cap.
 
+A retained effect can select **Final Movement Percent** to multiply the entire speed after clamping the ordinary bonus. Enter `-50` to halve speed. An actor with +20% ordinary bonus and a 4 m/s baseline runs at 4.8 m/s before the slow and 2.4 m/s while it lasts. Independent slows and stacked copies multiply their factors. The operation uses a fixed value from −100 to 0 and applies only to Movement Speed.
+
 F3 displays the bonus percentage. The bonus starts at zero. The JSON keys `movement_speed_min_percent` and `movement_speed_max_percent` supply its bounds. Older rule data that omits the maximum uses the +25% default. **Movement → Settings → Movement Baseline → Normal Run Speed** owns the physical baseline. Movement computes `settings.normal_run_speed × max(0, 1 + final_bonus/100) × gait_ratio × encumbrance_factor`. At a 6 m/s baseline and no overload, 0% and +20% give 6 and 7.2 m/s normal running. Active identity 54 represents the bonus. Identity 27 remains retired.
 
 The saved player owns one ActorAttributes node, inherited by the caster example. Movement references it explicitly and reads the live attribute each step. AbilitySystem also uses that component; if its explicit reference is empty, startup resolves the sibling `Attributes` node, preserving the single actor source after an inherited-scene resave. Explicit valid references take precedence. It never stores another base-speed setting. Gait settings supply Walk ×0.5, Sprint ×1.5 and Crouch ×0.6; crouch-walk combines Walk and Crouch. At the default attribute the speeds remain 4/2/6/2.4/1.2 m/s for run/walk/sprint/crouch/crouch-walk. Jump/gravity/acceleration/braking/terrain remain independent settings.
@@ -177,7 +181,7 @@ The actor's carry rule publishes an enter event above capacity and an exit event
 
 ## Effects and delivery
 
-Player and AI share ASC activation. Ability definitions select GDScript execution behavior, cost and cooldown effects, and tag rules. The prototype grants Fireball directly. It owns `State.CombatAction` while the cast runs, and its animation release event goes to the activation that started playback. Locomotion can overlap the cast. The projectile carries the outgoing effect spec prepared at release.
+Player and AI share ASC activation. Ability definitions author phases, actions, resource payments, charge pools and tag rules. The prototype grants Fireball directly. It owns `State.CombatAction` while the cast runs, and its animation release event goes to the activation that started playback. Locomotion can overlap the cast. The projectile delivers the payload prepared at release. [Ability composition](ability_composition.md)
 
 Gameplay Effects support instant, finite and infinite lifetimes, optional periodic executions, tag requirements and configurable stacking. An effect can grant tags without stat modifiers. Retained definitions can opt into HUD presentation with an icon and a Buff or Debuff category. Fireball's impact is instant.
 

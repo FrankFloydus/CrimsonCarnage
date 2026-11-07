@@ -1,0 +1,106 @@
+[gd_resource type="Resource" script_class="AbilityDefinition" format=3]
+
+[ext_resource type="Script" path="res://combat/abilities/ability_definition.gd" id="1_ability"]
+[ext_resource type="Script" path="res://combat/abilities/composition/phased_ability_execution.gd" id="2_execution"]
+[ext_resource type="Script" path="res://combat/abilities/composition/ability_targeting_definition.gd" id="3_targeting"]
+[ext_resource type="Script" path="res://combat/abilities/composition/ability_delivery_definition.gd" id="4_delivery"]
+[ext_resource type="Script" path="res://combat/abilities/composition/ability_phase_definition.gd" id="5_phase"]
+[ext_resource type="Script" path="res://combat/abilities/composition/ability_action_definition.gd" id="6_action"]
+[ext_resource type="Script" path="res://combat/abilities/composition/ability_apply_effects_action.gd" id="7_apply"]
+[ext_resource type="Script" path="res://combat/effects/gameplay_effect_definition.gd" id="8_effect"]
+[ext_resource type="Script" path="res://combat/effects/gameplay_effect_execution.gd" id="9_effect_execution"]
+[ext_resource type="Script" path="res://combat/effects/gameplay_effect_damage_execution.gd" id="10_damage"]
+[ext_resource type="Script" path="res://combat/amounts/amount_definition.gd" id="11_amount"]
+[ext_resource type="Script" path="res://combat/attributes/attribute_modifier.gd" id="12_modifier"]
+[ext_resource type="Script" path="res://combat/effects/status_profile.gd" id="13_status"]
+[ext_resource type="Script" path="res://combat/outcomes/reaction_definition.gd" id="14_reaction"]
+[ext_resource type="Script" path="res://combat/outcomes/combat_reaction_action.gd" id="15_reaction_action"]
+[ext_resource type="Script" path="res://combat/outcomes/restore_resource_reaction_action.gd" id="16_restore"]
+
+[sub_resource type="Resource" id="Targeting_disk"]
+script = ExtResource("3_targeting")
+shape = 5
+radius = 20.0
+half_height = 2.0
+allegiance = 1
+
+[sub_resource type="Resource" id="Delivery_area_burst"]
+script = ExtResource("4_delivery")
+kind = 3
+
+[sub_resource type="Resource" id="Amount_damage"]
+script = ExtResource("11_amount")
+fixed_amount = 20.0
+
+[sub_resource type="Resource" id="Execution_damage"]
+script = ExtResource("10_damage")
+amount = SubResource("Amount_damage")
+
+[sub_resource type="Resource" id="Effect_damage"]
+script = ExtResource("8_effect")
+effect_id = &"Effect.Fixture.BloodLash.Impact"
+display_name = "Blood Lash impact"
+damage_type = 1
+magic_school = 4
+executions = Array[ExtResource("9_effect_execution")]([SubResource("Execution_damage")])
+
+[sub_resource type="Resource" id="Modifier_slow"]
+script = ExtResource("12_modifier")
+attribute = 54
+operation = 5
+value = -50.0
+
+[sub_resource type="Resource" id="Status_slow"]
+script = ExtResource("13_status")
+category = 2
+immunity_tags = PackedStringArray("State.Immune.Slow")
+
+[sub_resource type="Resource" id="Effect_slow"]
+script = ExtResource("8_effect")
+effect_id = &"Effect.Fixture.BloodLash.Slow"
+display_name = "Blood Lash slow"
+timing = 1
+duration = 2.0
+granted_tags = PackedStringArray("State.Slowed")
+status_profile = SubResource("Status_slow")
+modifiers = Array[ExtResource("12_modifier")]([SubResource("Modifier_slow")])
+stacking_type = 2
+stack_limit_count = 1
+
+[sub_resource type="Resource" id="Action_impact"]
+script = ExtResource("7_apply")
+effects = Array[ExtResource("8_effect")]([SubResource("Effect_damage"), SubResource("Effect_slow")])
+
+[sub_resource type="Resource" id="Phase_impact"]
+script = ExtResource("5_phase")
+event_key = &"delivery.impact"
+actions = Array[ExtResource("6_action")]([SubResource("Action_impact")])
+
+[sub_resource type="Resource" id="Amount_max_mana"]
+script = ExtResource("11_amount")
+source = 2
+percentage = 1.0
+timing = 1
+
+[sub_resource type="Resource" id="ReactionAction_restore"]
+script = ExtResource("16_restore")
+amount = SubResource("Amount_max_mana")
+
+[sub_resource type="Resource" id="Reaction_mana_per_enemy"]
+script = ExtResource("14_reaction")
+once_policy = 1
+actions = Array[ExtResource("15_reaction_action")]([SubResource("ReactionAction_restore")])
+
+[sub_resource type="Resource" id="Execution_composition"]
+script = ExtResource("2_execution")
+targeting = SubResource("Targeting_disk")
+delivery = SubResource("Delivery_area_burst")
+phases = Array[ExtResource("5_phase")]([SubResource("Phase_impact")])
+
+[resource]
+script = ExtResource("1_ability")
+ability_id = &"fixture_blood_lash"
+display_name = "Blood Lash"
+ability_tags = PackedStringArray("Ability.Spell", "Ability.Fixture.BloodLash")
+execution = SubResource("Execution_composition")
+reactions = Array[ExtResource("14_reaction")]([SubResource("Reaction_mana_per_enemy")])

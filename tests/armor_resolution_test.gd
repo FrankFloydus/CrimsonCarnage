@@ -44,7 +44,7 @@ func _physical(amount: float = 100.0) -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
 	effect.executions = [GameplayEffectDamageExecution.new()]
 	effect.effect_id = &"Effect.ArmorPhysicalTest"
-	effect.base_magnitude = amount
+	effect.get_damage_execution().amount = AmountDefinition.fixed(amount)
 	return effect
 
 
@@ -66,7 +66,6 @@ func _modifier(attribute: int, amount: float,
 
 func _buff() -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
-	effect.kind = GameplayEffectDefinition.Kind.MODIFIERS
 	effect.timing = GameplayEffectDefinition.Timing.DURATION
 	effect.duration = 2.0
 	effect.modifiers = [_modifier(CombatAttributes.Id.STRENGTH, 10.0)]

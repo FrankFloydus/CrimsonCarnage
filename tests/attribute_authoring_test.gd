@@ -20,7 +20,8 @@ func _initialize() -> void:
 func _run() -> void:
 	preload("res://tests/combat_rules_fixture.gd").install()
 	_test_inspector_catalogue()
-	_test_ability_commit_effect_selectors()
+	_test_ability_commitment_selectors()
+	_test_dependent_inspector_fields()
 	_test_stale_metadata_refresh()
 	_test_modifier_roundtrips()
 	_test_legacy_movement_identity_roundtrip()
@@ -78,13 +79,79 @@ func _test_inspector_catalogue() -> void:
 			"Optional selectors add only the None sentinel")
 
 
-func _test_ability_commit_effect_selectors() -> void:
+func _test_ability_commitment_selectors() -> void:
 	var ability := AbilityDefinition.new()
-	for property: StringName in [&"cost_effect", &"cooldown_effect"]:
-		var metadata := _property(ability, property)
-		_check(metadata.get("hint") == PROPERTY_HINT_RESOURCE_TYPE
-				and metadata.get("hint_string") == "GameplayEffectDefinition",
-				"%s selects an editable Gameplay Effect resource" % property)
+	var pool := _property(ability, &"charge_pool")
+	_check(pool.get("hint") == PROPERTY_HINT_RESOURCE_TYPE
+			and pool.get("hint_string") == "AbilityChargeDefinition",
+			"The cooldown selects an editable charge profile")
+	var amount := _property(AbilityResourceCost.new(), &"amount")
+	_check(amount.get("hint") == PROPERTY_HINT_RESOURCE_TYPE
+			and amount.get("hint_string") == "AmountDefinition",
+			"Resource payment selects an editable semantic amount")
+
+
+func _test_dependent_inspector_fields() -> void:
+	var cost := AbilityResourceCost.new()
+	cost.maximum = 31.0
+	var refreshes := [0]
+	cost.property_list_changed.connect(func() -> void: refreshes[0] += 1)
+	_check(_hidden_and_stored(cost, &"maximum"), "Fixed spending hides the variable maximum")
+	cost.spend_up_to_maximum = true
+	_check(_visible(cost, &"maximum") and cost.maximum == 31.0 and refreshes[0] == 1,
+			"Variable spending refreshes the Inspector and exposes the saved cap")
+
+	var charge := AbilityChargeDefinition.new()
+	charge.parallel_recharge = true
+	_check(_hidden_and_stored(charge, &"parallel_recharge") and not charge.uses_parallel_recharge(),
+			"A one-charge cooldown hides and ignores the parallel option")
+	charge.capacity = 2
+	_check(_visible(charge, &"parallel_recharge") and charge.uses_parallel_recharge(),
+			"Adding a charge brings back the saved parallel option")
+
+	var policy := AbilityInterruptionPolicy.new()
+	_check(_hidden_and_stored(policy, &"compatible_channels"),
+			"Compatibility hides until a channel is occupied")
+	policy.occupied_channels = PackedStringArray(["offense"])
+	_check(_visible(policy, &"compatible_channels"), "Occupied channels can declare compatibility")
+	policy.interrupt_windup = false
+	policy.interrupt_channel = false
+	_check(_hidden_and_stored(policy, &"cancel_on_tags")
+			and _hidden_and_stored(policy, &"interruptible_by_action"),
+			"Interruption options hide when no phase can be interrupted")
+	policy.interrupt_channel = true
+	_check(_visible(policy, &"cancel_on_tags") and _visible(policy, &"interruptible_by_action"),
+			"An interruptible phase shows its policy controls")
+
+	var modifier := AttributeModifier.new()
+	modifier.capture_coefficient = 2.0
+	_check(_hidden_and_stored(modifier, &"capture_coefficient"),
+			"Fixed modifiers hide the coefficient for captured attributes")
+	modifier.capture_attribute = CombatAttributes.Id.STRENGTH
+	_check(_visible(modifier, &"capture_coefficient") and modifier.capture_coefficient == 2.0,
+			"Selecting a captured attribute shows its saved coefficient")
+	modifier.attribute = CombatAttributes.Id.MOVEMENT_SPEED
+	modifier.value = -50.0
+	modifier.operation = AttributeModifier.Operation.FINAL_MOVEMENT_PERCENT
+	_check(_hidden_and_stored(modifier, &"capture_attribute")
+			and _hidden_and_stored(modifier, &"capture_coefficient")
+			and _hidden_and_stored(modifier, &"set_by_caller_tag"),
+			"Final Movement Percent hides settings for a dynamic magnitude")
+	_check(GameplayEffectDefinition.is_valid_modifier(modifier, false)
+			and modifier.get_magnitude(null, PackedStringArray()) == -50.0,
+			"Final Movement Percent uses its fixed value while the captured attribute is dormant")
+	modifier.operation = AttributeModifier.Operation.ADD
+	_check(_visible(modifier, &"capture_coefficient") and modifier.capture_coefficient == 2.0,
+			"Returning to an ordinary modifier restores its capture settings")
+
+
+func _hidden_and_stored(resource: Resource, property_name: StringName) -> bool:
+	var usage := int(_property(resource, property_name).get("usage", 0))
+	return (usage & PROPERTY_USAGE_EDITOR) == 0 and (usage & PROPERTY_USAGE_STORAGE) != 0
+
+
+func _visible(resource: Resource, property_name: StringName) -> bool:
+	return (int(_property(resource, property_name).get("usage", 0)) & PROPERTY_USAGE_EDITOR) != 0
 
 
 func _test_stale_metadata_refresh() -> void:

@@ -3,7 +3,9 @@ extends RefCounted
 ## Stable serialized identities for Combat 2.0 attributes.
 ## Retired numeric slots remain reserved so older assets cannot silently change meaning.
 
+## Persistent attribute identifiers used by saved modifiers and the actor stat catalogue.
 enum Id {
+	## The optional selector has no attribute.
 	NONE = -1,
 	## Current Health points, bounded by maximum Health.
 	HEALTH = 0,
@@ -31,13 +33,17 @@ enum Id {
 	STAMINA_REGEN = 11,
 	## Mana restored per second while alive, including while casting.
 	MANA_REGEN = 12,
-	DAMAGE_BONUS = 13, # Retired Combat 1.0 identity.
+	## Reserved ID for the retired generic damage bonus.
+	DAMAGE_BONUS = 13,
 	## Percentage chance for a successful direct damage hit to critically strike.
 	CRITICAL_CHANCE = 14,
 	## Uncapped bonus percentage points added to the base critical damage multiplier.
 	CRITICAL_DAMAGE = 15,
-	CRITICAL_MULTIPLIER = 15, # Legacy spelling of the same bonus-stat identity.
+	## Alias of Critical Damage for the original saved bonus-stat ID.
+	CRITICAL_MULTIPLIER = 15,
+	## Reserved ID for retired Healing Power.
 	HEALING_POWER = 16,
+	## Reserved slot with no active attribute.
 	RESERVED_17 = 17,
 	## Nonnegative, uncapped rating that reduces incoming Physical damage with diminishing returns.
 	ARMOR = 18,
@@ -45,28 +51,45 @@ enum Id {
 	FIRE_RESISTANCE = 19,
 	## Percentage reduction to incoming Cold magic damage; negative values amplify it.
 	COLD_RESISTANCE = 20,
+	## Original alias of the active Cold Resistance ID.
 	FROST_RESISTANCE = 20,
 	## Percentage reduction to incoming Lightning magic damage; negative values amplify it.
 	LIGHTNING_RESISTANCE = 21,
 	## Percentage reduction to incoming Necrotic magic damage; negative values amplify it.
 	NECROTIC_RESISTANCE = 22,
+	## Original alias of the active Necrotic Resistance ID.
 	POISON_RESISTANCE = 22,
+	## Reserved ID for retired block efficiency.
 	BLOCK_EFFICIENCY = 23,
+	## Reserved ID for the retired Resolve attribute.
 	RESOLVE = 24,
+	## Alias of the retired Resolve ID.
 	CONTROL_DURATION_REDUCTION = 24,
+	## Reserved ID for the old rating-based Attack Speed model.
 	ATTACK_SPEED_RATING = 25,
+	## Reserved ID for the old rating-based Cast Speed model.
 	CAST_SPEED_RATING = 26,
-	LEGACY_MOVEMENT_SPEED_PERCENT = 27, # Retired identity; does not participate in the live bonus stat.
+	## Reserved ID for the old movement percentage. Active Movement Speed uses ID 54.
+	LEGACY_MOVEMENT_SPEED_PERCENT = 27,
+	## Reserved ID for the retired Stamina cost discount.
 	STAMINA_COST_EFFICIENCY = 28,
+	## Reserved ID for the retired Mana cost discount.
 	MANA_COST_EFFICIENCY = 29,
+	## Reserved ID for retired cooldown-recovery scaling.
 	COOLDOWN_RECOVERY = 30,
+	## Reserved ID for the old Spell Power attribute. Active Magic Power uses ID 42.
 	SPELL_POWER = 31,
+	## Reserved ID for the old Attack Power attribute. Active Physical Power uses ID 53.
 	ATTACK_POWER = 32,
+	## Reserved ID for retired Evasion.
 	EVASION = 33,
 	## Percentage of target Armor ignored by outgoing Physical damage before its reduction curve.
 	ARMOR_PENETRATION = 34,
+	## Reserved ID for the retired elemental damage bonus.
 	ELEMENTAL_DAMAGE = 35,
+	## Reserved slot with no active attribute.
 	RESERVED_36 = 36,
+	## Reserved ID for the retired Block Chance attribute.
 	BLOCK_CHANCE = 37,
 	## Inventory weight threshold for encumbrance, supplied by Strength and authored bonuses.
 	CARRY_CAPACITY = 38,
@@ -74,20 +97,31 @@ enum Id {
 	CARRIED_WEIGHT = 39,
 	## Action-specific flat rating from the governing primary and applicable modifiers.
 	ACCURACY_RATING = 40,
-	HIT_RATING = 40, # Legacy spelling of the same saved slot.
+	## Original alias of the shared active Accuracy Rating ID.
+	HIT_RATING = 40,
+	## Reserved ID for retired spell-only Accuracy.
 	SPELL_ACCURACY = 41,
 	## Flat offensive power for spells, supplied by Intellect and authored bonuses.
 	MAGIC_POWER = 42,
+	## Reserved ID for the retired global periodic damage bonus.
 	DOT_DAMAGE = 43,
 	## Percentage reduction to incoming Void magic damage; negative values amplify it.
 	VOID_RESISTANCE = 44,
+	## Reserved ID for the retired actor-wide absorption pool.
 	ABSORPTION = 45,
+	## Reserved ID for the retired actor-wide absorption capacity.
 	MAX_ABSORPTION = 46,
+	## Reserved ID for the retired actor-wide burn chance.
 	BURN_CHANCE = 47,
+	## Reserved ID for the retired actor-wide chill chance.
 	CHILL_CHANCE = 48,
+	## Reserved ID for the retired actor-wide lightning ailment chance.
 	ZAPPED_CHANCE = 49,
+	## Reserved ID for the retired actor-wide bleed chance.
 	BLEED_CHANCE = 50,
+	## Reserved ID for the retired actor-wide poison chance.
 	POISON_CHANCE = 51,
+	## Reserved ID for the retired actor-wide Void ailment chance.
 	HOLLOWED_CHANCE = 52,
 	## Flat physical power for the relevant Finesse or Brutality attack.
 	PHYSICAL_POWER = 53,

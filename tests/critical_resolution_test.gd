@@ -48,7 +48,7 @@ func _damage(amount: float = 100.0, magic: bool = false) -> GameplayEffectDefini
 	var effect := GameplayEffectDefinition.new()
 	effect.executions = [GameplayEffectDamageExecution.new()]
 	effect.effect_id = &"Effect.CriticalTest"
-	effect.base_magnitude = amount
+	effect.get_damage_execution().amount = AmountDefinition.fixed(amount)
 	if magic:
 		effect.damage_type = GameplayEffectDefinition.DamageType.MAGIC
 	return effect
@@ -64,7 +64,6 @@ func _modifier(attribute: int, value: float, tags: PackedStringArray) -> Attribu
 
 func _buff() -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
-	effect.kind = GameplayEffectDefinition.Kind.MODIFIERS
 	effect.timing = GameplayEffectDefinition.Timing.DURATION
 	effect.duration = 2.0
 	effect.modifiers = [_modifier(CombatAttributes.Id.STRENGTH, 10.0, PackedStringArray())]
@@ -293,7 +292,7 @@ func _test_independent_seeded_streams() -> void:
 	var context := _context(source, false)
 	context.bind_weapon(weapon)
 	var effect := _damage(0.0)
-	effect.use_weapon_damage = true
+	effect.get_damage_execution().use_weapon_damage = true
 	var first := _system(51379)
 	var second := _system(51379)
 	source.set_base_value(CombatAttributes.Id.CRITICAL_CHANCE, 0.0)
@@ -336,9 +335,10 @@ func _test_reentrant_payload_keeps_resolved_critical() -> void:
 			"A callback cannot overwrite the outer Hit's resolved critical")
 	_check(damages.size() == 3, "The reentrant test emits the outer two components and nested damage once each")
 	if damages.size() == 3:
-		_check(damages[0].is_critical and not damages[1].is_critical and damages[2].is_critical,
-				"Nested normal damage does not clear the remaining outer component's critical flag")
-		_near(damages[2].critical_multiplier, 2.0, "Changing source bonuses mid-payload does not recompute the outer critical")
+		_check(damages[0].is_critical and damages[1].is_critical and not damages[2].is_critical,
+				"Both outer components commit before a nested normal hit reaches the event queue")
+		_near(damages[1].critical_multiplier, 2.0,
+				"Both components keep the critical multiplier resolved for their shared hit")
 	_near(target.get_value(CombatAttributes.Id.HEALTH), 999590.0,
 			"Reentrant damage uses outer two-hundred plus nested ten plus outer two-hundred")
 	_check(not context.is_critical, "Reentrant resolution does not contaminate the reusable source context")

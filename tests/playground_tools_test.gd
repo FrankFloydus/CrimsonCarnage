@@ -50,8 +50,8 @@ func _run() -> void:
 		return
 	var fireball := _tools.player_system.get_ability_definition(&"fireball")
 	var impact := fireball.execution.get_effect_payload()[0]
-	impact.base_magnitude = 5.0
-	impact.power_coefficient = 1.0
+	impact.get_damage_execution().amount = AmountDefinition.fixed(5.0)
+	impact.get_damage_execution().power_coefficient = 1.0
 	_tools.show_attributes(0)
 	await _test_attribute_editors()
 	_test_attribute_filter()
@@ -534,7 +534,6 @@ func _test_clearing_capacity_effect_restores_encumbrance() -> void:
 	modifier.value = 100.0
 	var effect := GameplayEffectDefinition.new()
 	effect.effect_id = &"Effect.TestExtraCarryCapacity"
-	effect.kind = GameplayEffectDefinition.Kind.MODIFIERS
 	effect.timing = GameplayEffectDefinition.Timing.DURATION
 	effect.modifiers = [modifier]
 	var handle := system.effects.apply_effect(effect, system.create_effect_context())
@@ -738,10 +737,10 @@ func _test_real_damage_statistics() -> void:
 	_check(definition != null and context != null, "The saved Fireball grant provides a spell context")
 	if definition == null or context == null:
 		return
-	var payload: Array[GameplayEffectDefinition] = definition.execution.get("on_hit_effects")
-	var numeric_effect := payload[0].duplicate(true) as GameplayEffectDefinition
-	numeric_effect.base_magnitude = 0.0
-	numeric_effect.power_coefficient = 1.0
+	var payload: Array[GameplayEffectDefinition] = definition.execution.get_effect_payload()
+	var numeric_effect := payload[0].duplicate_deep(Resource.DEEP_DUPLICATE_ALL) as GameplayEffectDefinition
+	numeric_effect.get_damage_execution().amount = null
+	numeric_effect.get_damage_execution().power_coefficient = 1.0
 	payload = [numeric_effect]
 	var result := _tools.dummy.ability_system.receive_hit(context, payload)
 	_check(result.outcome == &"hit", "An actual delivery succeeds through the shared runtime")
@@ -783,7 +782,7 @@ func _test_failed_outcome_statistics() -> void:
 	_target.restore_resources()
 	var system := _tools.player_system
 	var definition := system.get_ability_definition(&"fireball")
-	var payload: Array[GameplayEffectDefinition] = definition.execution.get("on_hit_effects")
+	var payload: Array[GameplayEffectDefinition] = definition.execution.get_effect_payload()
 	var context := system.create_ability_context(&"fireball")
 	var before := _target.get_value(CombatAttributes.Id.HEALTH)
 	var result := _tools.dummy.ability_system.receive_hit(context, payload, 1.0)
@@ -827,10 +826,10 @@ func _test_critical_statistics() -> void:
 	var system := _tools.player_system
 	var definition := system.get_ability_definition(&"fireball")
 	var context := system.create_ability_context(&"fireball")
-	var payload: Array[GameplayEffectDefinition] = definition.execution.get("on_hit_effects")
-	var numeric_effect := payload[0].duplicate(true) as GameplayEffectDefinition
-	numeric_effect.base_magnitude = 0.0
-	numeric_effect.power_coefficient = 1.0
+	var payload: Array[GameplayEffectDefinition] = definition.execution.get_effect_payload()
+	var numeric_effect := payload[0].duplicate_deep(Resource.DEEP_DUPLICATE_ALL) as GameplayEffectDefinition
+	numeric_effect.get_damage_execution().amount = null
+	numeric_effect.get_damage_execution().power_coefficient = 1.0
 	payload = [numeric_effect]
 	var components: Array[GameplayEffectDefinition] = [payload[0], payload[0]]
 	var result := _tools.dummy.ability_system.receive_hit(context, components)

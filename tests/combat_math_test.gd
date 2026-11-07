@@ -31,8 +31,8 @@ func _test_flat_primary_damage() -> void:
 	var target := _actor()
 	var physical := GameplayEffectDefinition.new()
 	physical.executions = [GameplayEffectDamageExecution.new()]
-	physical.base_magnitude = 100.0
-	physical.power_coefficient = 0.5
+	physical.get_damage_execution().amount = AmountDefinition.fixed(100.0)
+	physical.get_damage_execution().power_coefficient = 0.5
 	for strength: float in [0.0, 10.0, 50.0, 100.0, 138.0]:
 		source.set_base_value(CombatAttributes.Id.STRENGTH, strength)
 		var context := GameplayEffectContext.capture(source, GameplayTagSet.new(),
@@ -47,8 +47,8 @@ func _test_flat_primary_damage() -> void:
 	var magic := GameplayEffectDefinition.new()
 	magic.executions = [GameplayEffectDamageExecution.new()]
 	magic.damage_type = GameplayEffectDefinition.DamageType.MAGIC
-	magic.base_magnitude = 10.0
-	magic.power_coefficient = 1.5
+	magic.get_damage_execution().amount = AmountDefinition.fixed(10.0)
+	magic.get_damage_execution().power_coefficient = 1.5
 	for intellect: float in [0.0, 10.0, 30.0, 100.0, 10000.0]:
 		source.set_base_value(CombatAttributes.Id.INTELLECT, intellect)
 		var context := GameplayEffectContext.capture(source, GameplayTagSet.new(),
@@ -71,8 +71,8 @@ func _test_seeded_damage() -> void:
 		var tags := PackedStringArray()
 		var effect := GameplayEffectDefinition.new()
 		effect.executions = [GameplayEffectDamageExecution.new()]
-		effect.base_magnitude = base
-		effect.power_coefficient = coefficient
+		effect.get_damage_execution().amount = AmountDefinition.fixed(base)
+		effect.get_damage_execution().power_coefficient = coefficient
 		match iteration % 3:
 			0:
 				source.set_base_value(CombatAttributes.Id.STRENGTH, primary)
@@ -99,8 +99,8 @@ func _test_target_health_independence() -> void:
 	var effect := GameplayEffectDefinition.new()
 	effect.executions = [GameplayEffectDamageExecution.new()]
 	effect.damage_type = GameplayEffectDefinition.DamageType.MAGIC
-	effect.base_magnitude = 25.0
-	effect.power_coefficient = 2.0
+	effect.get_damage_execution().amount = AmountDefinition.fixed(25.0)
+	effect.get_damage_execution().power_coefficient = 2.0
 	var context := GameplayEffectContext.capture(source, GameplayTagSet.new(),
 			PackedStringArray(["Ability.Spell"]))
 	for capacity: float in [1.0, 200.0, 2000.0, 1000000.0]:

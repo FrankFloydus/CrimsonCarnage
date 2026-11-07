@@ -115,8 +115,9 @@ func _test_periodic_damage() -> void:
 	definition.duration = 0.5
 	definition.period = 0.25
 	definition.execute_periodic_on_application = false
-	definition.base_magnitude = 6.0
-	definition.executions = [GameplayEffectDamageExecution.new()]
+	var execution := GameplayEffectDamageExecution.new()
+	execution.amount = AmountDefinition.fixed(6.0)
+	definition.executions = [execution]
 	definition.granted_tags = PackedStringArray(["State.Test.PeriodicDamage"])
 	var damage_context := definition.get_context_tags(PackedStringArray(["Ability.Spell", "Damage.Direct"]))
 	_check(damage_context.has("Damage.Periodic") and not damage_context.has("Damage.Direct"),
@@ -134,10 +135,11 @@ func _test_periodic_damage() -> void:
 	_near(_target.get_value(CombatAttributes.Id.HEALTH), 10.0, "Periodic damage waits for its first tick")
 	_effects.advance(0.5)
 	_near(_target.get_value(CombatAttributes.Id.HEALTH), 0.0, "Both due periodic calculations change Health")
-	_check(events.size() == 4 and events[1].type == &"damage" and events[2].type == &"damage"
+	_check(events.size() == 5 and events[1].type == &"damage" and events[2].type == &"damage"
 			and events[1].is_periodic and events[2].is_periodic and events[1].amount == 6.0
-			and events[2].amount == 4.0 and events[3].type == &"effect_removed",
-			"Periodic damage reports actual loss before a synchronous removal, without reapplication")
+			and events[2].amount == 4.0 and events[3].type == &"effect_removed"
+			and events[4].type == &"kill" and events[4].health_damage == 4.0,
+			"Periodic damage reports actual loss, synchronous cleanup and one committed kill")
 	_check(not _effects.has_retained_effect(handle) and not _tags.has_tag(&"State.Test.PeriodicDamage"),
 			"The lethal period cleans up its active handle and tag")
 

@@ -8,18 +8,27 @@ var settings: GameplayEffectDefinition
 var level: float = 1.0
 ## Requested stack count on an outgoing spec and the aggregate count on an active copy.
 var stack_count: int = 1
+## Per-application capture for semantic effect magnitudes.
+var amount_snapshot: AmountEvaluationContext
+## Optional amount supplied by the effect-owned behavior that accumulated it.
+var accumulated_amount: float = NAN
+## Per-target resistance changes this application's lifetime without changing shared settings.
+var duration_scale: float = 1.0
+## Per-target resistance changes this application's authored modifier magnitude only.
+var modifier_scale: float = 1.0
 var duration: float:
 	get:
-		return settings.duration if settings != null else 0.0
+		return settings.duration * duration_scale if settings != null \
+				and settings.timing == GameplayEffectDefinition.Timing.DURATION else 0.0
 var period: float:
 	get:
-		return settings.period if settings != null else 0.0
+		return settings.get_effective_period() if settings != null else 0.0
 var modifiers: Array[AttributeModifier]:
 	get:
 		return settings.modifiers if settings != null else []
 var executions: Array[GameplayEffectExecution]:
 	get:
-		return settings.executions if settings != null else []
+		return settings.executions if settings != null and settings.executes_calculations() else []
 
 var _set_by_caller: Dictionary[StringName, float] = {}
 
@@ -54,5 +63,24 @@ func copy_for_application() -> GameplayEffectSpec:
 	result.definition = definition
 	result.level = level
 	result.stack_count = stack_count
+	result.amount_snapshot = amount_snapshot
+	result.accumulated_amount = accumulated_amount
+	result.duration_scale = duration_scale
+	result.modifier_scale = modifier_scale
+	result._set_by_caller = _set_by_caller.duplicate()
+	return result
+
+
+## Executes using the active instance's frozen settings with an independent timing context.
+func copy_for_execution() -> GameplayEffectSpec:
+	var result := GameplayEffectSpec.new(null, context)
+	result.definition = definition
+	result.settings = settings
+	result.level = level
+	result.stack_count = stack_count
+	result.amount_snapshot = amount_snapshot
+	result.accumulated_amount = accumulated_amount
+	result.duration_scale = duration_scale
+	result.modifier_scale = modifier_scale
 	result._set_by_caller = _set_by_caller.duplicate()
 	return result

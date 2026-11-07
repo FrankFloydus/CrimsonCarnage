@@ -3,7 +3,15 @@ class_name GrantAbilityEffectComponent
 extends GameplayEffectComponent
 ## Grants one ordinary ability spec while an effect is active.
 
-enum RemovalPolicy { CANCEL_IMMEDIATELY, REMOVE_ON_END, KEEP_ABILITY }
+## Determines what happens to the effect's granted ability when the effect stops contributing.
+enum RemovalPolicy {
+	## Cancels any running use and revokes the grant immediately.
+	CANCEL_IMMEDIATELY,
+	## Prevents new activations and revokes the grant when its current cast ends.
+	REMOVE_ON_END,
+	## Leaves the ability grant in place after this effect ends.
+	KEEP_ABILITY,
+}
 
 ## Shared ability to grant on the effect target while this retained effect is active.
 @export var ability: AbilityDefinition

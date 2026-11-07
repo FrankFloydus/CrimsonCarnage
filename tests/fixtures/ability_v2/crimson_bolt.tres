@@ -1,0 +1,108 @@
+[gd_resource type="Resource" script_class="AbilityDefinition" format=3]
+
+[ext_resource type="Script" path="res://combat/abilities/ability_definition.gd" id="1_ability"]
+[ext_resource type="Script" path="res://combat/abilities/composition/phased_ability_execution.gd" id="2_execution"]
+[ext_resource type="Script" path="res://combat/abilities/composition/ability_targeting_definition.gd" id="3_targeting"]
+[ext_resource type="Script" path="res://combat/abilities/composition/ability_delivery_definition.gd" id="4_delivery"]
+[ext_resource type="Script" path="res://combat/abilities/composition/ability_phase_definition.gd" id="5_phase"]
+[ext_resource type="Script" path="res://combat/abilities/composition/ability_action_definition.gd" id="6_action"]
+[ext_resource type="Script" path="res://combat/abilities/composition/ability_apply_effects_action.gd" id="7_apply"]
+[ext_resource type="Script" path="res://combat/effects/gameplay_effect_definition.gd" id="8_effect"]
+[ext_resource type="Script" path="res://combat/effects/gameplay_effect_execution.gd" id="9_effect_execution"]
+[ext_resource type="Script" path="res://combat/effects/gameplay_effect_damage_execution.gd" id="10_damage"]
+[ext_resource type="Script" path="res://combat/amounts/amount_definition.gd" id="11_amount"]
+[ext_resource type="Script" path="res://combat/outcomes/reaction_definition.gd" id="12_reaction"]
+[ext_resource type="Script" path="res://combat/outcomes/combat_reaction_action.gd" id="13_reaction_action"]
+[ext_resource type="Script" path="res://combat/outcomes/heal_reaction_action.gd" id="14_heal"]
+[ext_resource type="PackedScene" path="res://tests/fixtures/ability_v2/crimson_bolt_projectile.tscn" id="15_projectile"]
+
+[sub_resource type="Resource" id="Targeting_aim"]
+script = ExtResource("3_targeting")
+shape = 3
+origin = 1
+max_range = 30.0
+allegiance = 1
+
+[sub_resource type="Resource" id="Delivery_projectile"]
+script = ExtResource("4_delivery")
+kind = 2
+projectile_scene = ExtResource("15_projectile")
+
+[sub_resource type="Resource" id="Amount_direct_hit"]
+resource_name = "DirectHitDamage (fixture)"
+script = ExtResource("11_amount")
+fixed_amount = 40.0
+
+[sub_resource type="Resource" id="Execution_impact"]
+script = ExtResource("10_damage")
+amount = SubResource("Amount_direct_hit")
+
+[sub_resource type="Resource" id="Amount_lifesteal"]
+script = ExtResource("11_amount")
+source = 4
+percentage = 10.0
+
+[sub_resource type="Resource" id="ReactionAction_heal"]
+script = ExtResource("14_heal")
+amount = SubResource("Amount_lifesteal")
+
+[sub_resource type="Resource" id="Reaction_lifesteal"]
+script = ExtResource("12_reaction")
+trigger = 1
+timing_filter = 1
+actions = Array[ExtResource("13_reaction_action")]([SubResource("ReactionAction_heal")])
+
+[sub_resource type="Resource" id="Effect_impact"]
+script = ExtResource("8_effect")
+effect_id = &"Effect.Fixture.CrimsonBolt.Impact"
+display_name = "Crimson Bolt impact"
+damage_type = 1
+magic_school = 4
+executions = Array[ExtResource("9_effect_execution")]([SubResource("Execution_impact")])
+reactions = Array[ExtResource("12_reaction")]([SubResource("Reaction_lifesteal")])
+
+[sub_resource type="Resource" id="Amount_tick"]
+script = ExtResource("11_amount")
+fixed_amount = 20.0
+
+[sub_resource type="Resource" id="Execution_tick"]
+script = ExtResource("10_damage")
+amount = SubResource("Amount_tick")
+
+[sub_resource type="Resource" id="Effect_periodic"]
+script = ExtResource("8_effect")
+effect_id = &"Effect.Fixture.CrimsonBolt.Periodic"
+display_name = "Crimson Bolt periodic"
+damage_type = 1
+magic_school = 4
+timing = 1
+duration = 5.0
+period = 1.0
+execute_periodic_on_application = false
+snapshot_source = true
+tick_at_end = true
+stacking_type = 1
+stack_limit_count = 1
+executions = Array[ExtResource("9_effect_execution")]([SubResource("Execution_tick")])
+
+[sub_resource type="Resource" id="Action_impact"]
+script = ExtResource("7_apply")
+effects = Array[ExtResource("8_effect")]([SubResource("Effect_impact"), SubResource("Effect_periodic")])
+
+[sub_resource type="Resource" id="Phase_impact"]
+script = ExtResource("5_phase")
+event_key = &"delivery.impact"
+actions = Array[ExtResource("6_action")]([SubResource("Action_impact")])
+
+[sub_resource type="Resource" id="Execution_composition"]
+script = ExtResource("2_execution")
+targeting = SubResource("Targeting_aim")
+delivery = SubResource("Delivery_projectile")
+phases = Array[ExtResource("5_phase")]([SubResource("Phase_impact")])
+
+[resource]
+script = ExtResource("1_ability")
+ability_id = &"fixture_crimson_bolt"
+display_name = "Crimson Bolt"
+ability_tags = PackedStringArray("Ability.Spell", "Ability.Fixture.CrimsonBolt")
+execution = SubResource("Execution_composition")

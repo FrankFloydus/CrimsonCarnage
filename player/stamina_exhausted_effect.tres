@@ -1,16 +1,22 @@
 [gd_resource type="Resource" script_class="GameplayEffectDefinition" format=3 uid="uid://jdc4yu6ouogr"]
 
+[ext_resource type="Script" uid="uid://bv4s17m8a60kn" path="res://combat/effects/gameplay_effect_component.gd" id="1_0f7ug"]
 [ext_resource type="Script" uid="uid://u8g6qa0kpol1" path="res://combat/effects/gameplay_effect_definition.gd" id="1_effect"]
 [ext_resource type="Script" uid="uid://bmu4hnn0quf7l" path="res://combat/attributes/attribute_modifier.gd" id="1_vtrh0"]
+[ext_resource type="Script" uid="uid://divtubtmdgcq4" path="res://combat/effects/gameplay_effect_execution.gd" id="2_7sxv8"]
+[ext_resource type="Script" uid="uid://0pha8yyuqu58" path="res://combat/outcomes/reaction_definition.gd" id="4_3tc64"]
 
 [resource]
 script = ExtResource("1_effect")
 effect_id = &"Effect.Stamina.Exhausted"
 display_name = "Stamina Exhausted"
-kind = 2
 timing = 1
+asset_tags = PackedStringArray()
+gameplay_cue_tags = PackedStringArray()
 damage_tags = PackedStringArray()
 granted_tags = PackedStringArray("State.Stamina.Exhausted", "State.Stamina.RecoveryBlocked")
 required_target_tags = PackedStringArray()
 blocked_target_tags = PackedStringArray("State.Dead")
 duration = 2.0
+ongoing_required_target_tags = PackedStringArray()
+ongoing_blocked_target_tags = PackedStringArray()

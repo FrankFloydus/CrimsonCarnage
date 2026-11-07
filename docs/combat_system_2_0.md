@@ -488,7 +488,7 @@ Activation requires Current Mana ≥ Authored Mana cost
 
 **Limits:** minimum **0**; maximum **current Maximum Mana**.
 
-Mana regenerates periodically while alive, including during casting. A miss or resist does not refund the cost effect. Mana Efficiency is outside the foundation.
+Mana regenerates periodically while alive, including during casting. A miss or resist leaves the committed Mana payment spent. Mana Efficiency is outside the foundation.
 
 ## Resource regeneration
 

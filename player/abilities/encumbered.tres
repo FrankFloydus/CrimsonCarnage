@@ -1,13 +1,44 @@
 [gd_resource type="Resource" script_class="AbilityDefinition" format=3 uid="uid://bgg63mokeo6ci"]
 
 [ext_resource type="Script" uid="uid://db5x8t6k0figb" path="res://combat/abilities/ability_definition.gd" id="1_ability"]
-[ext_resource type="Script" uid="uid://k2gkunvxjbi3" path="res://combat/abilities/maintain_effect_execution.gd" id="2_execution"]
+[ext_resource type="Script" uid="uid://bfag3jxu1uk47" path="res://combat/abilities/composition/ability_condition_definition.gd" id="1_eqhpd"]
+[ext_resource type="Script" uid="uid://da7q4e3l7vcpj" path="res://combat/abilities/composition/phased_ability_execution.gd" id="2_execution"]
 [ext_resource type="Resource" uid="uid://bnudustbua0bc" path="res://player/encumbered_effect.tres" id="3_effect"]
+[ext_resource type="Script" uid="uid://bh8p0tphj8h15" path="res://combat/abilities/composition/ability_delivery_definition.gd" id="4_delivery"]
+[ext_resource type="Script" uid="uid://dlawnr5gjwl84" path="res://combat/abilities/composition/ability_phase_definition.gd" id="5_phase"]
+[ext_resource type="Script" uid="uid://c0kslm6jp2og4" path="res://combat/abilities/composition/ability_action_definition.gd" id="6_action"]
+[ext_resource type="Script" uid="uid://dmwmurfftvm1a" path="res://combat/abilities/composition/ability_maintain_effect_action.gd" id="7_maintain"]
+[ext_resource type="Script" uid="uid://dfnckjgya4d0v" path="res://combat/abilities/composition/ability_finish_action.gd" id="8_finish"]
+[ext_resource type="Script" uid="uid://0pha8yyuqu58" path="res://combat/outcomes/reaction_definition.gd" id="9_f6wvv"]
+[ext_resource type="Script" uid="uid://lj1m7cwhno0o" path="res://combat/abilities/ability_resource_cost.gd" id="10_0e04y"]
+
+[sub_resource type="Resource" id="Delivery_none"]
+script = ExtResource("4_delivery")
+kind = 8
+
+[sub_resource type="Resource" id="Action_maintain"]
+script = ExtResource("7_maintain")
+effect = ExtResource("3_effect")
+
+[sub_resource type="Resource" id="Phase_start"]
+script = ExtResource("5_phase")
+event_key = &"ability.cast_started"
+actions = Array[ExtResource("6_action")]([SubResource("Action_maintain")])
+
+[sub_resource type="Resource" id="Action_finish"]
+script = ExtResource("8_finish")
+
+[sub_resource type="Resource" id="Phase_finish"]
+script = ExtResource("5_phase")
+event_key = &"Event.Carry.WithinCapacity"
+synchronous_gameplay_event = true
+actions = Array[ExtResource("6_action")]([SubResource("Action_finish")])
 
 [sub_resource type="Resource" id="Execution_encumbered"]
 script = ExtResource("2_execution")
-effect = ExtResource("3_effect")
-end_on_event_tag = &"Event.Carry.WithinCapacity"
+cast_mode = 5
+delivery = SubResource("Delivery_none")
+phases = Array[ExtResource("5_phase")]([SubResource("Phase_start"), SubResource("Phase_finish")])
 
 [resource]
 script = ExtResource("1_ability")
@@ -15,9 +46,7 @@ ability_id = &"encumbered"
 display_name = "Encumbered"
 ability_tags = PackedStringArray("Ability.Status.Encumbered")
 required_tags = PackedStringArray()
-blocked_tags = PackedStringArray("State.Dead")
 activation_tags = PackedStringArray()
-interruption_tags = PackedStringArray("State.Dead")
 cancel_ability_tags = PackedStringArray()
 block_ability_tags = PackedStringArray()
 activation_event_tag = &"Event.Carry.Overloaded"

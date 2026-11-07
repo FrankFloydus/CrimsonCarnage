@@ -2,7 +2,7 @@ extends SceneTree
 ## Exercises saved locomotion abilities, Fireball and the load status on one player.
 ## Run headless with --fixed-fps 60 --script res://tests/player_ability_integration_test.gd.
 
-class EventProbeExecution extends MaintainEffectExecution:
+class EventProbeExecution extends PhasedAbilityExecution:
 	func handle_gameplay_event(cast: AbilityCast, event_tag: StringName, payload: Dictionary) -> void:
 		super.handle_gameplay_event(cast, event_tag, payload)
 		match event_tag:
@@ -208,7 +208,7 @@ func _test_sprint_through_fireball() -> void:
 		return
 	_check(cast == _system.get_animation_cast() and sprint == _system.get_active_cast(SPRINT),
 			"Fireball owns the animation player while Sprint keeps its separate cast")
-	var execution := cast.definition.execution as ProjectileCastExecution
+	var execution := cast.definition.execution as PhasedAbilityExecution
 	var clip := _animation.get_animation(execution.animation_name)
 	_check(clip != null, "The saved caster has the animation configured by Fireball")
 	if clip == null:
@@ -320,6 +320,14 @@ func _test_startup_and_revive_encumbrance() -> void:
 			and _system.tags.get_count(ENCUMBERED_TAG) == 1
 			and _system.effects.active_count(ENCUMBERED.effect_id) == 1,
 			"A saved actor with starting overload activates Encumbered without a later attribute change")
+	var initial_cast := _system.get_active_cast(ENCUMBERED_ACTION)
+	var original_handle: Variant = _system.effects.get_retained_effects().find_key(ENCUMBERED)
+	_system.clear_transient_effects()
+	_check(original_handle is int and _system.get_active_cast(ENCUMBERED_ACTION) == initial_cast
+			and not _system.effects.has_retained_effect(int(original_handle))
+			and _system.effects.active_count(ENCUMBERED.effect_id) == 1
+			and _system.tags.get_count(ENCUMBERED_TAG) == 1,
+			"Clearing transient effects replaces the maintained handle on the same active cast")
 	var other_handle := _system.effects.apply_effect(ENCUMBERED, _system.create_effect_context())
 	_check(_system.effects.has_retained_effect(other_handle) and _system.tags.get_count(ENCUMBERED_TAG) == 2,
 			"Two instances of the same effect may each own the counted tag")
@@ -396,12 +404,22 @@ func _test_reusable_gameplay_events() -> void:
 	var finish_event := &"Event.TestAction.Exited"
 	var effect := GameplayEffectDefinition.new()
 	effect.effect_id = &"Effect.TestEventAction"
-	effect.kind = GameplayEffectDefinition.Kind.MODIFIERS
-	effect.timing = GameplayEffectDefinition.Timing.DURATION
+	effect.timing = GameplayEffectDefinition.Timing.INFINITE
 	effect.granted_tags = PackedStringArray([String(test_tag)])
+	var maintain := AbilityMaintainEffectAction.new()
+	maintain.effect = effect
+	var start := AbilityPhaseDefinition.new()
+	start.event_key = &"ability.cast_started"
+	start.actions = [maintain]
+	var finish := AbilityPhaseDefinition.new()
+	finish.event_key = finish_event
+	finish.synchronous_gameplay_event = true
+	finish.actions = [AbilityFinishAction.new()]
 	var execution := EventProbeExecution.new()
-	execution.effect = effect
-	execution.end_on_event_tag = finish_event
+	execution.cast_mode = PhasedAbilityExecution.CastMode.SUSTAINED
+	execution.delivery = AbilityDeliveryDefinition.new()
+	execution.delivery.kind = AbilityDeliveryDefinition.Kind.NONE
+	execution.phases = [start, finish]
 	var definition := AbilityDefinition.new()
 	definition.ability_id = test_action
 	definition.ability_tags = PackedStringArray(["Ability.Status.TestEventAction"])
@@ -429,7 +447,7 @@ func _test_reusable_gameplay_events() -> void:
 	_system.send_gameplay_event(&"Event.TestAction.Queue")
 	_check(cast != null and cast.data.get("event_order") == [0, 42, 43],
 			"Nested gameplay events reach the active execution in order after the current callback finishes")
-	_system.send_gameplay_event(finish_event)
+	_system.send_gameplay_event(&"Event.TestAction.Exited.Child")
 	_check(cast != null and cast.finished and _system.get_active_cast(test_action) == null
 			and _system.tags.get_count(test_tag) == 0,
 			"The authored finish event ends the action and releases its effect")

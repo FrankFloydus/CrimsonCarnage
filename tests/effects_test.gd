@@ -71,7 +71,9 @@ func _damage(amount: float) -> GameplayEffectDefinition:
 	var definition := GameplayEffectDefinition.new()
 	definition.effect_id = &"Effect.TestDamage"
 	definition.display_name = "Test damage"
-	definition.base_magnitude = amount
+	var execution := GameplayEffectDamageExecution.new()
+	execution.amount = AmountDefinition.fixed(amount)
+	definition.executions = [execution]
 	definition.damage_type = GameplayEffectDefinition.DamageType.MAGIC
 	return definition
 
@@ -89,7 +91,6 @@ func _buff(duration: float = 2.0) -> GameplayEffectDefinition:
 	var definition := GameplayEffectDefinition.new()
 	definition.effect_id = &"Effect.Empowered"
 	definition.display_name = "Empowered"
-	definition.kind = GameplayEffectDefinition.Kind.MODIFIERS
 	definition.timing = GameplayEffectDefinition.Timing.DURATION
 	definition.duration = duration
 	definition.modifiers = [_modifier(CombatAttributes.Id.MAGIC_POWER, 50.0)]
@@ -105,7 +106,7 @@ func _test_direct_damage_and_telemetry() -> void:
 	var events: Array[Dictionary] = []
 	runtime.combat_event.connect(func(event: Dictionary) -> void: events.append(event))
 	var definition := _damage(30.0)
-	definition.power_coefficient = 0.5
+	definition.get_damage_execution().power_coefficient = 0.5
 	var mana := target.get_value(CombatAttributes.Id.MANA)
 	var stamina := target.get_value(CombatAttributes.Id.STAMINA)
 	var handle := runtime.apply_effect(definition, _context(source))
@@ -224,6 +225,7 @@ func _test_requirements_and_invalid_payloads() -> void:
 	_check(not runtime.can_apply_effect(definition), "Invalid authored duration is rejected")
 	var invalid := _buff()
 	invalid.timing = GameplayEffectDefinition.Timing.INSTANT
+	invalid.modifiers[0].value = NAN
 	var payload: Array[GameplayEffectDefinition] = [null, invalid, _damage(10.0)]
 	var result := runtime.apply_hit_payload(payload, _context(actor), 0.0)
 	_check(result.applied_effects == 1, "A delivered payload counts only accepted effects")

@@ -17,11 +17,6 @@ class WaitingExecution extends AbilityExecution:
 		cast.data[&"cancelled"] = cancelled
 
 
-class DeferredCommitExecution extends WaitingExecution:
-	func should_commit_on_activation() -> bool:
-		return false
-
-
 class PlaybackExecution extends AbilityExecution:
 	func get_animation_name() -> StringName:
 		return &"shared_playback"
@@ -37,7 +32,7 @@ class PlaybackExecution extends AbilityExecution:
 		else:
 			cast.data[&"unexpected_event"] = event_name
 
-const ABILITY_EFFECTS = preload("res://tests/ability_effect_fixture.gd")
+const COMMITMENT = preload("res://tests/ability_commit_fixture.gd")
 
 var _checks: int = 0
 var _failures: int = 0
@@ -87,11 +82,12 @@ func _waiting_ability(id: StringName) -> AbilityDefinition:
 	var ability := AbilityDefinition.new()
 	ability.ability_id = id
 	ability.execution = WaitingExecution.new()
-	ability.cost_effect = ABILITY_EFFECTS.make_cost(CombatAttributes.Id.MANA, 12.0)
-	ability.cooldown_effect = ABILITY_EFFECTS.make_cooldown("Cooldown.%s" % id, 2.0)
+	ability.resource_costs = [COMMITMENT.make_cost(AmountDefinition.Pool.MANA, 12.0)]
+	ability.charge_pool = COMMITMENT.make_cooldown(2.0)
 	ability.activation_tags = PackedStringArray(["State.ContractAction", "State.CombatAction"])
-	ability.blocked_tags = PackedStringArray(["State.Dead", "State.CombatAction"])
-	ability.interruption_tags = PackedStringArray(["State.ContractInterrupt", "State.Dead"])
+	ability.interruption_policy = AbilityInterruptionPolicy.new()
+	ability.interruption_policy.activation_blockers = PackedStringArray(["State.CombatAction"])
+	ability.interruption_policy.cancel_on_tags = PackedStringArray(["State.ContractInterrupt"])
 	return ability
 
 
@@ -134,16 +130,15 @@ func _test_activation_cost_cooldown_and_tags() -> void:
 func _test_spec_cost_magnitudes() -> void:
 	var system := _fixture()
 	var ability := _waiting_ability(&"dynamic_cost")
-	var debit := ability.cost_effect.modifiers[0]
-	debit.set_by_caller_tag = &"Data.Test.ManaCost"
-	debit.capture_attribute = CombatAttributes.Id.INTELLECT
-	debit.capture_coefficient = -0.5
-	var magnitudes: Dictionary[StringName, float] = {&"Data.Test.ManaCost": -6.0}
-	var handle := system.grant_ability_spec(ability, 1, null, 0, magnitudes)
+	var amount := ability.resource_costs[0].amount
+	amount.source = AmountDefinition.Source.STAT_PERCENT
+	amount.stat = CombatAttributes.Id.INTELLECT
+	amount.percentage = 110.0
+	var handle := system.grant_ability_spec(ability)
 	system.attributes.set_base_value(CombatAttributes.Id.INTELLECT, 10.0)
 	system.attributes.set_base_value(CombatAttributes.Id.MANA, 10.0)
 	_check(system.get_activation_failure_for_spec(handle) == &"insufficient_resource",
-			"Eligibility resolves both the caller magnitude and the captured attribute")
+			"Eligibility evaluates the authored percentage of the source stat")
 	system.attributes.set_base_value(CombatAttributes.Id.MANA, 11.0)
 	_check(system.try_activate_spec(handle), "The exact resolved dynamic cost can commit")
 	_near(system.attributes.get_value(CombatAttributes.Id.MANA), 0.0,
@@ -154,10 +149,11 @@ func _test_shared_cooldown_and_deferred_commit() -> void:
 	var system := _fixture()
 	var deferred := _waiting_ability(&"deferred")
 	var followup := _waiting_ability(&"followup")
-	deferred.execution = DeferredCommitExecution.new()
-	followup.cooldown_effect = ABILITY_EFFECTS.make_cooldown("Cooldown.deferred", 3.0)
-	var additional_cost := ABILITY_EFFECTS.make_cost(CombatAttributes.Id.STAMINA, 5.0)
-	deferred.cost_effect.modifiers.append(additional_cost.modifiers[0])
+	deferred.interruption_policy.cost_timing = AbilityInterruptionPolicy.CommitTiming.ON_RELEASE
+	deferred.interruption_policy.cooldown_timing = AbilityInterruptionPolicy.CommitTiming.ON_RELEASE
+	deferred.charge_pool = COMMITMENT.make_cooldown(2.0, &"fixture_shared")
+	followup.charge_pool = COMMITMENT.make_cooldown(2.0, &"fixture_shared")
+	deferred.resource_costs.append(COMMITMENT.make_cost(AmountDefinition.Pool.STAMINA, 5.0))
 	system.grant_ability(deferred)
 	system.grant_ability(followup)
 	_check(system.try_activate(deferred.ability_id), "An execution can defer commit until a later event")
@@ -165,6 +161,7 @@ func _test_shared_cooldown_and_deferred_commit() -> void:
 	if cast == null:
 		return
 	_near(system.attributes.get_value(CombatAttributes.Id.MANA), 100.0, "Activation alone does not pay a deferred cost")
+	cast.phase = AbilityCast.Phase.RELEASE
 	system.attributes.set_base_value(CombatAttributes.Id.STAMINA, 4.0)
 	_check(not cast.commit(), "Deferred commit rechecks all current pool costs")
 	_near(system.attributes.get_value(CombatAttributes.Id.MANA), 100.0, "A rejected multi-pool cost pays nothing")
@@ -172,24 +169,25 @@ func _test_shared_cooldown_and_deferred_commit() -> void:
 	system.attributes.set_base_value(CombatAttributes.Id.STAMINA, 5.0)
 	_check(cast.commit() and cast.commit(), "Repeated commit calls cannot apply the same cast's effects twice")
 	_near(system.attributes.get_value(CombatAttributes.Id.MANA), 88.0, "A successful commit pays Mana once")
-	_near(system.attributes.get_value(CombatAttributes.Id.STAMINA), 0.0, "The same effect pays the Stamina cost")
+	_near(system.attributes.get_value(CombatAttributes.Id.STAMINA), 0.0, "The same commit pays the Stamina cost")
 	cast.finish()
-	_check(system.get_activation_failure(followup.ability_id) == &"on_cooldown",
-			"Different ability definitions can share a granted cooldown tag")
-	_near(system.get_cooldown_remaining(followup.ability_id), 2.0, "The cooldown query reads the applied effect's remaining time")
+	_check(system.get_activation_failure(followup.ability_id) == &"no_charges",
+			"Different ability definitions can reserve charges from one group")
+	_near(system.get_cooldown_remaining(followup.ability_id), 2.0,
+			"The cooldown query reads the shared pool's recharge clock")
 	system.advance(2.01)
-	_check(system.get_activation_failure(followup.ability_id).is_empty(), "Expiry releases the shared cooldown tag")
+	_check(system.get_activation_failure(followup.ability_id).is_empty(), "Recharge restores the shared charge")
 	var reentrant := _fixture()
 	var interrupted := _waiting_ability(&"cost_changed_at_commit")
-	var cooldown_tag := StringName(interrupted.cooldown_effect.granted_tags[0])
 	reentrant.tags.changed.connect(func(tag: StringName, present: bool) -> void:
-		if tag == cooldown_tag and present:
+		if tag == &"State.CombatAction" and present:
 			reentrant.attributes.set_base_value(CombatAttributes.Id.MANA, 1.0))
 	reentrant.grant_ability(interrupted)
 	_check(not reentrant.try_activate(interrupted.ability_id),
-			"Commit fails if a synchronous cooldown listener makes the cost unaffordable")
-	_check(not reentrant.tags.has_tag(cooldown_tag) and reentrant.get_active_cast(interrupted.ability_id) == null,
-			"A failed commit releases its tentative cooldown effect and action ownership")
+			"Commit fails if a synchronous activation listener makes the cost unaffordable")
+	_check(reentrant.get_available_charges(interrupted.ability_id) == 1
+			and reentrant.get_active_cast(interrupted.ability_id) == null,
+			"A failed commit releases its reserved charge and action ownership")
 	_near(reentrant.attributes.get_value(CombatAttributes.Id.MANA), 1.0, "A failed commit never debits an unaffordable cost")
 
 
@@ -215,7 +213,7 @@ func _test_independent_grant_specs() -> void:
 	_check(first_cast.grant_spec.source_object == first_source
 			and second_cast.grant_spec.source_object == second_source,
 			"Each activation can inspect its grant's source object")
-	var effect := ABILITY_EFFECTS.make_cost(CombatAttributes.Id.MANA, 1.0)
+	var effect := GameplayEffectDefinition.new()
 	_check(first_cast.make_effect_spec(effect).level == 3 and second_cast.make_effect_spec(effect).level == 7,
 			"Outgoing effect specs use the grant's level")
 	_check(system.get_active_cast(definition.ability_id) == first_cast,
@@ -263,11 +261,11 @@ func _test_independent_activation_lifetimes() -> void:
 	var attack := _waiting_ability(&"attack")
 	var other_attack := _waiting_ability(&"other_attack")
 	var sprint := _waiting_ability(&"sprint")
-	sprint.blocked_tags = PackedStringArray(["State.Encumbered"])
-	sprint.interruption_tags = PackedStringArray(["State.Encumbered"])
+	sprint.interruption_policy.activation_blockers = PackedStringArray(["State.Encumbered"])
+	sprint.interruption_policy.cancel_on_tags = PackedStringArray(["State.Encumbered"])
 	sprint.activation_tags = PackedStringArray(["State.Sprinting"])
-	sprint.cost_effect = null
-	sprint.cooldown_effect = null
+	sprint.resource_costs.clear()
+	sprint.charge_pool = null
 	for definition: AbilityDefinition in [attack, other_attack, sprint]:
 		system.grant_ability(definition)
 	_check(system.try_activate(sprint.ability_id) and system.get_animation_cast() == null,
@@ -380,7 +378,7 @@ func _test_cancelled_animation_frame_cannot_transfer_ownership() -> void:
 func _test_reentrant_interruption() -> void:
 	var system := _fixture()
 	var ability := _waiting_ability(&"interrupted_at_start")
-	ability.cooldown_effect = null
+	ability.charge_pool = null
 	var observed: Array[AbilityCast] = []
 	system.ability_started.connect(func(id: StringName) -> void:
 		observed.append(system.get_active_cast(id))
@@ -393,25 +391,25 @@ func _test_reentrant_interruption() -> void:
 			"Synchronous cancellation leaves no active cast or leaked action tag")
 	var dying := _fixture()
 	var sacrifice := _waiting_ability(&"health_cost")
-	sacrifice.cost_effect = ABILITY_EFFECTS.make_cost(
-			CombatAttributes.Id.HEALTH, dying.attributes.get_value(CombatAttributes.Id.HEALTH))
+	sacrifice.resource_costs = [COMMITMENT.make_cost(
+			AmountDefinition.Pool.HEALTH, dying.attributes.get_value(CombatAttributes.Id.HEALTH))]
 	dying.grant_ability(sacrifice)
 	_check(not dying.try_activate(sacrifice.ability_id), "A lethal resource cost prevents execution from starting")
 	_check(dying.tags.has_tag(&"State.Dead") and dying.get_active_cast(sacrifice.ability_id) == null,
 			"Lethal costs preserve ordinary death cleanup")
 	_check(not dying.tags.has_tag(&"State.CombatAction"), "Cancellation during cost payment releases the action lock")
-	sacrifice.blocked_tags = PackedStringArray()
+	sacrifice.interruption_policy.activation_blockers.clear()
 	_check(dying.get_activation_failure(sacrifice.ability_id) == &"actor_dead",
 			"A dead actor cannot bypass the lifecycle guard by removing optional blocked tags")
 	var invalid := _fixture()
 	var malformed := _waiting_ability(&"invalid_numbers")
 	invalid.grant_ability(malformed)
-	malformed.cost_effect.modifiers[0].value = NAN
-	_check(invalid.get_activation_failure(malformed.ability_id) == &"invalid_cost_effect",
+	malformed.resource_costs[0].amount.fixed_amount = NAN
+	_check(invalid.get_activation_failure(malformed.ability_id) == &"invalid_resource_cost",
 			"Nonfinite authored costs are rejected before changing current resources")
-	malformed.cost_effect = null
-	malformed.cooldown_effect.duration = INF
-	_check(invalid.get_activation_failure(malformed.ability_id) == &"invalid_cooldown_effect",
+	malformed.resource_costs.clear()
+	malformed.charge_pool.recharge_seconds = INF
+	_check(invalid.get_activation_failure(malformed.ability_id) == &"invalid_charge_pool",
 			"Nonfinite authored cooldowns cannot corrupt the action clock")
 
 
@@ -430,7 +428,7 @@ func _test_explicit_connected_payload() -> void:
 	weapon.base_attack_cycle = 1.0
 	var effect := GameplayEffectDefinition.new()
 	effect.executions = [GameplayEffectDamageExecution.new()]
-	effect.use_weapon_damage = true
+	effect.get_damage_execution().use_weapon_damage = true
 	var context := source.create_effect_context(PackedStringArray(["Ability.Attack"]))
 	context.bind_weapon(weapon)
 	var all_hits := true
@@ -455,7 +453,7 @@ func _test_explicit_connected_payload() -> void:
 	var magic := GameplayEffectDefinition.new()
 	magic.executions = [GameplayEffectDamageExecution.new()]
 	magic.damage_type = GameplayEffectDefinition.DamageType.MAGIC
-	magic.base_magnitude = 5.0
+	magic.get_damage_execution().amount = AmountDefinition.fixed(5.0)
 	target.receive_hit(source.create_effect_context(PackedStringArray(["Ability.Spell"])), [magic])
 	_check(target.effects.active_count() == 0, "Magic hits apply only their explicit payload and never create Burn")
 
@@ -472,7 +470,6 @@ func _test_modifier_lifetime() -> void:
 	more.operation = AttributeModifier.Operation.MORE_PERCENT
 	more.value = 20.0
 	var effect := GameplayEffectDefinition.new()
-	effect.kind = GameplayEffectDefinition.Kind.MODIFIERS
 	effect.timing = GameplayEffectDefinition.Timing.DURATION
 	effect.duration = 3.0
 	effect.modifiers = [modifier, increased, more]
@@ -514,19 +511,32 @@ func _test_invalid_projectile_and_payload_reject_before_commit() -> void:
 	system.get_parent().add_child(animation_player)
 	system.animation_player = animation_player
 	var effect := GameplayEffectDefinition.new()
-	var execution := ProjectileCastExecution.new()
+	var damage := GameplayEffectDamageExecution.new()
+	damage.amount = AmountDefinition.fixed(10.0)
+	effect.executions = [damage]
+	var execution := PhasedAbilityExecution.new()
+	execution.cast_mode = PhasedAbilityExecution.CastMode.ANIMATION
 	execution.animation_name = &"cast_fireball"
 	execution.release_event = &"release"
-	execution.on_hit_effects = [effect]
+	execution.targeting = AbilityTargetingDefinition.new()
+	execution.targeting.shape = AbilityTargetingDefinition.Shape.POINT
+	execution.targeting.origin = AbilityTargetingDefinition.Origin.SOCKET
+	execution.delivery = AbilityDeliveryDefinition.new()
+	execution.delivery.kind = AbilityDeliveryDefinition.Kind.PROJECTILE
+	var action := AbilityApplyEffectsAction.new()
+	action.effects = [effect]
+	var impact := AbilityPhaseDefinition.new()
+	impact.actions = [action]
+	execution.phases = [impact]
 	var valid_root := AbilityProjectile.new()
-	execution.projectile_scene = PackedScene.new()
-	_check(execution.projectile_scene.pack(valid_root) == OK, "A projectile root is a valid fixture")
+	execution.delivery.projectile_scene = PackedScene.new()
+	_check(execution.delivery.projectile_scene.pack(valid_root) == OK, "A projectile root is a valid fixture")
 	valid_root.free()
 	var ability := AbilityDefinition.new()
 	ability.ability_id = &"validated_projectile"
 	ability.ability_tags = PackedStringArray(["Ability.Spell"])
-	ability.cost_effect = ABILITY_EFFECTS.make_cost(CombatAttributes.Id.MANA, 17.0)
-	ability.cooldown_effect = ABILITY_EFFECTS.make_cooldown("Cooldown.ValidatedProjectile", 5.0)
+	ability.resource_costs = [COMMITMENT.make_cost(AmountDefinition.Pool.MANA, 17.0)]
+	ability.charge_pool = COMMITMENT.make_cooldown(5.0)
 	ability.execution = execution
 	ability.activation_tags = PackedStringArray(["State.CombatAction"])
 	system.grant_ability(ability)
@@ -547,7 +557,7 @@ func _test_invalid_projectile_and_payload_reject_before_commit() -> void:
 	var invalid_scene := PackedScene.new()
 	_check(invalid_scene.pack(wrong_root) == OK, "A non-projectile scene is a valid PackedScene fixture")
 	wrong_root.free()
-	execution.projectile_scene = invalid_scene
+	execution.delivery.projectile_scene = invalid_scene
 	var orphan_count := Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)
 	_check(system.get_activation_failure(ability.ability_id) == &"invalid_projectile_root",
 			"A PackedScene with the wrong root is rejected during preflight")

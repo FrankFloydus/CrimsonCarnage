@@ -35,7 +35,6 @@ func _run() -> void:
 	var immunity := ImmunityEffectComponent.new()
 	immunity.blocked_asset_tags = PackedStringArray(["Effect.Test.Recovery"])
 	var shield := GameplayEffectDefinition.new()
-	shield.kind = GameplayEffectDefinition.Kind.MODIFIERS
 	shield.timing = GameplayEffectDefinition.Timing.INFINITE
 	shield.ongoing_required_target_tags = PackedStringArray(["State.Test.Shielded"])
 	shield.components.append(immunity)
@@ -59,7 +58,6 @@ func _run() -> void:
 
 func _instant_mana(amount: float) -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
-	effect.kind = GameplayEffectDefinition.Kind.MODIFIERS
 	var modifier := AttributeModifier.new()
 	modifier.attribute = CombatAttributes.Id.MANA
 	modifier.value = amount

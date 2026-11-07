@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://bv4s17m8a60kn" path="res://combat/effects/gameplay_effect_component.gd" id="1_jtcsl"]
 [ext_resource type="Script" uid="uid://bmu4hnn0quf7l" path="res://combat/attributes/attribute_modifier.gd" id="2_modifier"]
 [ext_resource type="Script" uid="uid://divtubtmdgcq4" path="res://combat/effects/gameplay_effect_execution.gd" id="2_qliue"]
+[ext_resource type="Script" uid="uid://0pha8yyuqu58" path="res://combat/outcomes/reaction_definition.gd" id="4_qliue"]
 
 [sub_resource type="Resource" id="MaxHealth"]
 script = ExtResource("2_modifier")

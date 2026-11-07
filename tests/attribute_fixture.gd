@@ -33,7 +33,6 @@ static func new_attributes() -> ActorAttributes:
 static func configure(system: AbilitySystem, regen_period: float = REGENERATION_PERIOD) -> void:
 	var defaults := GameplayEffectDefinition.new()
 	defaults.effect_id = &"Effect.DefaultAttributes"
-	defaults.kind = GameplayEffectDefinition.Kind.MODIFIERS
 	for id: int in STARTUP_BASES:
 		var modifier := AttributeModifier.new()
 		modifier.attribute = id
@@ -42,7 +41,6 @@ static func configure(system: AbilitySystem, regen_period: float = REGENERATION_
 		defaults.modifiers.append(modifier)
 	var derivations := GameplayEffectDefinition.new()
 	derivations.effect_id = &"Effect.AttributeDerivations"
-	derivations.kind = GameplayEffectDefinition.Kind.MODIFIERS
 	derivations.timing = GameplayEffectDefinition.Timing.INFINITE
 	derivations.modifiers = _derivations()
 	system.startup_effects = [defaults, derivations, regeneration_effect(regen_period)]
@@ -51,7 +49,6 @@ static func configure(system: AbilitySystem, regen_period: float = REGENERATION_
 static func regeneration_effect(period: float = REGENERATION_PERIOD) -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
 	effect.effect_id = &"Effect.ResourceRegeneration"
-	effect.kind = GameplayEffectDefinition.Kind.MODIFIERS
 	effect.timing = GameplayEffectDefinition.Timing.INFINITE
 	effect.period = period
 	effect.execute_periodic_on_application = false

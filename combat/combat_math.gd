@@ -90,19 +90,26 @@ static func get_source_power(
 
 ## Resolves one stable weapon roll and Power contribution before actual Health loss.
 static func raw_effect_magnitude(
-		definition: GameplayEffectDefinition, context: GameplayEffectContext
+		definition: GameplayEffectDefinition,
+		context: GameplayEffectContext,
+		target: ActorAttributes = null,
+		spec: GameplayEffectSpec = null
 ) -> float:
 	if definition == null or context == null or not definition.is_damage_effect() \
 			or not definition.get_validation_error().is_empty():
 		return 0.0
-	var tags := definition.get_context_tags(context.ability_tags)
+	var damage := definition.get_damage_execution()
+	var base_amount := damage.evaluate_base_amount(definition, context, target, spec)
+	if not is_finite(base_amount) or base_amount < 0.0:
+		return 0.0
+	var tags := definition.get_payload_context_tags(context)
 	var power := get_source_power(definition, context, tags)
-	if definition.use_weapon_damage:
+	if damage.use_weapon_damage:
 		if not context.has_physical_weapon() or GameplayEffectContext.is_spell_delivery(tags):
 			return 0.0
-		return maxf(0.0, definition.base_magnitude + (context.get_weapon_base_damage() \
-				+ power * context.weapon_power_coefficient) * definition.weapon_power_share)
-	return maxf(0.0, definition.base_magnitude + power * definition.power_coefficient)
+		return maxf(0.0, base_amount + (context.get_weapon_base_damage() \
+				+ power * context.weapon_power_coefficient) * damage.weapon_power_share)
+	return maxf(0.0, base_amount + power * damage.power_coefficient)
 
 
 ## Returns resolved damage after Armor or matching school Resistance, independently of Accuracy.
@@ -120,17 +127,21 @@ static func resolve_effect(
 static func resolve_effect_result(
 		definition: GameplayEffectDefinition,
 		context: GameplayEffectContext,
-		target: ActorAttributes
+		target: ActorAttributes,
+		spec: GameplayEffectSpec = null
 ) -> Dictionary:
-	var raw := raw_effect_magnitude(definition, context) if is_instance_valid(target) else 0.0
+	var raw := raw_effect_magnitude(definition, context, target, spec) if is_instance_valid(target) else 0.0
 	var resistance_attribute := CombatAttributes.Id.NONE
 	var resistance := 0.0
 	var effective_resistance := 0.0
 	var spell_penetration := 0.0
+	var resistance_stages: Array[Dictionary] = []
+	var resistance_multiplier := 1.0
 	var school := -1
 	var armor := 0.0
 	var effective_armor := 0.0
 	var penetration := 0.0
+	var flat_penetration := 0.0
 	var armor_reduction := 0.0
 	var critical := false
 	var critical_multiplier := 1.0
@@ -142,31 +153,43 @@ static func resolve_effect_result(
 		if critical:
 			critical_multiplier = context.critical_multiplier
 			critical_damage = context.critical_damage_percent
-		if definition.damage_type == GameplayEffectDefinition.DamageType.PHYSICAL:
-			var tags := definition.get_context_tags(context.ability_tags)
+		var tags := definition.get_payload_context_tags(context)
+		var physical := definition.damage_type == GameplayEffectDefinition.DamageType.PHYSICAL
+		var profile := definition.damage_profile
+		var explicit := profile != null and profile.defense_selection == DamageProfile.DefenseSelection.EXPLICIT
+		var use_armor := profile.use_armor if explicit else physical
+		if use_armor:
 			armor = target.get_value(CombatAttributes.Id.ARMOR, tags)
 			if not is_finite(armor):
 				armor = 0.0
 			penetration = _bounded_armor_penetration(context.get_source_value(
 					CombatAttributes.Id.ARMOR_PENETRATION, tags))
-			effective_armor = get_effective_armor(armor, penetration)
+			flat_penetration = profile.flat_armor_penetration if explicit else 0.0
+			effective_armor = maxf(0.0, get_effective_armor(armor, penetration) - flat_penetration)
 			armor_reduction = get_armor_reduction(effective_armor)
-		else:
-			resistance_attribute = definition.get_resistance_attribute()
-			if resistance_attribute != CombatAttributes.Id.NONE:
-				school = definition.magic_school
-				var tags := definition.get_context_tags(context.ability_tags)
-				resistance = target.get_value(resistance_attribute, tags)
-				if definition.period == 0.0 and GameplayEffectContext.is_spell_delivery(tags):
-					var source_value := context.get_source_value(CombatAttributes.Id.SPELL_PENETRATION, tags)
-					if is_finite(source_value):
-						spell_penetration = maxf(0.0, source_value)
-				effective_resistance = maxf(CombatRules.get_number("resistance_min_percent"),
-						resistance - spell_penetration)
-	var multiplier := 1.0 - effective_resistance / 100.0
+		if not physical:
+			school = definition.magic_school
+		var source_spell_penetration := _direct_spell_penetration(definition, context, tags)
+		if explicit:
+			for stage: DamageResistanceStage in profile.resistance_stages:
+				var stage_penetration := source_spell_penetration if stage.apply_spell_penetration else 0.0
+				resistance_stages.append(_resolve_resistance_stage(target, tags, stage.attribute,
+						stage_penetration, stage.minimum_percent, stage.maximum_percent))
+		elif not physical:
+			resistance_stages.append(_resolve_resistance_stage(target, tags, definition.get_resistance_attribute(),
+					source_spell_penetration, CombatRules.get_number("resistance_min_percent"),
+					CombatRules.get_number("resistance_max_percent")))
+		if not resistance_stages.is_empty():
+			var primary := resistance_stages[0]
+			resistance_attribute = primary.attribute
+			resistance = primary.resistance_percent
+			effective_resistance = primary.effective_resistance_percent
+			spell_penetration = primary.spell_penetration
+			for stage: Dictionary in resistance_stages:
+				resistance_multiplier *= stage.multiplier
 	var critical_magnitude := raw * critical_multiplier
 	return {
-		"magnitude": critical_magnitude * (1.0 - armor_reduction) * multiplier,
+		"magnitude": critical_magnitude * (1.0 - armor_reduction) * resistance_multiplier,
 		"raw_magnitude": raw,
 		"critical_magnitude": critical_magnitude,
 		"is_critical": critical,
@@ -175,13 +198,42 @@ static func resolve_effect_result(
 		"armor": armor,
 		"effective_armor": effective_armor,
 		"armor_penetration_percent": penetration,
+		"flat_armor_penetration": flat_penetration,
 		"armor_reduction": armor_reduction,
 		"magic_school": school,
 		"resistance_attribute": resistance_attribute,
 		"resistance_percent": resistance,
 		"effective_resistance_percent": effective_resistance,
 		"spell_penetration": spell_penetration,
-		"resistance_multiplier": multiplier,
+		"resistance_multiplier": resistance_multiplier,
+		"resistance_stages": resistance_stages,
+	}
+
+
+static func _direct_spell_penetration(
+		definition: GameplayEffectDefinition, context: GameplayEffectContext, tags: PackedStringArray
+) -> float:
+	if definition.damage_type != GameplayEffectDefinition.DamageType.MAGIC \
+			or definition.get_effective_period() != 0.0 or not GameplayEffectContext.is_spell_delivery(tags):
+		return 0.0
+	if context.outcome_context != null and context.outcome_context.timing != CombatOutcomeContext.Timing.DIRECT:
+		return 0.0
+	var source_value := context.get_source_value(CombatAttributes.Id.SPELL_PENETRATION, tags)
+	return maxf(0.0, source_value) if is_finite(source_value) else 0.0
+
+
+static func _resolve_resistance_stage(
+		target: ActorAttributes, tags: PackedStringArray, attribute: int,
+		penetration: float, minimum_percent: float, maximum_percent: float
+) -> Dictionary:
+	var resistance := target.get_value(attribute, tags)
+	var effective := clampf(resistance - penetration, minimum_percent, maximum_percent)
+	return {
+		"attribute": attribute,
+		"resistance_percent": resistance,
+		"effective_resistance_percent": effective,
+		"spell_penetration": penetration,
+		"multiplier": 1.0 - effective / 100.0,
 	}
 
 

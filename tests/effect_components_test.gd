@@ -200,7 +200,6 @@ func _new_ability(id: StringName) -> AbilityDefinition:
 
 func _new_effect(components: Array[GameplayEffectComponent]) -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
-	effect.kind = GameplayEffectDefinition.Kind.MODIFIERS
 	effect.timing = GameplayEffectDefinition.Timing.INFINITE
 	effect.components = components
 	return effect

@@ -4,7 +4,6 @@ extends SceneTree
 const CONTROLLER = preload("res://player/first_person_controller.tscn")
 const CASTER = preload("res://examples/fireball/caster.tscn")
 const EDITOR = preload("res://levels/playground/testing/attribute_editor.tscn")
-const SPRINT_EXECUTION = preload("res://player/abilities/sprint_execution.gd")
 const SPRINT_FIXTURE = preload("res://tests/sprint_fixture.gd")
 const UPKEEP_ID: StringName = &"Effect.Sprint.StaminaUpkeep"
 const REGENERATION_PERIOD: float = 0.1
@@ -119,7 +118,8 @@ func _test_saved_wiring_and_live_modifiers() -> void:
 		var definition := caster_system.get_ability_definition(ability_id)
 		_check(definition != null and caster_system.granted_abilities.has(definition),
 				"The saved caster registers %s from Granted Abilities" % ability_id)
-	var saved_sprint := caster_system.get_ability_definition(&"sprint").execution as SPRINT_EXECUTION
+	var saved_execution := caster_system.get_ability_definition(&"sprint").execution as PhasedAbilityExecution
+	var saved_sprint := saved_execution.phases[0].actions[0] as PlayerSprintAction
 	var upkeep := saved_sprint.upkeep_effect
 	_check(upkeep != null and upkeep.effect_id == UPKEEP_ID
 			and upkeep.timing == GameplayEffectDefinition.Timing.INFINITE and upkeep.period > 0.0
@@ -640,7 +640,8 @@ func _start_fixture(position: Vector3 = Vector3(0.0, 0.03, 0.0), settle: bool = 
 	_attributes = _player.get_node("Attributes") as ActorAttributes
 	_attributes.initial_modifiers = []
 	_world.add_child(_player)
-	var sprint := system.get_ability_definition(&"sprint").execution as SPRINT_EXECUTION
+	var execution := system.get_ability_definition(&"sprint").execution as PhasedAbilityExecution
+	var sprint := execution.phases[0].actions[0] as PlayerSprintAction
 	_upkeep_calculation = sprint.upkeep_effect.executions[0] as SprintStaminaUpkeepCalculation
 	_disable_processing(_player)
 	_movement = _player.get_node("Movement") as FirstPersonMovement

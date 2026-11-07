@@ -1,10 +1,42 @@
 [gd_resource type="Resource" script_class="AbilityDefinition" format=3 uid="uid://bcsqor8fx8cwc"]
 
+[ext_resource type="Script" uid="uid://bfag3jxu1uk47" path="res://combat/abilities/composition/ability_condition_definition.gd" id="1_88com"]
 [ext_resource type="Script" uid="uid://db5x8t6k0figb" path="res://combat/abilities/ability_definition.gd" id="1_ability"]
-[ext_resource type="Script" uid="uid://x78oqy07a3xw" path="res://player/abilities/crouch_execution.gd" id="2_execution"]
+[ext_resource type="Script" uid="uid://da7q4e3l7vcpj" path="res://combat/abilities/composition/phased_ability_execution.gd" id="2_execution"]
+[ext_resource type="Script" uid="uid://bh8p0tphj8h15" path="res://combat/abilities/composition/ability_delivery_definition.gd" id="3_delivery"]
+[ext_resource type="Script" uid="uid://dlawnr5gjwl84" path="res://combat/abilities/composition/ability_phase_definition.gd" id="4_phase"]
+[ext_resource type="Script" uid="uid://c0kslm6jp2og4" path="res://combat/abilities/composition/ability_action_definition.gd" id="5_action"]
+[ext_resource type="Script" uid="uid://cikanmca8pahh" path="res://player/abilities/player_crouch_action.gd" id="6_crouch"]
+[ext_resource type="Script" uid="uid://0pha8yyuqu58" path="res://combat/outcomes/reaction_definition.gd" id="7_vvh3a"]
+[ext_resource type="Script" uid="uid://lj1m7cwhno0o" path="res://combat/abilities/ability_resource_cost.gd" id="8_bmnpd"]
+
+[sub_resource type="Resource" id="Delivery_none"]
+script = ExtResource("3_delivery")
+kind = 8
+
+[sub_resource type="Resource" id="Action_enter"]
+script = ExtResource("6_crouch")
+
+[sub_resource type="Resource" id="Phase_start"]
+script = ExtResource("4_phase")
+event_key = &"ability.cast_started"
+actions = Array[ExtResource("5_action")]([SubResource("Action_enter")])
+failure_policy = 2
+
+[sub_resource type="Resource" id="Action_release"]
+script = ExtResource("6_crouch")
+operation = 1
+
+[sub_resource type="Resource" id="Phase_release"]
+script = ExtResource("4_phase")
+event_key = &"ability.input_released"
+actions = Array[ExtResource("5_action")]([SubResource("Action_release")])
 
 [sub_resource type="Resource" id="Execution_crouch"]
 script = ExtResource("2_execution")
+cast_mode = 5
+delivery = SubResource("Delivery_none")
+phases = Array[ExtResource("4_phase")]([SubResource("Phase_start"), SubResource("Phase_release")])
 
 [resource]
 script = ExtResource("1_ability")
@@ -12,9 +44,7 @@ ability_id = &"crouch"
 display_name = "Crouch"
 ability_tags = PackedStringArray("Ability.Movement.Crouch")
 required_tags = PackedStringArray()
-blocked_tags = PackedStringArray("State.Dead")
 activation_tags = PackedStringArray()
-interruption_tags = PackedStringArray("State.Dead")
 cancel_ability_tags = PackedStringArray()
 block_ability_tags = PackedStringArray()
 execution = SubResource("Execution_crouch")

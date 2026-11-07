@@ -47,9 +47,15 @@ func advance_locomotion(
 			not jump_pressed and _abilities.get_active_cast(JUMP) == null)
 	_crouch.retry_standing()
 	_update_sprint_input(delta, sprint_held, walk_held)
-	if jump_pressed and _abilities.get_active_cast(JUMP) == null:
+	var movement_locked := _abilities.tags.has_tag(&"State.Control.Rooted") \
+			or _abilities.tags.has_tag(&"State.Control.Stunned")
+	var cast_locks_movement := _abilities.handle_movement_intent(
+			not movement_locked and (jump_pressed or not movement_input.is_zero_approx())
+	)
+	movement_locked = movement_locked or cast_locks_movement
+	if jump_pressed and not movement_locked and _abilities.get_active_cast(JUMP) == null:
 		_abilities.try_activate(JUMP)
-	_movement.move(delta, movement_input, _gait.current_gait)
+	_movement.move(delta, movement_input, _gait.current_gait, movement_locked)
 
 
 func _update_crouch_input(pressed: bool, held: bool, can_enter: bool) -> void:

@@ -7,7 +7,7 @@ extends GameplayEffectComponent
 
 
 func get_validation_error(definition: GameplayEffectDefinition) -> StringName:
-	return &"Effect.PeriodicRemovalComponent" if definition.period > 0.0 else &""
+	return &"Effect.PeriodicRemovalComponent" if definition.get_effective_period() > 0.0 else &""
 
 
 func on_applied(runtime: GameplayEffectRuntime, spec: GameplayEffectSpec) -> void:

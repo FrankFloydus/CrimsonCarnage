@@ -41,7 +41,7 @@ func _weapon(kind: WeaponDefinition.Kind, minimum: float, maximum: float,
 func _effect() -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
 	effect.executions = [GameplayEffectDamageExecution.new()]
-	effect.use_weapon_damage = true
+	effect.get_damage_execution().use_weapon_damage = true
 	return effect
 
 

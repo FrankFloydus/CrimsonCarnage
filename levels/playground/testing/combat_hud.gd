@@ -103,7 +103,7 @@ func _refresh_cast_bar() -> void:
 	if is_instance_valid(_casting):
 		var cast := _casting.get_animation_cast()
 		if cast != null and GameplayEffectContext.is_spell_delivery(cast.context.ability_tags):
-			var execution := cast.definition.execution as ProjectileCastExecution
+			var execution := cast.definition.execution
 			if execution != null:
 				progress = execution.get_windup_progress(cast)
 	_cast_bar_slot.visible = progress >= 0.0

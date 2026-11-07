@@ -20,6 +20,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	preload("res://tests/combat_rules_fixture.gd").install()
+	_test_feedback_inspector()
 	var dummy := DUMMY_SCENE.instantiate() as DamageDummy
 	(dummy.get_node("Attributes") as ActorAttributes).initial_modifiers = []
 	ATTRIBUTE_FIXTURE.configure(dummy.get_node("AbilitySystem") as AbilitySystem)
@@ -32,14 +33,13 @@ func _run() -> void:
 	source.set_base_value(CombatAttributes.Id.INTELLECT, 20.0)
 	var context := GameplayEffectContext.capture(source, GameplayTagSet.new(),
 			FIREBALL.get_context_tags())
-	var execution := FIREBALL.execution as ProjectileCastExecution
-	var saved_impact := execution.on_hit_effects[0]
+	var execution := FIREBALL.execution as PhasedAbilityExecution
+	var saved_impact := execution.get_effect_payload()[0]
 	var impact := GameplayEffectDefinition.new()
 	impact.executions = [GameplayEffectDamageExecution.new()]
 	impact.damage_type = GameplayEffectDefinition.DamageType.MAGIC
 	impact.magic_school = GameplayEffectDefinition.MagicSchool.FIRE
-	impact.base_magnitude = 0.0
-	impact.power_coefficient = 1.0
+	impact.get_damage_execution().power_coefficient = 1.0
 	var numbers := dummy.get_node("DamageNumbers")
 	_check(dummy.ability_system.effects.apply_effect(impact, context),
 			"The isolated Fireball feedback fixture applies")
@@ -51,7 +51,7 @@ func _run() -> void:
 			"Magic Power from Intellect supplies the direct damage")
 	var bar := dummy.get_node("HealthBar")
 	_near(float(bar.fill_ratio), 0.8, "The text-free Health bar follows the actual Health fraction")
-	_check(execution.on_hit_effects.size() == 1
+	_check(execution.get_effect_payload().size() == 1
 			and saved_impact.executions.size() == 1
 			and saved_impact.executions[0] is GameplayEffectDamageExecution
 			and saved_impact.timing == GameplayEffectDefinition.Timing.INSTANT
@@ -98,6 +98,40 @@ func _run() -> void:
 	await _test_combat_hud()
 	print("Damage number checks: %d passed, %d failed." % [_checks - _failures, _failures])
 	quit(0 if _failures == 0 else 1)
+
+
+func _test_feedback_inspector() -> void:
+	var dummy := DamageDummy.new()
+	dummy.damage_number_spacing = 0.7
+	_check(_property_usage(dummy, &"damage_number_spacing") & PROPERTY_USAGE_EDITOR == 0,
+			"Without a damage number scene, lane spacing is hidden")
+	_check(_property_usage(dummy, &"damage_number_spacing") & PROPERTY_USAGE_STORAGE != 0,
+			"Hidden lane spacing remains serializable")
+	dummy.damage_number_scene = PackedScene.new()
+	_check(_property_usage(dummy, &"damage_number_spacing") & PROPERTY_USAGE_EDITOR != 0,
+			"Selecting a damage number scene reveals lane spacing")
+	_near(dummy.damage_number_spacing, 0.7, "Changing the scene preserves lane spacing")
+	dummy.free()
+
+	var number := FloatingDamageNumber.new()
+	number.critical_pop_peak = 1.6
+	number.critical_pop_duration = 0.0
+	_check(_property_usage(number, &"critical_pop_peak") & PROPERTY_USAGE_EDITOR == 0,
+			"Zero critical pop duration hides the critical pop peak")
+	_check(_property_usage(number, &"critical_pop_peak") & PROPERTY_USAGE_STORAGE != 0,
+			"Hidden critical pop peak remains serializable")
+	number.critical_pop_duration = 0.25
+	_check(_property_usage(number, &"critical_pop_peak") & PROPERTY_USAGE_EDITOR != 0,
+			"Positive critical pop duration reveals the critical pop peak")
+	_near(number.critical_pop_peak, 1.6, "Changing the duration preserves the critical pop peak")
+	number.free()
+
+
+func _property_usage(object: Object, name: StringName) -> int:
+	for property: Dictionary in object.get_property_list():
+		if property.name == name:
+			return int(property.usage)
+	return 0
 
 
 func _test_critical_damage_feedback(
@@ -274,7 +308,6 @@ func _test_effect_hud(hud: Control, system: AbilitySystem, dummy: AbilitySystem)
 	texture.gradient = Gradient.new()
 	var buff := GameplayEffectDefinition.new()
 	buff.display_name = "Test Buff"
-	buff.kind = GameplayEffectDefinition.Kind.MODIFIERS
 	buff.timing = GameplayEffectDefinition.Timing.DURATION
 	buff.duration = 1.0
 	buff.icon = texture

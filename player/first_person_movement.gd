@@ -38,10 +38,12 @@ var _jump_request: AbilityCast
 
 ## Advances locomotion once per physics tick. Input uses X for strafe and negative Y for forward.
 ## Resolves the selected movement mode through this component's settings; defaults to normal run.
+## A movement lock suppresses horizontal motion and takeoff while retaining gravity and contacts.
 func move(
 		delta: float,
 		movement_input: Vector2,
-		gait: FirstPersonGait.Gait = FirstPersonGait.Gait.RUN
+		gait: FirstPersonGait.Gait = FirstPersonGait.Gait.RUN,
+		movement_locked: bool = false
 ) -> void:
 	if _moving or not is_finite(delta) or delta <= 0.0 or not is_instance_valid(body) \
 			or settings == null or not body.is_inside_tree():
@@ -52,7 +54,7 @@ func move(
 		effective = FirstPersonGait.Gait.RUN
 	var jump_cast := _jump_request
 	_jump_request = null
-	var launched := _advance_movement(delta, movement_input, effective, jump_cast)
+	var launched := _advance_movement(delta, movement_input, effective, jump_cast, movement_locked)
 	if jump_cast != null and not jump_cast.finished:
 		if launched:
 			jump_cast.finish()
@@ -70,7 +72,7 @@ func is_grounded() -> bool:
 	return body.is_on_floor() or _stepped_last_tick
 
 
-## Checks physical sprint availability. The Sprint execution owns eligibility and cost rules.
+## Checks physical sprint availability. The Sprint action owns eligibility and upkeep rules.
 func can_move_in_sprint() -> bool:
 	return get_speed_for_gait(FirstPersonGait.Gait.SPRINT) > 0.0
 
@@ -192,9 +194,10 @@ func _advance_movement(
 		delta: float,
 		movement_input: Vector2,
 		gait: FirstPersonGait.Gait,
-		jump_cast: AbilityCast
+		jump_cast: AbilityCast,
+		movement_locked: bool
 ) -> bool:
-	if not is_finite(movement_input.x) or not is_finite(movement_input.y):
+	if movement_locked or not is_finite(movement_input.x) or not is_finite(movement_input.y):
 		movement_input = Vector2.ZERO
 	_effective_gait = gait
 	var sprint_cast := _sprint_request
@@ -241,6 +244,9 @@ func _advance_movement(
 	horizontal_velocity = horizontal_velocity.move_toward(
 			direction * maxf(target_speed, 0.0), acceleration * delta
 	)
+	if movement_locked:
+		horizontal_velocity = Vector3.ZERO
+		_airborne_sprint_takeoff_speed = 0.0
 	body.velocity.x = horizontal_velocity.x
 	body.velocity.z = horizontal_velocity.z
 
@@ -248,7 +254,7 @@ func _advance_movement(
 		body.velocity.y = 0.0
 	body.velocity.y -= settings.gravity * delta
 	var launched := false
-	if jump_cast != null and not jump_cast.finished \
+	if not movement_locked and jump_cast != null and not jump_cast.finished \
 			and (grounded or _coyote_time_remaining > 0.0):
 		var jump_height := _get_effective_jump_height(_effective_gait)
 		if jump_height > 0.0:

@@ -5,17 +5,23 @@
 [ext_resource type="Script" uid="uid://divtubtmdgcq4" path="res://combat/effects/gameplay_effect_execution.gd" id="2_execution"]
 [ext_resource type="Script" uid="uid://bfu6fjuwsawdd" path="res://combat/effects/gameplay_effect_damage_execution.gd" id="3_damage"]
 [ext_resource type="Script" uid="uid://bmu4hnn0quf7l" path="res://combat/attributes/attribute_modifier.gd" id="4_81nvp"]
+[ext_resource type="Script" uid="uid://de126mrndguiy" path="res://combat/amounts/amount_definition.gd" id="4_amount"]
+[ext_resource type="Script" uid="uid://0pha8yyuqu58" path="res://combat/outcomes/reaction_definition.gd" id="6_46cu6"]
+
+[sub_resource type="Resource" id="Amount_fireball"]
+script = ExtResource("4_amount")
+fixed_amount = 5.0
 
 [sub_resource type="Resource" id="Execution_damage"]
 script = ExtResource("3_damage")
+amount = SubResource("Amount_fireball")
+power_coefficient = 1.0
 
 [resource]
 script = ExtResource("1_effect")
 effect_id = &"Effect.Fireball.Impact"
 asset_tags = PackedStringArray()
 gameplay_cue_tags = PackedStringArray()
-base_magnitude = 5.0
-power_coefficient = 1.0
 damage_type = 1
 damage_tags = PackedStringArray()
 granted_tags = PackedStringArray()

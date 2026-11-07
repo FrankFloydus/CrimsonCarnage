@@ -54,7 +54,7 @@ func _effect(school: int = GameplayEffectDefinition.MagicSchool.FIRE, amount: fl
 	effect.effect_id = &"Effect.ResistanceTest"
 	effect.damage_type = GameplayEffectDefinition.DamageType.MAGIC
 	effect.magic_school = school
-	effect.base_magnitude = amount
+	effect.get_damage_execution().amount = AmountDefinition.fixed(amount)
 	return effect
 
 
@@ -72,7 +72,6 @@ func _modifier(attribute: int, amount: float) -> AttributeModifier:
 
 func _buff() -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
-	effect.kind = GameplayEffectDefinition.Kind.MODIFIERS
 	effect.timing = GameplayEffectDefinition.Timing.DURATION
 	effect.duration = 2.0
 	effect.modifiers = [_modifier(CombatAttributes.Id.STRENGTH, 10.0)]
@@ -223,7 +222,7 @@ func _test_school_scopes_and_power() -> void:
 	var source := _actor()
 	var target := _actor()
 	var effect := _effect(GameplayEffectDefinition.MagicSchool.FIRE)
-	effect.power_coefficient = 0.5
+	effect.get_damage_execution().power_coefficient = 0.5
 	var fire_power := _modifier(CombatAttributes.Id.MAGIC_POWER, 20.0)
 	fire_power.required_context_tags = PackedStringArray(["Damage.Fire"])
 	source.set_modifiers(&"fire_power", [fire_power])
@@ -255,8 +254,8 @@ func _test_detached_source_and_fractional_damage() -> void:
 	school_penetration.required_context_tags = PackedStringArray(["Damage.Fire"])
 	source.set_modifiers(&"fire_bonuses", [school_power, school_penetration])
 	var effect := _effect()
-	effect.base_magnitude = 0.0
-	effect.power_coefficient = 1.0
+	effect.get_damage_execution().amount = null
+	effect.get_damage_execution().power_coefficient = 1.0
 	var context := _context(source)
 	context.prime_effects([effect])
 	_actors.erase(source)
@@ -268,8 +267,8 @@ func _test_detached_source_and_fractional_damage() -> void:
 	target.set_base_value(CombatAttributes.Id.FIRE_RESISTANCE, -100.0)
 	_near(CombatMath.resolve_effect(effect, context, target), 80.0,
 			"Changing target Resistance affects the next delivery rather than an old target snapshot")
-	effect.base_magnitude = 0.001
-	effect.power_coefficient = 0.0
+	effect.get_damage_execution().amount = AmountDefinition.fixed(0.001)
+	effect.get_damage_execution().power_coefficient = 0.0
 	target.set_base_value(CombatAttributes.Id.FIRE_RESISTANCE, 80.0)
 	result = CombatMath.resolve_effect_result(effect, context, target)
 	_near(result.magnitude, 0.0004, "Small mitigated components retain fractional damage internally")
@@ -314,7 +313,7 @@ func _test_hybrid_payload_and_accuracy() -> void:
 	target.set_base_value(CombatAttributes.Id.NECROTIC_RESISTANCE, 80.0)
 	var physical := _effect()
 	physical.damage_type = GameplayEffectDefinition.DamageType.PHYSICAL
-	physical.base_magnitude = 20.0
+	physical.get_damage_execution().amount = AmountDefinition.fixed(20.0)
 	var payload: Array[GameplayEffectDefinition] = [
 		physical, _effect(GameplayEffectDefinition.MagicSchool.FIRE, 100.0),
 		_effect(GameplayEffectDefinition.MagicSchool.COLD, 40.0),
@@ -408,22 +407,22 @@ func _test_damage_telemetry_and_overkill() -> void:
 
 func _test_saved_fireball() -> void:
 	var ability := load("res://examples/fireball/fireball.tres") as AbilityDefinition
-	_check(ability != null and ability.execution is ProjectileCastExecution,
+	_check(ability != null and ability.execution is PhasedAbilityExecution,
 			"The saved Fireball keeps its authored projectile execution")
-	if ability == null or not ability.execution is ProjectileCastExecution:
+	if ability == null or not ability.execution is PhasedAbilityExecution:
 		return
-	var execution := ability.execution as ProjectileCastExecution
-	_check(execution.on_hit_effects.size() == 1, "Fireball retains one direct payload without automatic ailments")
-	if execution.on_hit_effects.size() != 1:
+	var execution := ability.execution as PhasedAbilityExecution
+	_check(execution.get_effect_payload().size() == 1, "Fireball retains one direct payload without automatic ailments")
+	if execution.get_effect_payload().size() != 1:
 		return
-	var effect := execution.on_hit_effects[0]
+	var effect := execution.get_effect_payload()[0]
 	_check(effect.damage_type == GameplayEffectDefinition.DamageType.MAGIC
 			and effect.magic_school == GameplayEffectDefinition.MagicSchool.FIRE,
 			"Saved Fireball explicitly selects Fire Resistance without changing its Magic damage identity")
 	# Preserve authored balance tuning while isolating the numeric Resistance contract.
-	var numeric_effect := effect.duplicate(true) as GameplayEffectDefinition
-	numeric_effect.base_magnitude = 0.0
-	numeric_effect.power_coefficient = 1.0
+	var numeric_effect := effect.duplicate_deep(Resource.DEEP_DUPLICATE_ALL) as GameplayEffectDefinition
+	numeric_effect.get_damage_execution().amount = null
+	numeric_effect.get_damage_execution().power_coefficient = 1.0
 	var payload: Array[GameplayEffectDefinition] = [numeric_effect]
 	var source := _actor()
 	var target := _actor()
