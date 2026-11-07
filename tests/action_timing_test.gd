@@ -2,7 +2,7 @@ extends SceneTree
 ## Verifies the saved Fireball wiring and tests playback and cooldown with controlled inputs.
 ## Run headless with --fixed-fps 60 --script res://tests/action_timing_test.gd.
 
-const PLAYGROUND = preload("res://levels/playground/playground.tscn")
+const CASTER = preload("res://examples/fireball/caster.tscn")
 const FIREBALL_FIXTURE = preload("res://tests/fireball_fixture.gd")
 
 var _arena: Node3D
@@ -28,13 +28,10 @@ func _run() -> void:
 
 
 func _start_fixture() -> bool:
-	_arena = PLAYGROUND.instantiate() as Node3D
-	var caster := _arena.get_node("Player") as Node3D
+	_arena = Node3D.new()
+	var caster := CASTER.instantiate() as Node3D
 	(caster.get_node("Attributes") as ActorAttributes).initial_modifiers = []
-	caster.position = Vector3(0.0, 0.05, 6.0)
-	caster.rotation = Vector3.ZERO
-	for course_name in ["Parkour", "LowStairs", "HighStairs", "CrouchTunnels"]:
-		_arena.get_node(course_name).free()
+	_arena.add_child(caster)
 	_system = caster.get_node("AbilitySystem") as AbilitySystem
 	root.add_child(_arena)
 	current_scene = _arena
@@ -45,11 +42,11 @@ func _start_fixture() -> bool:
 	_system.attributes.set_physics_process(false)
 	_system.attributes.set_base_value(CombatAttributes.Id.MAX_MANA, 100.0)
 	_system.attributes.set_base_value(CombatAttributes.Id.MANA, 100.0)
-	_animation = caster.get_node("CastingAnimation") as AnimationPlayer
+	_animation = _system.animation_player
 	await physics_frame
 	await physics_frame
 	var valid := FIREBALL_FIXTURE.install(_system)
-	_check(valid, "The saved Playground Fireball has valid animation, projectile, payload and origin wiring")
+	_check(valid, "The saved Fireball has valid animation, projectile, payload and origin wiring")
 	return valid
 
 

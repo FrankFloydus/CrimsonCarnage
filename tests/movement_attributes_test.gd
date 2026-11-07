@@ -24,6 +24,7 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	preload("res://tests/combat_rules_fixture.gd").install()
 	Engine.physics_ticks_per_second = 60
 	await _test_saved_wiring_and_live_modifiers()
 	await _test_engine_speed_tuning_guard()

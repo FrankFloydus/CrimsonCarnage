@@ -86,7 +86,7 @@ func _test_toggle_and_shape_isolation() -> void:
 			"One controller's stance cannot resize another controller's capsule")
 	await _step(Vector2.ZERO, false, true)
 	await _step()
-	_check(_crouch.is_crouching, "Holding and releasing C leave toggle crouch active")
+	_check(_crouch.is_crouching, "Holding and releasing crouch leave toggle crouch active")
 	await _step(Vector2.ZERO, true, true)
 	_check(not _crouch.is_crouching, "Second toggle press stands in open space")
 	_check_close(_capsule.height, standing_height, "Standing restores authored capsule height")

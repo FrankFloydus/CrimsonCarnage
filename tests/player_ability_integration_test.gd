@@ -46,6 +46,7 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	preload("res://tests/combat_rules_fixture.gd").install()
 	await _start_fixture()
 	await _test_saved_caster_stamina_regeneration()
 	await _end_fixture()
