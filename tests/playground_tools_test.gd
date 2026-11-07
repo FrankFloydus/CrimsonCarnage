@@ -113,8 +113,8 @@ func _test_attribute_editors() -> void:
 			and _tools.dummy_editor.actor == _tools.dummy.ability_system,
 			"The saved editors bind independently to player and dummy")
 	_check(editor.rows.size() == CombatAttributes.all_ids().size()
-			and editor.rows.size() == 30,
-			"The editor includes thirty attributes including both action speeds")
+			and editor.rows.has(CombatAttributes.Id.SPELL_PENETRATION),
+			"The editor includes all active attributes, including Spell Penetration")
 	_check(_sheet_value(CombatAttributes.Id.PHYSICAL_POWER) == null
 			and _sheet_value(CombatAttributes.Id.MAGIC_POWER) == null
 			and _sheet_value(CombatAttributes.Id.ACCURACY_RATING) == null,
@@ -587,8 +587,17 @@ func _test_damage_preview() -> void:
 			"Fireball shows one normal-hit value after matching Fire Resistance")
 	target_editor.set_attribute_override(CombatAttributes.Id.FIRE_RESISTANCE, 75.0)
 	_near(float(damage.text), 10.0, "Editing target Resistance updates the live hit preview")
+	var penetration_id := CombatAttributes.Id.SPELL_PENETRATION
+	var row: LiveAttributeEditorRow = editor.rows[penetration_id]
+	row.override_toggle.button_pressed = true
+	row.base_slider.value = 20.0
+	_check(row.value_label.text == "20%" and _sheet_value(penetration_id).text == "20%",
+			"The editor and character sheet show Spell Penetration as a percentage")
+	_near(float(damage.text), 18.0, "Spell Penetration updates the normal-hit preview against high resistance")
+	target_editor.set_attribute_override(CombatAttributes.Id.FIRE_RESISTANCE, 0.0)
+	_near(float(damage.text), 48.0, "Spell Penetration takes the live preview below zero resistance")
 	_tools.show_attributes(1)
-	_near(float(damage.text), 10.0, "The Dummy sheet retains the player-to-dummy hit preview")
+	_near(float(damage.text), 48.0, "The Dummy sheet retains the player-to-dummy hit preview")
 	_tools.show_attributes(0)
 	_check(weapon_rng.state == weapon_state and _tools.recorder.get_log().size() == event_count
 			and _target.get_value(CombatAttributes.Id.HEALTH) == 1.0

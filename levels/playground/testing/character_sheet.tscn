@@ -513,6 +513,29 @@ theme_type_variation = &"PanelValue"
 text = "0%"
 mouse_filter = 1
 
+[node name="SpellPenetration" type="HBoxContainer" parent="Layout/Scroll/Content/Offense"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout/Scroll/Content/Offense/SpellPenetration"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+text = "Spell Penetration"
+mouse_filter = 1
+
+[node name="SpellPenetrationValue" type="Label" parent="Layout/Scroll/Content/Offense/SpellPenetration"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+theme_type_variation = &"PanelValue"
+text = "0%"
+mouse_filter = 1
+
 [node name="AttackSpeed" type="HBoxContainer" parent="Layout/Scroll/Content/Offense"]
 layout_mode = 2
 theme_override_constants/separation = 8

@@ -1,6 +1,6 @@
 class_name CombatAttributes
 extends RefCounted
-## Stable serialized identities and the thirty active Combat 2.0 attributes.
+## Stable serialized identities for Combat 2.0 attributes.
 ## Retired numeric slots remain reserved so older assets cannot silently change meaning.
 
 enum Id {
@@ -97,12 +97,14 @@ enum Id {
 	ATTACK_SPEED = 55,
 	## Additive percentage-point bonus to Spell animation playback.
 	CAST_SPEED = 56,
+	## Points subtracted from the matching resistance for each Magic component of a spell hit.
+	SPELL_PENETRATION = 57,
 }
 
 const MAX_LEVEL: int = 60
 const ACTIVE_IDS: Array[int] = [
 	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 18, 19, 20, 21, 22,
-	34, 38, 39, 40, 42, 44, 53, 54, 55, 56,
+	34, 38, 39, 40, 42, 44, 53, 54, 55, 56, 57,
 ]
 const RESISTANCE_IDS: Array[int] = [19, 20, 21, 22, 44]
 const RETIRED_IDS: Array[int] = [
@@ -129,7 +131,7 @@ static func is_resistance(id: int) -> bool:
 
 
 static func uses_percentage_units(id: int) -> bool:
-	return is_resistance(id) or id in [Id.ARMOR_PENETRATION, Id.CRITICAL_CHANCE,
+	return is_resistance(id) or id in [Id.ARMOR_PENETRATION, Id.SPELL_PENETRATION, Id.CRITICAL_CHANCE,
 			Id.CRITICAL_DAMAGE, Id.MOVEMENT_SPEED, Id.ATTACK_SPEED, Id.CAST_SPEED]
 
 
@@ -294,6 +296,12 @@ static func description(id: int) -> String:
 					+ "Does not permanently reduce target Armor, affect Magic damage or change Accuracy.") % [
 					CombatRules.get_number("armor_penetration_min_percent"),
 					CombatRules.get_number("armor_penetration_max_percent")]
+		Id.SPELL_PENETRATION:
+			return ("Spell Penetration of 20%% subtracts 20 percentage points from the matching "
+					+ "resistance for a Magic component of a spell hit. Effective resistance floors at %s%%. "
+					+ "Add Flat grants percentage points. Increased and More scale existing penetration. "
+					+ "Spell Penetration starts at 0%% and has no upper cap.") \
+					% CombatRules.get_number("resistance_min_percent")
 		Id.CARRY_CAPACITY:
 			return ("Weight threshold for encumbrance. Startup base plus the authored Strength derivation "
 					+ "and other flat bonuses, then increased and More modifiers. Minimum %s with "

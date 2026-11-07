@@ -8,12 +8,12 @@ The [shared Accuracy and level curve](combat_system_2_0.md#accuracy-and-levels) 
 
 ## Active attributes
 
-The code-defined catalogue contains thirty active attributes.
+The code-defined catalogue contains thirty-one active attributes.
 
 | Group | Attributes |
 | --- | --- |
 | Primary | Strength, Dexterity, Intellect, Vitality |
-| Offensive | Physical Power, Magic Power, Accuracy Rating, Critical Chance, Critical Damage, Armor Penetration, Attack Speed, Cast Speed |
+| Offensive | Physical Power, Magic Power, Accuracy Rating, Critical Chance, Critical Damage, Armor Penetration, Spell Penetration, Attack Speed, Cast Speed |
 | Capacity | Max Health, Max Stamina, Max Mana, Carry Capacity |
 | Load | Carried Weight |
 | Movement | Movement Speed bonus percentage; 0% is normal |
@@ -22,7 +22,7 @@ The code-defined catalogue contains thirty active attributes.
 | Resistance | Fire Resistance, Cold Resistance, Lightning Resistance, Void Resistance, Necrotic Resistance |
 | Current resources | Health, Stamina, Mana |
 
-Health/Stamina/Mana Regeneration use IDs 10/11/12. Armor uses ID 18. Fire/Cold/Lightning/Necrotic/Void Resistance use IDs 19/20/21/22/44. Armor Penetration uses ID 34, Critical Chance and Critical Damage use IDs 14/15, Physical Power uses ID 53 and Accuracy Rating uses ID 40. Movement Speed, Attack Speed and Cast Speed use bonus percentage IDs 54/55/56. Their old identities 27/25/26 stay retired. Retired slots return zero and stay out of Inspector and playground choices.
+Health/Stamina/Mana Regeneration use IDs 10/11/12. Armor uses ID 18. Fire/Cold/Lightning/Necrotic/Void Resistance use IDs 19/20/21/22/44. Armor Penetration uses ID 34, Spell Penetration uses ID 57, Critical Chance and Critical Damage use IDs 14/15, Physical Power uses ID 53 and Accuracy Rating uses ID 40. Movement Speed, Attack Speed and Cast Speed use bonus percentage IDs 54/55/56. Their old identities 27/25/26 stay retired. Retired slots return zero and stay out of Inspector and playground choices.
 
 | Primary | Flat contribution per point |
 | --- | --- |
@@ -121,13 +121,19 @@ Source values follow the existing weak-live/cached-fallback context policy, incl
 
 `GameplayEffectDefinition` preserves `DamageType.PHYSICAL = 0` and `MAGIC = 1`. Its separate Magic School selector supports Fire, Cold, Lightning, Void and Necrotic, defaulting to Fire for existing Magic resources without an authored school. Fireball explicitly authors that school. Physical components ignore the selector. All schools continue to use Magic Power.
 
-Each successful Magic damage component resolves `raw_magnitude × critical_multiplier × (1 − matching_resistance / 100)`. Only its corresponding target resistance participates, queried in that component's context. Canonical damage-type/school tags are derived from the authored fields; contradictory effect tags are rejected. The bounds/default are numeric JSON tuning: `base_resistance = 0`, `resistance_min_percent = -100`, `resistance_max_percent = 80`.
+Each Magic damage component resolves `raw_magnitude × critical_multiplier × (1 − effective_resistance / 100)`. It queries the target's matching school resistance in the component's context. Canonical damage-type and school tags come from the authored effect. Resistance defaults to 0% and its −100% to +80% bounds are tuned in `combat_rules.json`.
 
-For 100 raw damage, matching resistance of −100/−50/0/50/80% yields 200/150/100/50/20 damage. Resistance applies to Magic components of Attacks as well as Spells. Physical damage ignores all five, and retained modifier/control potency is unchanged. A mixed payload shares one Accuracy check, then resolves each damage component independently.
+For 100 raw damage, effective resistance of −100/−50/0/50/80% yields 200/150/100/50/20 damage. A mixed payload shares one Accuracy check, then resolves each damage component independently.
 
 Resistance bonuses are percentage points: Add Flat 20 grants +20 points. Increased and More multiply the signed foundation, so −50 with 20% increased becomes −60. Apply the final clamp after combining contributions; over-cap amounts can offset a later flat debuff. Damage events preserve raw/resistance/school details while reporting actual post-mitigation Health loss.
 
-School resistance adds no random roll. A matching 80% resistance produces a successful hit dealing 20% damage; RESIST feedback still means a failed spell Accuracy check. Armor applies separately to Physical components. Automatic ailments, periodic damage and barrier mechanics remain excluded.
+School resistance adds no random roll. A matching 80% effective resistance produces a successful hit dealing 20% damage. RESIST feedback means a failed spell Accuracy check. Armor applies separately to Physical components.
+
+### Spell Penetration
+
+Spell Penetration is an outgoing stat with saved ID 57, a default of zero and no upper cap. Each point subtracts one percentage point from the target's final matching resistance for a direct Magic component of a spell hit. The resulting effective resistance floors at −100%. With 20 Spell Penetration, a 100-damage Fire component deals 120 against 0% Fire Resistance and 40 against 80%. The target retains its resistance. Magic components of Attacks and periodic damage use their matching resistance directly.
+
+Use Add Flat for percentage points and scope modifiers with ability or damage tags as needed. F3 displays Spell Penetration as a percentage and uses it in the normal-hit preview. Damage telemetry records the target's resistance, the effective resistance for the component, and the caster's applied Spell Penetration separately.
 
 ## Accuracy and outcomes
 
@@ -181,7 +187,7 @@ Dodge, Block, Absorption, cooldown recovery and consumable behavior remain desig
 
 Open [playground.tscn](../levels/playground/playground.tscn). The saved [combat HUD scene](../levels/playground/testing/combat_hud.tscn) shows Health, Mana and Stamina at the bottom center. Buffs grow from the left and debuffs from the right. Fireball's cast bar shows its live windup and hides on release or cancellation.
 
-F3 opens the Player or Dummy tab. The left pane offers an ability selector, level and searchable sliders for all thirty attributes. The right sheet shows effective stats, including Attack Speed and Cast Speed as percentages. The Player → Dummy card uses the selected ability's hit chance and normal-hit damage against the dummy's current defenses. Hover the derived readouts for inputs such as Accuracy Rating, applicable Power, Armor and Critical Damage bonus.
+F3 opens the Player or Dummy tab. The left pane offers an ability selector, level and searchable sliders for all thirty-one attributes. The right sheet shows effective stats, including Attack Speed and Cast Speed as percentages. The Player → Dummy card uses the selected ability's hit chance and normal-hit damage against the dummy's current defenses. Hover the derived readouts for inputs such as Accuracy Rating, applicable Power, Armor and Critical Damage bonus.
 
 Enable a row override to edit its base. Current pools edit directly within their current capacity. Level, Strength, Dexterity, Intellect and Vitality use whole steps. Other attribute sliders use 0.01 steps. Focus a slider and use the arrow keys for a single step. The saved editor scene defines practical test ranges. Tracks include existing values outside those ranges. The character sheet uses the effective values after gameplay limits apply. Damage previews use the selected action's authored hit payload. The ellipsis menu holds reset edits and clear effects, plus resource restoration for Player. R restores the dummy during gameplay. Esc or F3 closes the attribute view. LMB or F activates the selected action.
 

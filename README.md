@@ -2,7 +2,7 @@
 
 A first-person RPG inspired by the spirit of *The Elder Scrolls V: Skyrim*, with action RPG elements inspired by *Diablo*, built with Godot.
 
-The playable project uses the [Combat 2.0 foundation](docs/combat_system.md) with thirty code-defined stats, scoped modifiers, shared attack/spell Accuracy, damage and resistance rules, and tag-driven abilities and effects. Fireball is the Godot Playground’s combat ability. Historical Python tools and reports use the legacy model.
+The playable project uses the [Combat 2.0 foundation](docs/combat_system.md) with thirty-one code-defined stats, scoped modifiers, shared attack/spell Accuracy, damage and resistance rules, and tag-driven abilities and effects. Fireball is the Godot Playground’s combat ability. Historical Python tools and reports use the legacy model.
 
 The [combat game design](docs/combat_system_2_0.md) records the full attribute descriptions and formulas, implemented Armor/Penetration/resistances, Accuracy/level curve and regeneration, current weapon roster, unique-equipped rule, shared weapon trees, Shield's blocking specialization and ten Relic visual alternatives. Its Shield and new caster families, blocking and equipment/progression rules are design only; the document separates them from implemented behavior.
 
@@ -44,7 +44,7 @@ in the main course. There are no separate combat arenas to open.
 - **F1:** toggle per-ability combat statistics.
 - **F2:** toggle the combat log at the lower left.
 
-The player's combat HUD shows Health, Mana and Stamina at the bottom center. The Fireball cast bar fills with its active animation and disappears on release or cancellation. The dummy shows an unlabeled health bar, actual damage and MISS/RESIST feedback. F3 offers searchable sliders for all thirty attributes, with effective percentages and computed outcomes on the character sheet. In F3, set Cast Speed to +50% to play Fireball at 1.5×. +100% reaches 2×. Drag a speed slider to its right edge and release to expand the test range.
+The player's combat HUD shows Health, Mana and Stamina at the bottom center. The Fireball cast bar fills with its active animation and disappears on release or cancellation. The dummy shows an unlabeled health bar, actual damage and MISS/RESIST feedback. F3 offers searchable sliders for all thirty-one attributes, with effective percentages and computed outcomes on the character sheet. In F3, set Cast Speed to +50% to play Fireball at 1.5×. +100% reaches 2×. Drag a speed slider to its right edge and release to expand the test range.
 
 [Ability authoring](docs/ability_system.md) explains the editable resources. [Combat implementation](docs/combat_system.md) lists the live catalogue and formulas. Tuning is in [combat_rules.json](combat/combat_rules.json).
 

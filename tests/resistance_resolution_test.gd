@@ -24,6 +24,8 @@ func _run() -> void:
 	preload("res://tests/combat_rules_fixture.gd").install()
 	_test_school_identity_and_validation()
 	_test_all_school_boundaries()
+	_test_spell_penetration()
+	_test_spell_penetration_delivery()
 	_test_school_scopes_and_power()
 	_test_detached_source_and_fractional_damage()
 	_test_physical_and_action_independence()
@@ -145,6 +147,78 @@ func _test_all_school_boundaries() -> void:
 	_near(CombatMath.resolve_effect(_effect(), context, null), 0.0, "Missing targets safely resolve zero damage")
 
 
+func _test_spell_penetration() -> void:
+	var source := _actor()
+	var target := _actor()
+	var penetration := CombatAttributes.Id.SPELL_PENETRATION
+	var context := _context(source)
+	var fire := _effect()
+	_near(source.get_value(penetration), 0.0, "Spell Penetration starts at zero")
+	target.set_base_value(CombatAttributes.Id.FIRE_RESISTANCE, 80.0)
+	_near(CombatMath.resolve_effect(fire, context, target), 20.0, "Zero penetration preserves high Resistance")
+	source.set_base_value(penetration, -20.0)
+	_near(source.get_value(penetration), 0.0, "Negative Spell Penetration floors at zero")
+	source.set_base_value(penetration, 20.0)
+	for school in RESISTANCES.size():
+		var effect := _effect(school)
+		var resistance := RESISTANCES[school]
+		target.set_base_value(resistance, 140.0)
+		_near(CombatMath.resolve_effect(effect, context, target), 40.0,
+				"Twenty penetration subtracts from the matching capped Resistance")
+		_near(target.get_value(resistance), 80.0, "Spell resolution preserves the target's effective Resistance")
+		_near(target.get_base_value(resistance), 140.0, "Spell resolution preserves the target's stored Resistance")
+		target.set_base_value(resistance, 0.0)
+		_near(CombatMath.resolve_effect(effect, context, target), 120.0,
+				"Twenty penetration turns neutral Resistance into a damage vulnerability")
+	target.set_base_value(CombatAttributes.Id.FIRE_RESISTANCE, -25.0)
+	_near(CombatMath.resolve_effect(fire, context, target), 145.0, "Penetration deepens existing vulnerabilities")
+	source.set_base_value(penetration, 150.0)
+	_near(source.get_value(penetration), 150.0, "Spell Penetration can exceed one hundred points")
+	_near(CombatMath.resolve_effect(fire, context, target), 200.0, "Effective Resistance stops at minus one hundred percent")
+	_near(CombatMath.resolve_effect(fire, _context(source, false), target), 125.0,
+			"Magic components of Attacks use Resistance without Spell Penetration")
+	var periodic_fire := _effect()
+	periodic_fire.timing = GameplayEffectDefinition.Timing.DURATION
+	periodic_fire.duration = 2.0
+	periodic_fire.period = 1.0
+	_near(CombatMath.resolve_effect(periodic_fire, context, target), 125.0,
+			"Periodic spell damage uses Resistance without the spell-hit penetration bonus")
+
+
+func _test_spell_penetration_delivery() -> void:
+	var source := _actor()
+	var target := _actor()
+	source.set_base_value(CombatAttributes.Id.SPELL_PENETRATION, 20.0)
+	source.set_base_value(CombatAttributes.Id.CRITICAL_CHANCE, 100.0)
+	target.set_base_value(CombatAttributes.Id.FIRE_RESISTANCE, 80.0)
+	var physical := _effect(GameplayEffectDefinition.MagicSchool.FIRE, 20.0)
+	physical.damage_type = GameplayEffectDefinition.DamageType.PHYSICAL
+	var payload: Array[GameplayEffectDefinition] = [
+		_effect(), _effect(GameplayEffectDefinition.MagicSchool.COLD), physical,
+	]
+	var runtime := GameplayEffectRuntime.new(target, GameplayTagSet.new())
+	var context := _context(source)
+	var damage_events: Array[Dictionary] = []
+	runtime.combat_event.connect(func(event: Dictionary) -> void:
+		if event.type == &"damage":
+			damage_events.append(event))
+	_check(runtime.apply_hit_payload(payload, context, 1.0, 0.0).outcome == &"resist"
+			and damage_events.is_empty(), "Spell Penetration cannot turn a failed Accuracy roll into a hit")
+	_near(target.get_value(CombatAttributes.Id.HEALTH), 10000.0, "A failed spell deals no damage")
+	var hit := runtime.apply_hit_payload(payload, context, 0.0, 0.0)
+	_check(hit.outcome == &"hit" and hit.is_critical and damage_events.size() == 3,
+			"One successful critical spell delivers every component")
+	_near(target.get_value(CombatAttributes.Id.HEALTH), 9730.0,
+			"Critical spell deals 60 Fire, 180 Cold and 30 Physical damage")
+	if damage_events.size() == 3:
+		_near(damage_events[0].resistance_percent, 80.0, "Fire telemetry preserves the target's original Resistance")
+		_near(damage_events[0].effective_resistance_percent, 60.0, "Fire telemetry reports effective Resistance")
+		_near(damage_events[0].spell_penetration, 20.0, "Fire telemetry reports caster Spell Penetration")
+		_near(damage_events[1].effective_resistance_percent, -20.0, "Cold telemetry reports the vulnerability")
+		_near(damage_events[2].spell_penetration, 0.0, "Physical components ignore Spell Penetration")
+	_near(target.get_value(CombatAttributes.Id.FIRE_RESISTANCE), 80.0, "A delivered hit does not alter target Resistance")
+
+
 func _test_school_scopes_and_power() -> void:
 	var source := _actor()
 	var target := _actor()
@@ -177,7 +251,9 @@ func _test_detached_source_and_fractional_damage() -> void:
 	var target := _actor()
 	var school_power := _modifier(CombatAttributes.Id.MAGIC_POWER, 20.0)
 	school_power.required_context_tags = PackedStringArray(["Damage.Fire"])
-	source.set_modifiers(&"fire_power", [school_power])
+	var school_penetration := _modifier(CombatAttributes.Id.SPELL_PENETRATION, 20.0)
+	school_penetration.required_context_tags = PackedStringArray(["Damage.Fire"])
+	source.set_modifiers(&"fire_bonuses", [school_power, school_penetration])
 	var effect := _effect()
 	effect.base_magnitude = 0.0
 	effect.power_coefficient = 1.0
@@ -188,7 +264,7 @@ func _test_detached_source_and_fractional_damage() -> void:
 	target.set_base_value(CombatAttributes.Id.FIRE_RESISTANCE, 80.0)
 	var result := CombatMath.resolve_effect_result(effect, context, target)
 	_near(result.raw_magnitude, 40.0, "Detached sources retain the correct school-scoped Power fallback")
-	_near(result.magnitude, 8.0, "Detached payloads still resolve the current target Resistance")
+	_near(result.magnitude, 16.0, "Detached payloads combine scoped source penetration with live target Resistance")
 	target.set_base_value(CombatAttributes.Id.FIRE_RESISTANCE, -100.0)
 	_near(CombatMath.resolve_effect(effect, context, target), 80.0,
 			"Changing target Resistance affects the next delivery rather than an old target snapshot")
@@ -196,12 +272,12 @@ func _test_detached_source_and_fractional_damage() -> void:
 	effect.power_coefficient = 0.0
 	target.set_base_value(CombatAttributes.Id.FIRE_RESISTANCE, 80.0)
 	result = CombatMath.resolve_effect_result(effect, context, target)
-	_near(result.magnitude, 0.0002, "Small mitigated components retain fractional damage internally")
+	_near(result.magnitude, 0.0004, "Small mitigated components retain fractional damage internally")
 	var before := target.get_value(CombatAttributes.Id.HEALTH)
 	var runtime := GameplayEffectRuntime.new(target, GameplayTagSet.new())
 	_check(runtime.apply_hit_payload([effect], context, 0.0).outcome == &"hit",
 			"A fractional mitigated hit still follows the shared Accuracy path")
-	_near(before - target.get_value(CombatAttributes.Id.HEALTH), 0.0002,
+	_near(before - target.get_value(CombatAttributes.Id.HEALTH), 0.0004,
 			"Fractional Resistance results are not rounded away before applying Health loss")
 
 

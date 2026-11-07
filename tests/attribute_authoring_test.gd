@@ -6,7 +6,7 @@ const ATTRIBUTE_FIXTURE = preload("res://tests/attribute_fixture.gd")
 const TEMP_MODIFIER = "res://.godot/attribute_authoring_modifier.tres"
 const EXPECTED_IDS: Array[int] = [
 	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 18, 19, 20, 21, 22,
-	34, 38, 39, 40, 42, 44, 53, 54, 55, 56,
+	34, 38, 39, 40, 42, 44, 53, 54, 55, 56, 57,
 ]
 
 var _checks: int = 0
@@ -37,7 +37,7 @@ func _test_inspector_catalogue() -> void:
 	var metadata := _property(modifier, &"attribute")
 	_check(metadata.get("hint") == PROPERTY_HINT_ENUM, "Attribute selection has explicit enum choices")
 	var choices := _choices(metadata.get("hint_string", ""))
-	_check(choices.size() == 30, "Exactly thirty attributes are available for authoring")
+	_check(choices.size() == EXPECTED_IDS.size(), "The modifier offers only the active attributes")
 	_check(CombatAttributes.all_ids() == EXPECTED_IDS, "The catalogue has the agreed saved identities")
 	for id: int in EXPECTED_IDS:
 		_check(choices.has(id), "Every current attribute is available: %d" % id)
@@ -56,6 +56,8 @@ func _test_inspector_catalogue() -> void:
 			"Both speed attributes use percentage-point authoring units")
 	_check(choices.get(18) == "Armor", "Armor restores its original saved identity")
 	_check(choices.get(34) == "Armor Penetration", "Armor Penetration restores its original saved identity")
+	_check(choices.get(57) == "Spell Penetration" and CombatAttributes.uses_percentage_units(57),
+			"Spell Penetration has its own saved identity and uses percentage-point units")
 	_check(choices.get(14) == "Critical Chance" and choices.get(15) == "Critical Damage",
 			"Critical selectors retain their original identities and canonical designer names")
 	_check(CombatAttributes.Id.CRITICAL_MULTIPLIER == 15,
@@ -72,7 +74,8 @@ func _test_inspector_catalogue() -> void:
 	for id: int in CombatAttributes.RETIRED_IDS:
 		_check(not choices.has(id), "Old combat attributes are absent from new authoring: %d" % id)
 	var optional := _choices(CombatAttributes.inspector_hint(true))
-	_check(optional.size() == 31 and optional.get(-1) == "None", "Optional selectors add only the None sentinel")
+	_check(optional.size() == EXPECTED_IDS.size() + 1 and optional.get(-1) == "None",
+			"Optional selectors add only the None sentinel")
 
 
 func _test_ability_commit_effect_selectors() -> void:
@@ -89,7 +92,8 @@ func _test_stale_metadata_refresh() -> void:
 			"hint_string": "Old Burn Chance:47,Old Movement Percent:27,Old Critical Multiplier:15"}
 	AttributeModifier.new()._validate_property(metadata)
 	var choices := _choices(metadata.hint_string)
-	_check(choices.size() == 30 and choices.has(53) and choices.has(54) and choices.has(44) and choices.has(18) and choices.has(34)
+	_check(choices.size() == EXPECTED_IDS.size() and choices.has(53) and choices.has(54)
+			and choices.has(44) and choices.has(18) and choices.has(34) and choices.has(57)
 			and choices.get(39) == "Carried Weight"
 			and choices.get(14) == "Critical Chance" and choices.get(15) == "Critical Damage"
 			and not choices.has(13) and not choices.has(27) and not choices.has(47),

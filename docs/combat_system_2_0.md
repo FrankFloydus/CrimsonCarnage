@@ -38,7 +38,7 @@ Starting values and contribution rates below are the current editable tuning def
 
 ## Attributes
 
-There are **thirty active attributes**, including four primaries, three current resource pools, Carried Weight, and Attack Speed and Cast Speed bonuses. The proposed caster weapon timing factor is a separate equipment property.
+There are **thirty-one active attributes**, including four primaries, three current resource pools, Carried Weight, and Attack Speed and Cast Speed bonuses. The proposed caster weapon timing factor is a separate equipment property.
 
 ### Attribute value meanings
 
@@ -47,7 +47,7 @@ The F3 editor uses each attribute’s native units. The character sheet uses eff
 | Attribute type | Meaning of the editable attribute | Examples |
 | --- | --- | --- |
 | Totals and rates | The actual quantity after modifiers | Health, capacities, primaries, Armor, Power, Accuracy, Carry Capacity, Carried Weight and regeneration |
-| Direct percentages | The actual chance or defense percentage | Critical Chance, Armor Penetration and school resistances |
+| Direct percentages | The actual chance, defense or penetration percentage | Critical Chance, Armor Penetration, Spell Penetration and school resistances |
 | Bonus percentages | A bonus added to a separate built-in baseline | Critical Damage above 150%, Movement Speed above normal movement, Attack Speed and Cast Speed above authored playback |
 
 At 0% bonus, Critical Damage uses its 150% baseline and action and movement speeds use normal playback or movement. Add Flat adds native stat units. Generic Increased and More operations scale the stored stat value. The tooltips give each attribute's units and baseline.
@@ -378,18 +378,22 @@ Physical damage taken = Raw Physical damage × Critical multiplier × (1 − Arm
 
 At 50% penetration, a target's 1,000 Armor is treated as 500 for that component, reducing mitigation from 75% to 60%. At 100%, effective Armor is zero. Penetration uses the full target rating before the Armor curve; it does not permanently change the target's attribute. Physical Attacks and Physical Spells use it; Magic components, Accuracy and attached modifier potency are unaffected. Add Flat 20 grants 20 percentage points of penetration.
 
+### Spell Penetration
+
+Spell Penetration starts at **0%** and is nonnegative and uncapped after modifiers. Each percentage point subtracts one percentage point from the target's final matching resistance for a direct Magic component of a spell hit, with a **−100%** effective floor. For example, 20% penetration against 0% Fire Resistance yields −20% effective resistance, so a 100-damage Fire component deals 120. The calculation is local to the component. Accuracy, critical rules, and the target's resistance stat retain their ordinary behavior.
+
 ### Fire Resistance
 
 Fire Resistance reduces incoming **Fire magic damage**, from either an Attack or a Spell. Its base is **0%**, with no contribution from primary attributes. Flat bonuses add percentage points before increased and more modifiers.
 
 ```text
 Fire Resistance = clamp(Modified(0), −100, 80)
-Fire damage taken = Raw Fire damage × Critical multiplier × (1 − Fire Resistance / 100)
+Fire damage taken = Raw Fire damage × Critical multiplier × (1 − effective Fire Resistance / 100)
 ```
 
 **Limits:** minimum **−100%**; maximum **+80%**.
 
-At 50% Fire Resistance, a successful 100-damage Fire hit deals 50 damage. At −50%, it deals 150. Fire Resistance changes neither the hit's Accuracy nor its attached status effects' potency.
+At 50% effective Fire Resistance, a successful 100-damage Fire hit deals 50 damage. At −50%, it deals 150. For a direct Magic spell component, apply Spell Penetration to the target's final resistance. Fire Resistance changes neither the hit's Accuracy nor its attached status effects' potency.
 
 ### Cold Resistance
 
@@ -397,7 +401,7 @@ Cold Resistance reduces incoming **Cold magic damage**, from either an Attack or
 
 ```text
 Cold Resistance = clamp(Modified(0), −100, 80)
-Cold damage taken = Raw Cold damage × Critical multiplier × (1 − Cold Resistance / 100)
+Cold damage taken = Raw Cold damage × Critical multiplier × (1 − effective Cold Resistance / 100)
 ```
 
 **Limits:** minimum **−100%**; maximum **+80%**.
@@ -410,7 +414,7 @@ Lightning Resistance reduces incoming **Lightning magic damage**, from either an
 
 ```text
 Lightning Resistance = clamp(Modified(0), −100, 80)
-Lightning damage taken = Raw Lightning damage × Critical multiplier × (1 − Lightning Resistance / 100)
+Lightning damage taken = Raw Lightning damage × Critical multiplier × (1 − effective Lightning Resistance / 100)
 ```
 
 **Limits:** minimum **−100%**; maximum **+80%**.
@@ -423,7 +427,7 @@ Void Resistance reduces incoming **Void magic damage**, from either an Attack or
 
 ```text
 Void Resistance = clamp(Modified(0), −100, 80)
-Void damage taken = Raw Void damage × Critical multiplier × (1 − Void Resistance / 100)
+Void damage taken = Raw Void damage × Critical multiplier × (1 − effective Void Resistance / 100)
 ```
 
 **Limits:** minimum **−100%**; maximum **+80%**.
@@ -436,7 +440,7 @@ Necrotic Resistance reduces incoming **Necrotic magic damage**, from either an A
 
 ```text
 Necrotic Resistance = clamp(Modified(0), −100, 80)
-Necrotic damage taken = Raw Necrotic damage × Critical multiplier × (1 − Necrotic Resistance / 100)
+Necrotic damage taken = Raw Necrotic damage × Critical multiplier × (1 − effective Necrotic Resistance / 100)
 ```
 
 **Limits:** minimum **−100%**; maximum **+80%**.
@@ -739,11 +743,12 @@ Damage type, magic school and delivery are separate authored choices. **Physical
 After the whole hit passes its shared Accuracy check, each Physical component uses penetrated Armor and each Magic component uses its matching resistance. For example, a hit with 30 Physical damage and 20 Fire damage, zero source penetration, and a target with **500 Armor and 50% Fire Resistance** deals **12 + 10 = 22** damage. Armor and school resistance do not multiply together on the same component. Neither reduces attached buffs or control effects or introduces another success roll.
 
 ```text
-Effective school resistance = clamp(Modified resistance, −100, 80)
+Target school resistance = clamp(Modified resistance, −100, 80)
+Effective school resistance for a spell hit = max(−100, Target school resistance − Spell Penetration)
 Magic damage taken = Raw magic damage × Critical multiplier × (1 − Effective school resistance / 100)
 ```
 
-| Matching resistance | Damage multiplier | Damage taken from a successful 100-damage component |
+| Effective resistance | Damage multiplier | Damage taken from a successful 100-damage component |
 | --- | ---: | ---: |
 | −100% | ×2.00 | 200 |
 | −50% | ×1.50 | 150 |
@@ -971,6 +976,7 @@ The live character Cast Speed bonus is described under [Attack Speed and Cast Sp
 | Armor | Implemented; nonnegative, uncapped rating gives diminishing Physical reduction, capped at 75% from 1,000 effective Armor after penetration. |
 | Critical Chance and Critical Damage | Implemented; chance 0–100%, 150% base critical damage, nonnegative uncapped bonus. One critical outcome per successful damaging hit. |
 | Armor Penetration | Implemented; 0–100% source percentage ignores that share of full target Armor before the reduction curve. |
+| Spell Penetration | Implemented. Each point subtracts one percentage point from matching resistance for a direct Magic spell component, with a −100% effective floor. |
 | Physical weapon min/max damage and base cycle | Implemented, including Finesse/Brutality scaling and bow delivery. |
 | Magic Power | Fixed character value implemented; weapon min/max contribution is design only. |
 | Attack Speed and Cast Speed | Implemented as 0–100% character bonuses, sampled on activation. Fireball's cast bar follows its authored release key. |

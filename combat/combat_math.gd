@@ -115,7 +115,7 @@ static func resolve_effect(
 
 
 ## Physical components reduce full Armor by source penetration before the mitigation curve.
-## Magic uses only its matching school Resistance and ignores Armor/Penetration.
+## Magic uses its matching school Resistance. Spell hits subtract source Spell Penetration.
 ## Target Health limits actual resource loss later, never the source or mitigated magnitude.
 static func resolve_effect_result(
 		definition: GameplayEffectDefinition,
@@ -125,6 +125,8 @@ static func resolve_effect_result(
 	var raw := raw_effect_magnitude(definition, context) if is_instance_valid(target) else 0.0
 	var resistance_attribute := CombatAttributes.Id.NONE
 	var resistance := 0.0
+	var effective_resistance := 0.0
+	var spell_penetration := 0.0
 	var school := -1
 	var armor := 0.0
 	var effective_armor := 0.0
@@ -154,10 +156,14 @@ static func resolve_effect_result(
 			if resistance_attribute != CombatAttributes.Id.NONE:
 				school = definition.magic_school
 				var tags := definition.get_context_tags(context.ability_tags)
-				resistance = clampf(target.get_value(resistance_attribute, tags),
-						CombatRules.get_number("resistance_min_percent"),
-						CombatRules.get_number("resistance_max_percent"))
-	var multiplier := 1.0 - resistance / 100.0
+				resistance = target.get_value(resistance_attribute, tags)
+				if definition.period == 0.0 and GameplayEffectContext.is_spell_delivery(tags):
+					var source_value := context.get_source_value(CombatAttributes.Id.SPELL_PENETRATION, tags)
+					if is_finite(source_value):
+						spell_penetration = maxf(0.0, source_value)
+				effective_resistance = maxf(CombatRules.get_number("resistance_min_percent"),
+						resistance - spell_penetration)
+	var multiplier := 1.0 - effective_resistance / 100.0
 	var critical_magnitude := raw * critical_multiplier
 	return {
 		"magnitude": critical_magnitude * (1.0 - armor_reduction) * multiplier,
@@ -173,6 +179,8 @@ static func resolve_effect_result(
 		"magic_school": school,
 		"resistance_attribute": resistance_attribute,
 		"resistance_percent": resistance,
+		"effective_resistance_percent": effective_resistance,
+		"spell_penetration": spell_penetration,
 		"resistance_multiplier": multiplier,
 	}
 

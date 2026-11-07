@@ -68,6 +68,8 @@ Armor is a target rating, starting at 0. Add Flat 100 grants 100 rating; increas
 
 Armor Penetration is an outgoing source percentage starting at 0%, clamped to 0–100% after ordinary modifiers. Add Flat 20 grants 20 percentage points. The hit treats target Armor as `Full Armor × (1 − Source Penetration / 100)` before the curve, without changing the target's stat. At 50%, 1000 Armor becomes 500 effective Armor; at 100%, Armor is fully ignored for the Physical component. Magic damage and Accuracy are unchanged. A penetration modifier can be scoped to particular actions using the existing context tags.
 
+Spell Penetration starts at 0% and displays as a percentage. An item granting **+20% Spell Penetration** uses Add Flat 20. At 20% Spell Penetration, each direct Magic component of a spell hit subtracts 20 percentage points from its matching resistance, down to −100% effective resistance. At 20% base penetration, two **20% increased** modifiers add together to give 28%. Two **20% more** modifiers multiply separately to give 28.8%. Increased and More both require an existing value to scale. In F3, change Player Spell Penetration and Dummy Fire Resistance to see Fireball's Normal Hit preview update.
+
 ## Movement modifiers
 
 Movement Speed is a **bonus percentage**, default 0%, minimum −100% and maximum +25%. Add Flat 1 grants +1% movement; Add Flat 20 grants +20%. A gear property reading +20% Movement Speed therefore uses Add Flat 20 native percentage points. Increased Percent and More Percent scale the accumulated bonus: +20 flat and 20% increased produce +24%; a percentage modifier alone leaves zero at zero. This is the same bonus-stat convention as Critical Damage above its 150% baseline.

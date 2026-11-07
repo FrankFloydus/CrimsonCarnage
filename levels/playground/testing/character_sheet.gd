@@ -9,6 +9,7 @@ const STAT_LABELS: Dictionary[int, NodePath] = {
 	CombatAttributes.Id.CRITICAL_CHANCE: ^"%CriticalChanceValue",
 	CombatAttributes.Id.CRITICAL_DAMAGE: ^"%CriticalDamageValue",
 	CombatAttributes.Id.ARMOR_PENETRATION: ^"%ArmorPenetrationValue",
+	CombatAttributes.Id.SPELL_PENETRATION: ^"%SpellPenetrationValue",
 	CombatAttributes.Id.ATTACK_SPEED: ^"%AttackSpeedValue",
 	CombatAttributes.Id.CAST_SPEED: ^"%CastSpeedValue",
 	CombatAttributes.Id.ARMOR: ^"%PhysicalReductionValue",
@@ -33,6 +34,7 @@ const ACTION_STATS: Array[int] = [
 	CombatAttributes.Id.CRITICAL_CHANCE,
 	CombatAttributes.Id.CRITICAL_DAMAGE,
 	CombatAttributes.Id.ARMOR_PENETRATION,
+	CombatAttributes.Id.SPELL_PENETRATION,
 ]
 
 var _value_labels: Dictionary[int, Label] = {}

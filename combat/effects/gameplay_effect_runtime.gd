@@ -741,7 +741,8 @@ func _apply_damage(spec: GameplayEffectSpec, event: Dictionary, result: Dictiona
 	damage_event["stack_count"] = spec.stack_count
 	for field in ["raw_magnitude", "critical_magnitude", "armor", "effective_armor",
 			"armor_penetration_percent", "armor_reduction", "resistance_attribute",
-			"resistance_percent", "resistance_multiplier"]:
+			"resistance_percent", "effective_resistance_percent", "spell_penetration",
+			"resistance_multiplier"]:
 		if result.has(field):
 			damage_event[field] = result[field]
 	_notifications.append({"event": damage_event, "definition": spec.definition})

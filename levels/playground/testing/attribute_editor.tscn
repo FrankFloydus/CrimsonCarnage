@@ -32,7 +32,8 @@ slider_ranges = Dictionary[int, Vector2]({
 42: Vector2(0, 500),
 44: Vector2(-250, 150),
 53: Vector2(0, 500),
-54: Vector2(-150, 100)
+54: Vector2(-150, 100),
+57: Vector2(0, 200)
 })
 
 [node name="ActorControls" type="HBoxContainer" parent="."]
