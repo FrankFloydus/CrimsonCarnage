@@ -218,7 +218,7 @@ class TagManager(QWidget):
                 self._tags.reveal(full_name)
 
 
-def choose_tag(parent: QWidget, entries: list[dict], title: str) -> str | None:
+def choose_tag(parent: QWidget, entries: list[dict], title: str, *, allow_implied: bool = True) -> str | None:
     dialog = QDialog(parent)
     dialog.setWindowTitle(title)
     dialog.resize(460, 500)
@@ -230,13 +230,28 @@ def choose_tag(parent: QWidget, entries: list[dict], title: str) -> str | None:
     select = buttons.button(QDialogButtonBox.StandardButton.Ok)
     select.setText("Select Tag")
     select.setEnabled(False)
-    tags.tree.currentItemChanged.connect(lambda: select.setEnabled(tags.selected_path() is not None))
+
+    def can_select() -> bool:
+        path = tags.selected_path()
+        return path is not None and (allow_implied or path in tags.entries)
+
+    def accept_selection() -> None:
+        if can_select():
+            dialog.accept()
+
+    tags.tree.currentItemChanged.connect(lambda: select.setEnabled(can_select()))
+    tags.tree.itemDoubleClicked.connect(lambda _item: accept_selection())
+    tags.search.textChanged.connect(lambda _text: select.setEnabled(can_select()))
     buttons.accepted.connect(dialog.accept)
     buttons.rejected.connect(dialog.reject)
 
     layout = QVBoxLayout(dialog)
     layout.addWidget(tags.search)
     layout.addWidget(tags.tree)
+    if not allow_implied:
+        help_text = QLabel("Select a registered tag. Branches without a registration organize the tree.")
+        help_text.setWordWrap(True)
+        layout.addWidget(help_text)
     layout.addWidget(buttons)
     tags.search.setFocus()
 

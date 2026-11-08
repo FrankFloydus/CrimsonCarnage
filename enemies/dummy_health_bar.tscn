@@ -1,0 +1,52 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://enemies/dummy_health_bar.gd" id="1_bar"]
+
+[sub_resource type="StandardMaterial3D" id="Material_frame"]
+render_priority = -1
+shading_mode = 0
+albedo_color = Color(0.025, 0.03, 0.04, 1)
+cull_mode = 2
+no_depth_test = true
+
+[sub_resource type="QuadMesh" id="Mesh_frame"]
+material = SubResource("Material_frame")
+size = Vector2(0.74, 0.085)
+
+[sub_resource type="StandardMaterial3D" id="Material_background"]
+shading_mode = 0
+albedo_color = Color(0.21, 0.055, 0.045, 1)
+cull_mode = 2
+no_depth_test = true
+
+[sub_resource type="QuadMesh" id="Mesh_background"]
+material = SubResource("Material_background")
+size = Vector2(0.69, 0.045)
+
+[sub_resource type="StandardMaterial3D" id="Material_fill"]
+render_priority = 1
+shading_mode = 0
+albedo_color = Color(0.76, 0.12, 0.085, 1)
+cull_mode = 2
+no_depth_test = true
+
+[sub_resource type="QuadMesh" id="Mesh_fill"]
+material = SubResource("Material_fill")
+size = Vector2(0.69, 0.045)
+
+[node name="HealthBar" type="Node3D"]
+script = ExtResource("1_bar")
+
+[node name="Frame" type="MeshInstance3D" parent="."]
+cast_shadow = 0
+mesh = SubResource("Mesh_frame")
+
+[node name="Background" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0, 0.001)
+cast_shadow = 0
+mesh = SubResource("Mesh_background")
+
+[node name="Fill" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0, 0.002)
+cast_shadow = 0
+mesh = SubResource("Mesh_fill")

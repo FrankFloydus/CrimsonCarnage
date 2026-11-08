@@ -1,0 +1,406 @@
+{
+	"format": "godot_combat_definition",
+	"version": 1,
+	"uid": "uid://ctmxnxdyv5mf3",
+	"root": "r1",
+	"resources": {
+		"r1": {
+			"type": "AbilityDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"ability_id": 15,
+				"display_name": "Crimson Bolt",
+				"icon": null,
+				"ability_tags": [
+					"Ability.Spell",
+					"Ability.Fixture.CrimsonBolt"
+				],
+				"required_tags": [],
+				"activation_tags": [],
+				"cancel_ability_tags": [],
+				"block_ability_tags": [],
+				"activation_event_tag": "",
+				"reactions": [],
+				"interruption_policy": null,
+				"resource_costs": [],
+				"charge_pool": null,
+				"execution": {
+					"$resource": "r2"
+				}
+			}
+		},
+		"r2": {
+			"type": "PhasedAbilityExecution",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"cast_mode": 0,
+				"cast_duration": 0.0,
+				"channel_period": 1.0,
+				"animation_name": "",
+				"release_event": "Event.Combat.ProjectileRelease",
+				"animation_fallback_seconds": -1.0,
+				"targeting": {
+					"$resource": "r3"
+				},
+				"activation_conditions": [],
+				"delivery": {
+					"$resource": "r4"
+				},
+				"phases": [
+					{
+						"$resource": "r5"
+					}
+				]
+			}
+		},
+		"r3": {
+			"type": "AbilityTargetingDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"shape": 3,
+				"origin": 1,
+				"max_range": 30.0,
+				"radius": 1.0,
+				"half_height": 2.0,
+				"up_axis": {
+					"$variant": {
+						"type": "Vector3",
+						"args": [
+							0.0,
+							1.0,
+							0.0
+						]
+					}
+				},
+				"half_extents": {
+					"$variant": {
+						"type": "Vector3",
+						"args": [
+							1.0,
+							1.0,
+							1.0
+						]
+					}
+				},
+				"angle_degrees": 90.0,
+				"max_targets": 0,
+				"collision_mask": 1,
+				"require_line_of_sight": false,
+				"allegiance": 1,
+				"allow_world_surfaces": false,
+				"include_caster": false,
+				"include_dead": false,
+				"include_living": true,
+				"required_target_tags": [],
+				"blocked_target_tags": []
+			}
+		},
+		"r4": {
+			"type": "AbilityDeliveryDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"kind": 2,
+				"projectile_scene": {
+					"$asset": "res://tests/fixtures/ability_v2/crimson_bolt_projectile.tscn"
+				},
+				"spawn_offset": {
+					"$variant": {
+						"type": "Vector3",
+						"args": [
+							0.0,
+							0.0,
+							0.0
+						]
+					}
+				},
+				"detach_on_cancel": true,
+				"area_targeting": null,
+				"lifetime": 1.0,
+				"period": 0.0,
+				"arm_delay": 0.0,
+				"maximum_surface_slope": 90.0,
+				"chain_targeting": null,
+				"chain_hops": 2,
+				"stop_chain_on_failed_hit": false
+			}
+		},
+		"r5": {
+			"type": "AbilityPhaseDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"event_key": "delivery.impact",
+				"synchronous_gameplay_event": false,
+				"targeting": null,
+				"conditions": [],
+				"actions": [
+					{
+						"$resource": "r6"
+					}
+				],
+				"execution_mode": 0,
+				"failure_policy": 1,
+				"run_once_per_execution": false,
+				"run_once_per_target": false,
+				"max_fires": 0
+			}
+		},
+		"r6": {
+			"type": "AbilityApplyEffectsAction",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"effects": [
+					{
+						"$resource": "r7"
+					},
+					{
+						"$resource": "r13"
+					}
+				],
+				"application": 0,
+				"owned_until_cast_ends": false,
+				"require_application": false
+			}
+		},
+		"r7": {
+			"type": "GameplayEffectDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"effect_id": 18,
+				"display_name": "Crimson Bolt impact",
+				"icon": null,
+				"hud_category": 0,
+				"timing": 0,
+				"asset_tags": [],
+				"gameplay_cue_tags": [],
+				"damage_type": 1,
+				"magic_school": 4,
+				"damage_profile": null,
+				"damage_tags": [],
+				"granted_tags": [],
+				"required_target_tags": [],
+				"blocked_target_tags": [
+					"State.Dead"
+				],
+				"duration": 0.0,
+				"period": 0.0,
+				"execute_periodic_on_application": true,
+				"period_inhibition_policy": 0,
+				"ongoing_required_target_tags": [],
+				"ongoing_blocked_target_tags": [],
+				"modifiers": [],
+				"executions": [
+					{
+						"$resource": "r8"
+					}
+				],
+				"stacking_type": 0,
+				"stack_limit_count": 0,
+				"deny_overflow_application": false,
+				"clear_stack_on_overflow": false,
+				"stack_duration_policy": 0,
+				"stack_period_policy": 0,
+				"stack_expiration_policy": 0,
+				"components": [],
+				"status_profile": null,
+				"snapshot_source": false,
+				"tick_at_end": true,
+				"exclusive_owner_slot": "",
+				"transferable": false,
+				"reactions": [
+					{
+						"$resource": "r10"
+					}
+				]
+			}
+		},
+		"r8": {
+			"type": "GameplayEffectDamageExecution",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"amount": {
+					"$resource": "r9"
+				},
+				"use_weapon_damage": false,
+				"power_coefficient": 0.0,
+				"weapon_power_share": 1.0
+			}
+		},
+		"r9": {
+			"type": "AmountDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "DirectHitDamage (fixture)",
+				"source": 0,
+				"unit": 0,
+				"fixed_amount": 40.0,
+				"percentage": 100.0,
+				"actor": 0,
+				"stat": 42,
+				"resource": 1,
+				"resource_basis": 1,
+				"outcome_basis": 0,
+				"timing": 0,
+				"curve_input": 0,
+				"curve": null,
+				"amount_per_target": 1.0,
+				"clamp_enabled": false,
+				"minimum": 0.0,
+				"maximum": 100.0
+			}
+		},
+		"r10": {
+			"type": "ReactionDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"trigger": 1,
+				"recipient": 0,
+				"once_policy": 0,
+				"timing_filter": 1,
+				"required_delivery": "",
+				"required_provenance": 0,
+				"excluded_provenance": 30,
+				"required_ability_tags": [],
+				"blocked_ability_tags": [],
+				"removal_reason": -1,
+				"link_slot": "",
+				"link_range": 0.0,
+				"link_exclude_trigger_target": true,
+				"nearby_targeting": null,
+				"fire_limit": 0,
+				"actions": [
+					{
+						"$resource": "r11"
+					}
+				]
+			}
+		},
+		"r11": {
+			"type": "HealReactionAction",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"amount": {
+					"$resource": "r12"
+				},
+				"healing_profile": null
+			}
+		},
+		"r12": {
+			"type": "AmountDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"source": 4,
+				"unit": 0,
+				"fixed_amount": 0.0,
+				"percentage": 10.0,
+				"actor": 0,
+				"stat": 42,
+				"resource": 1,
+				"resource_basis": 1,
+				"outcome_basis": 0,
+				"timing": 0,
+				"curve_input": 0,
+				"curve": null,
+				"amount_per_target": 1.0,
+				"clamp_enabled": false,
+				"minimum": 0.0,
+				"maximum": 100.0
+			}
+		},
+		"r13": {
+			"type": "GameplayEffectDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"effect_id": 19,
+				"display_name": "Crimson Bolt periodic",
+				"icon": null,
+				"hud_category": 0,
+				"timing": 1,
+				"asset_tags": [],
+				"gameplay_cue_tags": [],
+				"damage_type": 1,
+				"magic_school": 4,
+				"damage_profile": null,
+				"damage_tags": [],
+				"granted_tags": [],
+				"required_target_tags": [],
+				"blocked_target_tags": [
+					"State.Dead"
+				],
+				"duration": 5.0,
+				"period": 1.0,
+				"execute_periodic_on_application": false,
+				"period_inhibition_policy": 0,
+				"ongoing_required_target_tags": [],
+				"ongoing_blocked_target_tags": [],
+				"modifiers": [],
+				"executions": [
+					{
+						"$resource": "r14"
+					}
+				],
+				"stacking_type": 1,
+				"stack_limit_count": 1,
+				"deny_overflow_application": false,
+				"clear_stack_on_overflow": false,
+				"stack_duration_policy": 0,
+				"stack_period_policy": 0,
+				"stack_expiration_policy": 0,
+				"components": [],
+				"status_profile": null,
+				"snapshot_source": true,
+				"tick_at_end": true,
+				"exclusive_owner_slot": "",
+				"transferable": false,
+				"reactions": []
+			}
+		},
+		"r14": {
+			"type": "GameplayEffectDamageExecution",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"amount": {
+					"$resource": "r15"
+				},
+				"use_weapon_damage": false,
+				"power_coefficient": 0.0,
+				"weapon_power_share": 1.0
+			}
+		},
+		"r15": {
+			"type": "AmountDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"source": 0,
+				"unit": 0,
+				"fixed_amount": 20.0,
+				"percentage": 100.0,
+				"actor": 0,
+				"stat": 42,
+				"resource": 1,
+				"resource_basis": 1,
+				"outcome_basis": 0,
+				"timing": 0,
+				"curve_input": 0,
+				"curve": null,
+				"amount_per_target": 1.0,
+				"clamp_enabled": false,
+				"minimum": 0.0,
+				"maximum": 100.0
+			}
+		}
+	}
+}

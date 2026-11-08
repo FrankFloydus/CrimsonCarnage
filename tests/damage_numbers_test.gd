@@ -3,13 +3,14 @@ extends SceneTree
 ## Run headless with --fixed-fps 60 --script res://tests/damage_numbers_test.gd.
 
 const ATTRIBUTE_FIXTURE = preload("res://tests/attribute_fixture.gd")
+const COMBAT_DEFINITION_JSON = preload("res://combat/abilities/combat_definition_json.gd")
 
-const DUMMY_SCENE = preload("res://examples/fireball/dummy_actor.tscn")
-const FIREBALL = preload("res://examples/fireball/fireball.tres")
+const DUMMY_SCENE = preload("res://enemies/dummy.tscn")
 const ARENA = preload("res://levels/playground/playground.tscn")
-const ENCUMBERED = preload("res://player/encumbered_effect.tres")
 const NUMBER_LIFETIME: float = 0.2
 
+var _fireball := COMBAT_DEFINITION_JSON.load_definition("res://examples/fireball/fireball.ability.json") as AbilityDefinition
+var _encumbered := COMBAT_DEFINITION_JSON.load_definition("res://player/encumbered_effect.effect.json") as GameplayEffectDefinition
 var _checks: int = 0
 var _failures: int = 0
 
@@ -32,8 +33,8 @@ func _run() -> void:
 	root.add_child(source)
 	source.set_base_value(CombatAttributes.Id.INTELLECT, 20.0)
 	var context := GameplayEffectContext.capture(source, GameplayTagSet.new(),
-			FIREBALL.get_context_tags())
-	var execution := FIREBALL.execution as PhasedAbilityExecution
+			_fireball.get_context_tags())
+	var execution := _fireball.execution as PhasedAbilityExecution
 	var saved_impact := execution.get_effect_payload()[0]
 	var impact := GameplayEffectDefinition.new()
 	impact.executions = [GameplayEffectDamageExecution.new()]
@@ -142,7 +143,7 @@ func _test_critical_damage_feedback(
 	source.set_base_value(CombatAttributes.Id.ACCURACY_RATING, 30.0)
 	source.set_base_value(CombatAttributes.Id.CRITICAL_CHANCE, 100.0)
 	source.set_base_value(CombatAttributes.Id.CRITICAL_DAMAGE, 0.0)
-	var context := GameplayEffectContext.capture(source, GameplayTagSet.new(), FIREBALL.get_context_tags())
+	var context := GameplayEffectContext.capture(source, GameplayTagSet.new(), _fireball.get_context_tags())
 	var payload: Array[GameplayEffectDefinition] = [impact]
 	var numbers := dummy.get_node("DamageNumbers")
 	var result := dummy.ability_system.receive_hit(context, payload)
@@ -197,7 +198,7 @@ func _test_combat_hud() -> void:
 		attributes.allocated_vitality = 0
 	root.add_child(arena)
 	arena.get_node("Player").set_physics_process(false)
-	arena.get_node("Player/AbilityInput").set_process(false)
+	arena.get_node("Player/ActionRouter").set_process_unhandled_input(false)
 	var tools := arena.get_node("CombatTestTools") as CombatTestTools
 	tools.player_system.set_process(false)
 	tools.dummy.ability_system.set_process(false)
@@ -276,7 +277,7 @@ func _test_combat_hud() -> void:
 	_near(float(success_value.text.trim_suffix("%")), 80.0, "The spell preview shows actual success chance")
 	_near(float(failure_value.text.trim_suffix("%")), 20.0, "The spell preview shows actual resistance chance")
 	target.level = 11
-	tools.select_ability(FIREBALL.ability_id)
+	tools.select_ability(_fireball.ability_id)
 	tools.show_attributes(1)
 	var actor_level := sheet.get_node("%ActorLevel") as Label
 	_check(actor_level.text == "Lv. 11", "The sheet reports the edited dummy level")
@@ -385,8 +386,8 @@ func _test_effect_hud(hud: Control, system: AbilitySystem, dummy: AbilitySystem)
 	var capacity := attributes.get_value(CombatAttributes.Id.CARRY_CAPACITY)
 	attributes.set_base_value(CombatAttributes.Id.CARRIED_WEIGHT, capacity + 50.0)
 	var encumbered_icon := debuffs.get_child(0) as Control if debuffs.get_child_count() == 1 else null
-	_check(encumbered_icon != null and encumbered_icon.tooltip_text == ENCUMBERED.display_name
-			and (encumbered_icon.get_node("Texture") as TextureRect).texture == ENCUMBERED.icon,
+	_check(encumbered_icon != null and encumbered_icon.tooltip_text == _encumbered.display_name
+			and (encumbered_icon.get_node("Texture") as TextureRect).texture == _encumbered.icon,
 			"Crossing carry capacity displays the saved Encumbered debuff icon")
 	attributes.set_base_value(CombatAttributes.Id.CARRIED_WEIGHT, capacity)
 	_check(not strips.visible, "Returning to carry capacity removes the Encumbered icon")

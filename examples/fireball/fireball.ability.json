@@ -1,0 +1,296 @@
+{
+	"format": "godot_combat_definition",
+	"version": 1,
+	"uid": "uid://cq7ahk7kh0lsx",
+	"root": "r1",
+	"resources": {
+		"r1": {
+			"type": "AbilityDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"ability_id": 6,
+				"display_name": "Fireball",
+				"casting_cue": "GameplayCue.Cast.Fire",
+				"icon": {
+					"$asset": "res://examples/fireball/fireball_icon.svg",
+					"uid": "uid://dj6saa4qbkydw"
+				},
+				"ability_tags": [
+					"Ability.Spell",
+					"Ability.Fireball"
+				],
+				"required_tags": [],
+				"activation_tags": [
+					"State.Casting",
+					"State.CombatAction"
+				],
+				"cancel_ability_tags": [],
+				"block_ability_tags": [],
+				"activation_event_tag": "",
+				"reactions": [],
+				"interruption_policy": {
+					"$resource": "r2"
+				},
+				"resource_costs": [
+					{
+						"$resource": "r3"
+					},
+					{
+						"$resource": "r12"
+					}
+				],
+				"charge_pool": {
+					"$resource": "r5"
+				},
+				"execution": {
+					"$resource": "r6"
+				}
+			}
+		},
+		"r2": {
+			"type": "AbilityInterruptionPolicy",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"school": "School.Fire",
+				"activation_blockers": [
+					"State.CombatAction",
+					"State.Control.Silenced",
+					"State.Control.Stunned"
+				],
+				"activation_exceptions": [],
+				"cancel_on_tags": [
+					"State.Control.Silenced",
+					"State.Control.Stunned"
+				],
+				"interrupt_windup": true,
+				"interrupt_channel": true,
+				"interruptible_by_action": true,
+				"occupied_channels": [
+					"offense"
+				],
+				"compatible_channels": [],
+				"windup_movement": 0,
+				"channel_movement": 0,
+				"cost_timing": 0,
+				"cooldown_timing": 0,
+				"refund_cost_on_cancel": false,
+				"refund_cooldown_on_cancel": false
+			}
+		},
+		"r3": {
+			"type": "AbilityResourceCost",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"pool": 1,
+				"amount": {
+					"$resource": "r4"
+				},
+				"spend_up_to_maximum": false,
+				"maximum": 0.0
+			}
+		},
+		"r4": {
+			"type": "AmountDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"source": 0,
+				"unit": 0,
+				"fixed_amount": 15.0,
+				"percentage": 100.0,
+				"actor": 0,
+				"stat": 42,
+				"resource": 1,
+				"resource_basis": 1,
+				"outcome_basis": 0,
+				"timing": 0,
+				"curve_input": 0,
+				"curve": null,
+				"amount_per_target": 1.0,
+				"clamp_enabled": false,
+				"minimum": 0.0,
+				"maximum": 100.0
+			}
+		},
+		"r5": {
+			"type": "AbilityChargeDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"capacity": 1,
+				"recharge_seconds": 1.5,
+				"parallel_recharge": false,
+				"shared_group": ""
+			}
+		},
+		"r6": {
+			"type": "PhasedAbilityExecution",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"cast_mode": 2,
+				"cast_duration": 0.0,
+				"channel_period": 1.0,
+				"animation_name": "cast_fireball",
+				"release_event": "Event.Combat.ProjectileRelease",
+				"animation_fallback_seconds": -1.0,
+				"targeting": {
+					"$resource": "r7"
+				},
+				"activation_conditions": [
+					{
+						"$resource": "r11"
+					}
+				],
+				"delivery": {
+					"$resource": "r8"
+				},
+				"phases": [
+					{
+						"$resource": "r9"
+					}
+				]
+			}
+		},
+		"r7": {
+			"type": "AbilityTargetingDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"shape": 3,
+				"origin": 1,
+				"max_range": 100.0,
+				"radius": 1.0,
+				"half_height": 2.0,
+				"up_axis": {
+					"$variant": {
+						"type": "Vector3",
+						"args": [
+							0.0,
+							1.0,
+							0.0
+						]
+					}
+				},
+				"half_extents": {
+					"$variant": {
+						"type": "Vector3",
+						"args": [
+							1.0,
+							1.0,
+							1.0
+						]
+					}
+				},
+				"angle_degrees": 90.0,
+				"max_targets": 0,
+				"collision_mask": 1,
+				"require_line_of_sight": false,
+				"allegiance": 1,
+				"allow_world_surfaces": false,
+				"include_caster": false,
+				"include_dead": false,
+				"include_living": true,
+				"required_target_tags": [],
+				"blocked_target_tags": []
+			}
+		},
+		"r8": {
+			"type": "AbilityDeliveryDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"kind": 2,
+				"projectile_scene": {
+					"$asset": "res://examples/fireball/fireball_projectile.tscn"
+				},
+				"spawn_offset": {
+					"$variant": {
+						"type": "Vector3",
+						"args": [
+							0.0,
+							0.0,
+							0.0
+						]
+					}
+				},
+				"detach_on_cancel": true,
+				"area_targeting": null,
+				"lifetime": 1.0,
+				"period": 0.0,
+				"arm_delay": 0.0,
+				"maximum_surface_slope": 90.0,
+				"chain_targeting": null,
+				"chain_hops": 2,
+				"stop_chain_on_failed_hit": false
+			}
+		},
+		"r9": {
+			"type": "AbilityPhaseDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"event_key": "delivery.impact",
+				"synchronous_gameplay_event": false,
+				"targeting": null,
+				"conditions": [],
+				"actions": [
+					{
+						"$resource": "r10"
+					}
+				],
+				"execution_mode": 0,
+				"failure_policy": 1,
+				"run_once_per_execution": false,
+				"run_once_per_target": false,
+				"max_fires": 0
+			}
+		},
+		"r10": {
+			"type": "AbilityApplyEffectsAction",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"effects": [
+					{
+						"$asset": "res://examples/fireball/fireball_impact.effect.json",
+						"uid": "uid://dbvh7mn2ah1vv"
+					}
+				],
+				"application": 0,
+				"owned_until_cast_ends": false,
+				"require_application": false
+			}
+		},
+		"r11": {
+			"type": "AbilityConditionDefinition",
+			"properties": {
+				"kind": 2,
+				"resource": 4,
+				"threshold": 25.0
+			}
+		},
+		"r12": {
+			"type": "AbilityResourceCost",
+			"properties": {
+				"use_payment_pool": true,
+				"pool": 2,
+				"amount": {
+					"$resource": "r13"
+				}
+			}
+		},
+		"r13": {
+			"type": "AmountDefinition",
+			"properties": {
+				"unit": 0,
+				"resource_basis": 0,
+				"source": 2,
+				"percentage": 25.0
+			}
+		}
+	}
+}

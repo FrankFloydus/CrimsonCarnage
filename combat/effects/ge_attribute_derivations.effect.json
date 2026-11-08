@@ -1,0 +1,145 @@
+{
+	"format": "godot_combat_definition",
+	"version": 1,
+	"uid": "uid://bdjodr76t7w3d",
+	"root": "r1",
+	"resources": {
+		"r1": {
+			"type": "GameplayEffectDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "GE_AttributeDerivations",
+				"effect_id": 12,
+				"display_name": "Attribute Derivations",
+				"icon": {
+					"$asset": "res://combat/effects/icons/attribute_derivations.svg",
+					"uid": "uid://7j3s0ic2gvdb"
+				},
+				"hud_category": 0,
+				"timing": 2,
+				"asset_tags": [],
+				"gameplay_cue_tags": [],
+				"damage_type": 0,
+				"magic_school": 0,
+				"damage_profile": null,
+				"damage_tags": [],
+				"granted_tags": [],
+				"required_target_tags": [],
+				"blocked_target_tags": [],
+				"duration": 0.0,
+				"period": 0.0,
+				"execute_periodic_on_application": true,
+				"period_inhibition_policy": 0,
+				"ongoing_required_target_tags": [],
+				"ongoing_blocked_target_tags": [],
+				"modifiers": [
+					{
+						"$resource": "r2"
+					},
+					{
+						"$resource": "r3"
+					},
+					{
+						"$resource": "r4"
+					},
+					{
+						"$resource": "r5"
+					},
+					{
+						"$resource": "r6"
+					}
+				],
+				"executions": [],
+				"stacking_type": 0,
+				"stack_limit_count": 0,
+				"deny_overflow_application": false,
+				"clear_stack_on_overflow": false,
+				"stack_duration_policy": 0,
+				"stack_period_policy": 0,
+				"stack_expiration_policy": 0,
+				"components": [],
+				"status_profile": null,
+				"snapshot_source": false,
+				"tick_at_end": true,
+				"exclusive_owner_slot": "",
+				"transferable": false,
+				"reactions": []
+			}
+		},
+		"r2": {
+			"type": "AttributeModifier",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"attribute": 1,
+				"operation": 4,
+				"value": 0.0,
+				"capture_attribute": 9,
+				"capture_coefficient": 10.0,
+				"set_by_caller_tag": "",
+				"required_context_tags": [],
+				"excluded_context_tags": []
+			}
+		},
+		"r3": {
+			"type": "AttributeModifier",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"attribute": 3,
+				"operation": 4,
+				"value": 0.0,
+				"capture_attribute": 9,
+				"capture_coefficient": 5.0,
+				"set_by_caller_tag": "",
+				"required_context_tags": [],
+				"excluded_context_tags": []
+			}
+		},
+		"r4": {
+			"type": "AttributeModifier",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"attribute": 5,
+				"operation": 4,
+				"value": 0.0,
+				"capture_attribute": 8,
+				"capture_coefficient": 5.0,
+				"set_by_caller_tag": "",
+				"required_context_tags": [],
+				"excluded_context_tags": []
+			}
+		},
+		"r5": {
+			"type": "AttributeModifier",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"attribute": 42,
+				"operation": 4,
+				"value": 0.0,
+				"capture_attribute": 8,
+				"capture_coefficient": 2.0,
+				"set_by_caller_tag": "",
+				"required_context_tags": [],
+				"excluded_context_tags": []
+			}
+		},
+		"r6": {
+			"type": "AttributeModifier",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"attribute": 38,
+				"operation": 4,
+				"value": 0.0,
+				"capture_attribute": 6,
+				"capture_coefficient": 2.0,
+				"set_by_caller_tag": "",
+				"required_context_tags": [],
+				"excluded_context_tags": []
+			}
+		}
+	}
+}

@@ -1,0 +1,67 @@
+{
+	"format": "godot_combat_definition",
+	"version": 1,
+	"uid": "uid://5rfld7kfrjvd",
+	"root": "r1",
+	"resources": {
+		"r1": {
+			"type": "GameplayEffectDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "GE_ResourceRegeneration",
+				"effect_id": 13,
+				"display_name": "Resource Regeneration",
+				"icon": {
+					"$asset": "res://combat/effects/icons/resource_regeneration.svg",
+					"uid": "uid://roho7kkyht5p"
+				},
+				"hud_category": 0,
+				"timing": 2,
+				"asset_tags": [],
+				"gameplay_cue_tags": [],
+				"damage_type": 0,
+				"magic_school": 0,
+				"damage_profile": null,
+				"damage_tags": [],
+				"granted_tags": [],
+				"required_target_tags": [],
+				"blocked_target_tags": [],
+				"duration": 0.0,
+				"period": 0.1,
+				"execute_periodic_on_application": false,
+				"period_inhibition_policy": 0,
+				"ongoing_required_target_tags": [],
+				"ongoing_blocked_target_tags": [
+					"State.Dead"
+				],
+				"modifiers": [],
+				"executions": [
+					{
+						"$resource": "r2"
+					}
+				],
+				"stacking_type": 0,
+				"stack_limit_count": 0,
+				"deny_overflow_application": false,
+				"clear_stack_on_overflow": false,
+				"stack_duration_policy": 0,
+				"stack_period_policy": 0,
+				"stack_expiration_policy": 0,
+				"components": [],
+				"status_profile": null,
+				"snapshot_source": false,
+				"tick_at_end": true,
+				"exclusive_owner_slot": "",
+				"transferable": false,
+				"reactions": []
+			}
+		},
+		"r2": {
+			"type": "ResourceRegenerationExecution",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": ""
+			}
+		}
+	}
+}

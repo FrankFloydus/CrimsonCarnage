@@ -2,8 +2,7 @@ extends SceneTree
 ## Headless gait selection and physical movement checks using the saved controller.
 ## Run: godot --headless --path . --fixed-fps 60 --script res://tests/gait_test.gd
 
-const CONTROLLER = preload("res://player/first_person_controller.tscn")
-const SPRINT = preload("res://player/abilities/sprint.tres")
+const CONTROLLER = preload("res://player/player.tscn")
 const SPRINT_FIXTURE = preload("res://tests/sprint_fixture.gd")
 const ATTRIBUTE_FIXTURE = preload("res://tests/attribute_fixture.gd")
 
@@ -95,7 +94,7 @@ func _test_instance_isolation() -> void:
 	ATTRIBUTE_FIXTURE.configure(second.get_node("AbilitySystem") as AbilitySystem)
 	_world.add_child(second)
 	_disable_automatic_processing(second)
-	var other_gait: FirstPersonGait = (second as FirstPersonController)._gait
+	var other_gait: FirstPersonGait = (second as Player)._gait
 	_gait.advance(true, false, false, true, false)
 	other_gait.advance(true, false, false)
 	_check(_gait != other_gait and _gait.sprint_requires_release
@@ -125,7 +124,7 @@ func _test_exhaustion_and_release() -> void:
 			"Draining Sprint switches to running and requires Shift release")
 	system.advance(SPRINT_FIXTURE.EXHAUSTION_DURATION + 1.0)
 	await _step(Vector2.RIGHT, true)
-	_check(system.get_activation_failure(SPRINT.ability_id).is_empty() and _gait.sprint_requires_release
+	_check(system.get_activation_failure(SPRINT_FIXTURE.SPRINT).is_empty() and _gait.sprint_requires_release
 			and _movement.effective_gait == FirstPersonGait.Gait.RUN,
 			"Recovered Stamina cannot automatically restart a held exhausted sprint")
 	await _step(Vector2.RIGHT)
@@ -255,7 +254,7 @@ func _start_fixture() -> void:
 	_world.add_child(_player)
 	_disable_automatic_processing(_player)
 	_movement = _player.get_node("Movement")
-	_gait = (_player as FirstPersonController)._gait
+	_gait = (_player as Player)._gait
 	_has_authored_movement_settings = _movement.settings != null
 	_movement.settings = FirstPersonMovementSettings.new()
 	_crouch = _player.get_node("Crouch")
@@ -288,7 +287,7 @@ func _disable_automatic_processing(player: CharacterBody3D) -> void:
 func _step(direction: Vector2 = Vector2.ZERO, sprint_held: bool = false,
 		walk_held: bool = false, crouch_pressed: bool = false, jump_requested: bool = false) -> void:
 	await physics_frame
-	(_player as FirstPersonController).advance_locomotion(
+	(_player as Player).advance_locomotion(
 			_delta, direction, jump_requested, crouch_pressed, crouch_pressed, sprint_held, walk_held
 	)
 	(_player.get_node("AbilitySystem") as AbilitySystem).advance(_delta)

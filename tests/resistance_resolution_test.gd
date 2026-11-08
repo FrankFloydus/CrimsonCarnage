@@ -2,6 +2,7 @@ extends SceneTree
 ## Matching-school Resistance boundaries, authoring, payload integration and actual damage telemetry.
 
 const ATTRIBUTE_FIXTURE = preload("res://tests/attribute_fixture.gd")
+const COMBAT_DEFINITION_JSON = preload("res://combat/abilities/combat_definition_json.gd")
 
 const RESISTANCES: Array[int] = [
 	CombatAttributes.Id.FIRE_RESISTANCE, CombatAttributes.Id.COLD_RESISTANCE,
@@ -406,7 +407,7 @@ func _test_damage_telemetry_and_overkill() -> void:
 
 
 func _test_saved_fireball() -> void:
-	var ability := load("res://examples/fireball/fireball.tres") as AbilityDefinition
+	var ability := COMBAT_DEFINITION_JSON.load_definition("res://examples/fireball/fireball.ability.json") as AbilityDefinition
 	_check(ability != null and ability.execution is PhasedAbilityExecution,
 			"The saved Fireball keeps its authored projectile execution")
 	if ability == null or not ability.execution is PhasedAbilityExecution:

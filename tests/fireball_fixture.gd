@@ -15,7 +15,6 @@ static func install(system: AbilitySystem) -> bool:
 	var authored := system.get_ability_definition(FIREBALL)
 	var saved_execution := authored.execution as PhasedAbilityExecution if authored != null else null
 	var valid := saved_execution != null and authored.get_validation_error().is_empty() \
-			and authored.resource_costs.size() == 1 and authored.charge_pool != null \
 			and saved_execution.get_validation_error(system).is_empty() \
 			and system.aim_origin != null
 	if not valid:

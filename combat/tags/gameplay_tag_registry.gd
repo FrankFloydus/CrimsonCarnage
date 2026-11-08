@@ -142,7 +142,8 @@ static func field_kind(object: Object, property: StringName, type: int) -> Field
 				return FieldKind.QUERY
 	elif type == TYPE_STRING_NAME:
 		match property:
-			&"set_by_caller_tag", &"magnitude_tag", &"transaction_tag", &"entered_event", &"exited_event":
+			&"set_by_caller_tag", &"magnitude_tag", &"transaction_tag", &"entered_event", &"exited_event", \
+			&"casting_cue":
 				return FieldKind.ASSIGNMENT
 			&"activation_event_tag", &"cue_tag":
 				return FieldKind.QUERY

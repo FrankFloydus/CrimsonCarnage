@@ -2,26 +2,24 @@ class_name CombatResourceValidator
 extends RefCounted
 ## Validates saved abilities and effects as a collection, including their shared resources.
 
+const COMBAT_DEFINITION_JSON = preload("res://combat/abilities/combat_definition_json.gd")
+
 var _issues: Array[String] = []
 var _active: Dictionary[int, String] = {}
 var _visited: Dictionary[Resource, bool] = {}
-var _file_dependencies: Dictionary[String, bool] = {}
 var _ids: Dictionary[int, String] = {}
 var _catalog_only: bool = false
 var _check_registered_tags: bool = false
 
 
-## Loads combat resources at explicit res:// paths and returns problems in traversal order.
+## Loads combat JSON files at explicit res:// paths and returns their validation problems.
 static func validate_paths(paths: PackedStringArray) -> Array[String]:
 	var validator := CombatResourceValidator.new()
 	validator._begin_membership_check()
-	for path: String in paths:
-		validator._check_dependencies(path)
-		var definition := ResourceLoader.load(path) if ResourceLoader.exists(path) else null
-		if definition is AbilityDefinition or definition is GameplayEffectDefinition:
-			validator._visit(definition, path)
-		else:
-			validator._add_issue(path, "Expected an AbilityDefinition or GameplayEffectDefinition.")
+	var loaded := COMBAT_DEFINITION_JSON.read_definitions(paths)
+	validator._issues.append_array(loaded.issues)
+	for definition: Resource in loaded.definitions:
+		validator._visit(definition, COMBAT_DEFINITION_JSON.source_path(definition))
 	return validator._issues
 
 
@@ -45,7 +43,7 @@ static func validate_catalog(definitions: Array[Resource]) -> Array[String]:
 	validator._begin_membership_check()
 	for index: int in definitions.size():
 		var definition := definitions[index]
-		var location := definition.resource_path
+		var location := COMBAT_DEFINITION_JSON.source_path(definition)
 		if location.is_empty():
 			location = "definitions[%d]" % index
 		validator._visit(definition, location)
@@ -81,6 +79,10 @@ func _visit(definition: Resource, location: String) -> void:
 		var value: Variant = definition.get(name)
 		var field := "%s.%s" % [location, name]
 		if value is Resource:
+			if not _catalog_only and definition is AbilityResourceCost and name == "amount" \
+					and definition.uses_payment_pool():
+				# The ability validates this amount through its cost. Other references still check it independently.
+				continue
 			_visit(value, field)
 		elif value is Array:
 			for index: int in value.size():
@@ -93,7 +95,8 @@ func _visit(definition: Resource, location: String) -> void:
 
 func _check_definition(definition: Resource, location: String) -> void:
 	var failure: StringName
-	var id_location := definition.resource_path if not definition.resource_path.is_empty() else location
+	var source := COMBAT_DEFINITION_JSON.source_path(definition)
+	var id_location := source if not source.is_empty() else location
 	if definition is AbilityDefinition:
 		var ability := definition as AbilityDefinition
 		_check_id(ability.ability_id, id_location, "ability")
@@ -138,6 +141,9 @@ func _check_id(id: int, location: String, kind: String) -> void:
 func _check_tag_field(definition: Resource, name: StringName, value: Variant, location: String) -> void:
 	if definition is AbilityPhaseDefinition and name == &"event_key" and definition.is_lifecycle_event():
 		return
+	if name == &"casting_cue" and not value.is_empty() and not GameplayCueRouter.is_cue_tag(value):
+		_add_issue(location, "Choose a tag in the GameplayCue namespace.")
+		return
 	var kind := GameplayTagRegistry.field_kind(definition, name, typeof(value))
 	if value is PackedStringArray:
 		if kind != GameplayTagRegistry.FieldKind.NONE or (not _catalog_only and name.ends_with("_tags")):
@@ -160,26 +166,6 @@ func _check_tag(tag: String, location: String, kind: GameplayTagRegistry.FieldKi
 		_add_issue(location, "Gameplay tag '%s' is an implied parent. Register it to assign it." % tag)
 	else:
 		_add_issue(location, "Unregistered gameplay tag '%s'." % tag)
-
-
-func _check_dependencies(path: String) -> void:
-	if _file_dependencies.has(path):
-		return
-	_file_dependencies[path] = true
-	if not ResourceLoader.exists(path):
-		_add_issue(path, "Resource file is missing.")
-		return
-	for dependency: String in ResourceLoader.get_dependencies(path):
-		var target := dependency
-		if dependency.contains("::"):
-			target = dependency.get_slice("::", 2)
-			var uid := ResourceUID.text_to_id(dependency.get_slice("::", 0))
-			if ResourceUID.has_id(uid) and ResourceLoader.exists(ResourceUID.get_id_path(uid)):
-				target = ResourceUID.get_id_path(uid)
-		if ResourceLoader.exists(target):
-			_check_dependencies(target)
-		else:
-			_add_issue(path, "Missing dependency '%s'." % target)
 
 
 func _add_issue(location: String, message: String) -> void:

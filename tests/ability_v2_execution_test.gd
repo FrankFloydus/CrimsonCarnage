@@ -2,6 +2,7 @@ extends SceneTree
 ## Exercises reserved and paid costs through the same cast path used by authored abilities.
 
 const MANA := CombatAttributes.Id.MANA
+const STAMINA := CombatAttributes.Id.STAMINA
 const FIRE := &"School.Fire"
 const COLD := &"School.Cold"
 const SILENCE := &"State.Control.Silenced"
@@ -49,12 +50,64 @@ func _run() -> void:
 	_system.attributes = attributes
 	_holder.add_child(_system)
 	root.add_child(_holder)
+	_test_payment_pool_percent()
 	_test_delayed_commit()
 	_test_lockout_and_channels()
 	_test_pool_save_and_recharge()
 	_holder.free()
 	print("Ability v2 execution checks: %d passed, %d failed." % [_checks - _failures, _failures])
 	quit(1 if _failures > 0 else 0)
+
+
+func _test_payment_pool_percent() -> void:
+	var spell := _spell(222, FIRE)
+	var cost := spell.resource_costs[0]
+	var amount := cost.amount
+	cost.pool = AmountDefinition.Pool.STAMINA
+	amount.source = AmountDefinition.Source.RESOURCE_PERCENT
+	amount.resource = AmountDefinition.Pool.MANA
+	amount.resource_basis = AmountDefinition.ResourceBasis.CURRENT
+	amount.percentage = 25.0
+	amount.timing = AmountDefinition.Timing.SNAPSHOT
+	_system.attributes.set_base_value(CombatAttributes.Id.MAX_STAMINA, 200.0)
+	_system.attributes.set_base_value(STAMINA, 80.0)
+	_set_mana(40.0)
+	_system.grant_ability(spell)
+	_check(_system.try_activate(spell.ability_id) and _system.attributes.get_value(STAMINA) == 70.0,
+			"A legacy cost pays Stamina using the authored Mana percentage")
+	_system.cancel_ability(spell.ability_id)
+
+	cost.use_payment_pool = true
+	amount.actor = AmountDefinition.ActorRole.TARGET
+	var payments := {
+		AmountDefinition.ResourceBasis.CURRENT: 20.0,
+		AmountDefinition.ResourceBasis.MAXIMUM: 50.0,
+		AmountDefinition.ResourceBasis.MISSING: 30.0,
+	}
+	for basis: AmountDefinition.ResourceBasis in payments:
+		var basis_name: String = AmountDefinition.ResourceBasis.keys()[basis]
+		amount.resource_basis = basis
+		_system.attributes.set_base_value(STAMINA, 80.0)
+		_check(_system.try_activate(spell.ability_id) \
+				and _system.attributes.get_value(STAMINA) == 80.0 - payments[basis],
+				"A linked cost reads the payer's live Stamina with basis %s" % basis_name)
+		_system.cancel_ability(spell.ability_id)
+	_check(amount.actor == AmountDefinition.ActorRole.TARGET and amount.resource == AmountDefinition.Pool.MANA \
+			and amount.timing == AmountDefinition.Timing.SNAPSHOT, "Linked costs preserve the stored custom inputs")
+
+	amount.resource_basis = AmountDefinition.ResourceBasis.CURRENT
+	cost.pool = AmountDefinition.Pool.MANA
+	_check(_system.try_activate(spell.ability_id) and _mana() == 30.0,
+			"The percentage and debit follow a change of payment pool")
+	_system.cancel_ability(spell.ability_id)
+
+	cost.pool = AmountDefinition.Pool.STAMINA
+	cost.spend_up_to_maximum = true
+	cost.maximum = 40.0
+	_system.attributes.set_base_value(STAMINA, 80.0)
+	_check(_system.try_activate(spell.ability_id) and _system.attributes.get_value(STAMINA) == 40.0,
+			"Variable spending uses the linked calculation as its minimum and pays up to the cap")
+	_system.revoke_ability(spell.ability_id)
 
 
 func _test_delayed_commit() -> void:

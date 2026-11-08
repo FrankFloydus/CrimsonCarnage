@@ -28,7 +28,11 @@ var phase: Phase = Phase.WINDUP
 var spend_receipt: ResourceSpendReceipt
 var data: Dictionary = {}
 var elapsed: float = 0.0
-var released: bool = false
+var released: bool = false:
+	set(value):
+		released = value
+		if released:
+			_stop_casting_cue()
 var finished: bool = false
 var committed: bool = false
 var granted_tags: PackedStringArray = PackedStringArray()
@@ -44,6 +48,7 @@ var _target: WeakRef
 var _system: WeakRef
 var _animation_speed_multiplier: float = 1.0
 var _tasks: Array[AbilityTask] = []
+var _active_casting_cue: StringName
 
 
 func _init(
@@ -122,6 +127,25 @@ func cancel() -> void:
 	var system := get_system()
 	if system != null:
 		system.complete_cast(self, true)
+
+
+func _start_casting_cue() -> void:
+	var cue := definition.casting_cue
+	var system := get_system()
+	if cue.is_empty() or system == null or system.effects == null:
+		return
+	_active_casting_cue = cue
+	system.effects.cues.dispatch_cast(true, system.attributes, context, cue, get_instance_id())
+
+
+func _stop_casting_cue() -> void:
+	var cue := _active_casting_cue
+	if cue.is_empty():
+		return
+	_active_casting_cue = &""
+	var system := get_system()
+	if system != null and system.effects != null:
+		system.effects.cues.dispatch_cast(false, system.attributes, context, cue, get_instance_id())
 
 
 ## Registers one task before starting it so immediate callbacks can safely end the cast.

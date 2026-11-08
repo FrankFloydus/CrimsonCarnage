@@ -1,5 +1,5 @@
 extends SceneTree
-## Validates a collection of combat Resources supplied after the -- separator.
+## Validates ability and effect JSON paths supplied after the -- separator.
 
 
 func _initialize() -> void:

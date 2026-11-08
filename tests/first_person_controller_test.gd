@@ -2,7 +2,7 @@ extends SceneTree
 ## Headless behavioral checks using the saved controller and temporary collision fixtures.
 ## Run with: godot --headless --path . --script res://tests/first_person_controller_test.gd
 
-const CONTROLLER = preload("res://player/first_person_controller.tscn")
+const CONTROLLER = preload("res://player/player.tscn")
 const LOCOMOTION_FIXTURE = preload("res://tests/locomotion_fixture.gd")
 
 var _world: Node3D
@@ -249,7 +249,7 @@ func _settle() -> void:
 
 func _step(direction: Vector2 = Vector2.ZERO, jump_requested: bool = false) -> void:
 	await physics_frame
-	(_player as FirstPersonController).advance_locomotion(_delta, direction, jump_requested)
+	(_player as Player).advance_locomotion(_delta, direction, jump_requested)
 
 
 func _walk_off_platform() -> void:

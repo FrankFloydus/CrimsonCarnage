@@ -5,7 +5,8 @@ const HEALTH := CombatAttributes.Id.HEALTH
 const MANA := CombatAttributes.Id.MANA
 const PULSE := &"ability.channel_tick"
 const MARK := &"State.Test.Mark"
-const FIREBALL_PATH := "res://examples/fireball/fireball.tres"
+const COMBAT_DEFINITION_JSON = preload("res://combat/abilities/combat_definition_json.gd")
+const FIREBALL_PATH := "res://examples/fireball/fireball.ability.json"
 
 var _arena: Node3D
 var _checks: int = 0
@@ -142,8 +143,7 @@ func _check_fields(
 
 
 func _test_saved_fireball_targeting_visibility() -> void:
-	var ability := ResourceLoader.load(
-			FIREBALL_PATH, "Resource", ResourceLoader.CACHE_MODE_IGNORE) as AbilityDefinition
+	var ability := COMBAT_DEFINITION_JSON.read_definition(FIREBALL_PATH).definition as AbilityDefinition
 	var execution := ability.execution as PhasedAbilityExecution if ability != null else null
 	var targeting := execution.targeting if execution != null else null
 	_check(targeting != null and targeting.shape == AbilityTargetingDefinition.Shape.POINT,
@@ -164,27 +164,26 @@ func _test_saved_fireball_targeting_visibility() -> void:
 	_check_fields(targeting, [&"max_range"], [&"radius", &"half_height"])
 	_check(refreshes.size() == 2, "Both mode switches refresh the saved Fireball target's property list")
 
-	var save_path := "user://ability_v2_targeting_%d_%d.tres" % [OS.get_process_id(), Time.get_ticks_usec()]
-	var saved := ResourceSaver.save(ability, save_path)
-	_check(saved == OK, "Save the Fireball resource and its embedded Point targeting to a temporary file")
-	if saved != OK:
-		return
-	var reloaded := ResourceLoader.load(
-			save_path, "Resource", ResourceLoader.CACHE_MODE_IGNORE) as AbilityDefinition
-	var removed := DirAccess.remove_absolute(ProjectSettings.globalize_path(save_path))
-	_check(removed == OK, "Remove the temporary targeting roundtrip file")
+	var document: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FIREBALL_PATH))
+	var nodes: Dictionary = document["resources"]
+	var execution_key: String = nodes[document["root"]]["properties"]["execution"]["$resource"]
+	var targeting_key: String = nodes[execution_key]["properties"]["targeting"]["$resource"]
+	var authored_targeting: Dictionary = nodes[targeting_key]["properties"]
+	authored_targeting["radius"] = targeting.radius
+	authored_targeting["half_height"] = targeting.half_height
+	var reloaded := COMBAT_DEFINITION_JSON.decode_document(document, FIREBALL_PATH).definition as AbilityDefinition
 	var reloaded_execution := reloaded.execution as PhasedAbilityExecution if reloaded != null else null
 	var reloaded_targeting := reloaded_execution.targeting if reloaded_execution != null else null
 	_check(reloaded_targeting != null and reloaded_targeting != targeting \
 			and reloaded_targeting.shape == AbilityTargetingDefinition.Shape.POINT,
-			"Roundtrip loads a fresh embedded Point targeting resource")
+			"Edited JSON loads a fresh embedded Point targeting resource")
 	if reloaded_targeting == null:
 		return
 	_check_fields(reloaded_targeting, [&"max_range"], [&"radius", &"half_height"])
 	reloaded_targeting.shape = AbilityTargetingDefinition.Shape.DISK
 	_check_fields(reloaded_targeting, [&"radius", &"half_height"], [&"max_range"])
-	_near(reloaded_targeting.radius, 7.25, "Saving Point preserves the hidden radius")
-	_near(reloaded_targeting.half_height, 3.5, "Saving Point preserves the hidden half height")
+	_near(reloaded_targeting.radius, 7.25, "Loading Point preserves the authored hidden radius")
+	_near(reloaded_targeting.half_height, 3.5, "Loading Point preserves the authored hidden half height")
 
 
 func _test_beam_pulse_cost() -> void:

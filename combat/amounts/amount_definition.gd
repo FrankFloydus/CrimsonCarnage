@@ -198,7 +198,8 @@ func _uses_actor_input() -> bool:
 			or (source == Source.LEVEL_CURVE and curve_input == CurveInput.ACTOR_LEVEL)
 
 
-func get_validation_error(expected_unit: int = -1) -> StringName:
+## A payer pool override supplies the Resource Percent input when calculating a linked cost.
+func get_validation_error(expected_unit: int = -1, payer_pool: int = -1) -> StringName:
 	if not source in Source.values() or not unit in Unit.values():
 		return &"invalid_amount_source_or_unit"
 	if expected_unit >= 0 and unit != expected_unit:
@@ -211,15 +212,20 @@ func get_validation_error(expected_unit: int = -1) -> StringName:
 		return &"" if is_finite(amount_per_target) and amount_per_target >= 0.0 else &"invalid_amount_per_target"
 	if not is_finite(percentage) or percentage < 0.0:
 		return &"invalid_amount_percentage"
-	if _uses_actor_input() and (not actor in ActorRole.values() or not timing in Timing.values()):
+	var uses_payer_pool := source == Source.RESOURCE_PERCENT and payer_pool >= 0
+	if _uses_actor_input() and not uses_payer_pool \
+			and (not actor in ActorRole.values() or not timing in Timing.values()):
 		return &"invalid_amount_actor_or_timing"
 	match source:
 		Source.STAT_PERCENT:
 			if not CombatAttributes.is_active(stat):
 				return &"invalid_amount_stat"
-		Source.RESOURCE_PERCENT, Source.SPEND_PERCENT:
-			if not resource in Pool.values() or (
-					source == Source.RESOURCE_PERCENT and not resource_basis in ResourceBasis.values()):
+		Source.RESOURCE_PERCENT:
+			var selected_pool: int = payer_pool if uses_payer_pool else resource
+			if not selected_pool in Pool.values() or not resource_basis in ResourceBasis.values():
+				return &"invalid_amount_resource"
+		Source.SPEND_PERCENT:
+			if not resource in Pool.values():
 				return &"invalid_amount_resource"
 		Source.OUTCOME_PERCENT:
 			if not outcome_basis in OutcomeBasis.values():
@@ -234,26 +240,29 @@ func get_validation_error(expected_unit: int = -1) -> StringName:
 
 
 ## Returns NAN when the authoring or inputs are invalid; zero is a valid evaluated amount.
-func evaluate(context: AmountEvaluationContext = null) -> float:
-	if not get_validation_error().is_empty():
+## Linked costs pass a payer pool so Resource Percent reads that pool live.
+func evaluate(context: AmountEvaluationContext = null, payer_pool: int = -1) -> float:
+	if not get_validation_error(-1, payer_pool).is_empty():
 		return NAN
 	var value := fixed_amount
 	if source != Source.FIXED:
 		if context == null:
 			return NAN
 		var factor := amount_per_target if source == Source.UNIQUE_TARGET_COUNT else percentage / 100.0
-		value = _evaluate_basis(context) * factor
+		value = _evaluate_basis(context, payer_pool) * factor
 	if not is_finite(value):
 		return NAN
 	return clampf(value, minimum, maximum) if clamp_enabled else value
 
 
-func _evaluate_basis(context: AmountEvaluationContext) -> float:
+func _evaluate_basis(context: AmountEvaluationContext, payer_pool: int) -> float:
 	match source:
 		Source.STAT_PERCENT:
 			return context.read_stat(actor, stat, timing)
 		Source.RESOURCE_PERCENT:
-			return _resource_value(context)
+			if payer_pool >= 0:
+				return _resource_value(context, payer_pool as Pool, ActorRole.PAYER, Timing.LIVE)
+			return _resource_value(context, resource, actor, timing)
 		Source.LEVEL_CURVE:
 			if curve_input == CurveInput.ABILITY_RANK:
 				return _sample_curve(float(context.rank)) if context.rank > 0 else NAN
@@ -275,14 +284,16 @@ func _evaluate_basis(context: AmountEvaluationContext) -> float:
 	return NAN
 
 
-func _resource_value(context: AmountEvaluationContext) -> float:
-	var current_id := pool_attribute(resource)
+func _resource_value(
+		context: AmountEvaluationContext, selected_pool: Pool, selected_actor: ActorRole, read_timing: Timing
+) -> float:
+	var current_id := pool_attribute(selected_pool)
 	if resource_basis == ResourceBasis.CURRENT:
-		return context.read_stat(actor, current_id, timing)
-	var capacity := context.read_stat(actor, CombatAttributes.maximum_for(current_id), timing)
+		return context.read_stat(selected_actor, current_id, read_timing)
+	var capacity := context.read_stat(selected_actor, CombatAttributes.maximum_for(current_id), read_timing)
 	if resource_basis == ResourceBasis.MAXIMUM:
 		return capacity
-	var current := context.read_stat(actor, current_id, timing)
+	var current := context.read_stat(selected_actor, current_id, read_timing)
 	return maxf(0.0, capacity - current) if is_finite(current) and is_finite(capacity) else NAN
 
 

@@ -65,15 +65,16 @@ See [Godot conventions](godot_conventions.md) for authoring, naming, folder orga
 | `docs/combat_system_2_0.md` | Combat game design: individual attribute descriptions/formulas, progression, unique-equipped weapon types, shared trees, caster domains, Relic models and implementation status |
 | `docs/godot_conventions.md` | Godot authoring and coding conventions |
 | `project.godot` | Godot project configuration |
-| `player/` | Reusable first-person scene, focused behavior components, and editable tuning resources; [scoped instructions](../player/AGENTS.md) |
+| `player/` | Reusable Player scene, input and first-person components, and editable tuning resources. [Scoped instructions](../player/AGENTS.md) |
+| `enemies/` | Shared Enemy class and saved passive Damage Dummy with its Health bar |
 | `materials/prototype/` | World-space grid shader and reusable prototype materials |
 | `references/first_person_arms/` | Single-arm T-pose reference PNGs and generation prompts: weathered palm-facing and back-of-hand studies, alternate skin appearance, inferred top/hand-end-on side camera studies, and legacy iterations. Generated references are not verified renders of shared geometry or unwrapped UV maps; no mesh or rig implemented |
 | `levels/playground/` | Main movement/combat scene, authored course/environment, Player, Dummy, and saved CombatTestTools UI under `testing/` |
 | `tests/` | Headless controller, attribute, weapon, effect, ability, and direct-damage feedback checks |
 | `combat/` | Attribute/tag/ability/effect/hit-delivery code and shared numeric rules JSON; [scoped instructions](../combat/AGENTS.md) |
-| `examples/fireball/` | Reusable direct-damage Fireball/projectile, dummy, and damage presentation used by the main playground |
+| `examples/fireball/` | Fireball definition, impact effect, projectile scene, and reusable floating damage feedback |
 | `tools/combat_simulator/` | Seeded CLI balance experiments, provisional scenarios, frozen reports, and the offline Tk/NumPy Combat Lab under `lab/`; [scoped instructions](../tools/combat_simulator/AGENTS.md) |
-| `tools/ability_editor/` | Standalone Qt editor for a linked Godot checkout. It composes saved abilities, catalogs effects, checks deletion references, and authors gameplay tags, attributes and Accuracy curve points. [Launch and linking instructions](../tools/ability_editor/README.md) |
+| `tools/ability_editor/` | Standalone Qt editor for a linked Godot checkout. It edits JSON ability and effect definitions, checks deletion references, and authors gameplay tags, attributes and Accuracy curve points. [Launch and linking instructions](../tools/ability_editor/README.md) |
 | `icon.svg` | Initial project icon |
 | `.gitignore` | Excludes generated caches, credentials, temporary files, and export outputs |
 | `.gitattributes` | Normalizes text files to LF line endings |
@@ -83,20 +84,21 @@ Create additional gameplay folders when the corresponding work is requested. Kee
 
 ## First-person controller
 
-Entry scene: [`player/first_person_controller.tscn`](../player/first_person_controller.tscn).
-This is a `CharacterBody3D` composed with Movement, Crouch, Look, ActorAttributes and AbilitySystem. The caster scene inherits this composition and configures its Granted Abilities and animation bindings. The shared grants include Sprint, Jump, Crouch, Encumbered and Stamina Exhaustion. The caster also grants Fireball.
+The reusable [Player scene](../player/player.tscn) uses the `Player` class on a `CharacterBody3D`. Its authored components include Movement, Crouch, Look, ActorAttributes, AbilitySystem, ActionRouter and CastPresentation. The scene owns the movement and combat grants, cast animation, aim origin and projectile origin.
 
 | Part | Responsibility |
 | --- | --- |
-| `first_person_controller.gd` | Routes input to the granted Sprint, Jump and Crouch abilities, then coordinates stance and one movement step. Released mouse capture supplies zero input and releases held sprint while braking and gravity continue. |
+| `player.gd` | Routes input to the granted Sprint, Jump and Crouch abilities, then coordinates stance and one movement step. Released mouse capture supplies zero input and releases held sprint while braking and gravity continue. |
 | `Crouch` / `first_person_crouch.gd` | Owns actual stance, an instance-specific capsule, standing-volume clearance, and the saved eye pivot's smooth height transition. Resolves collision stance before movement and advances visual height each render frame. |
 | `first_person_gait.gd` | Per-controller helper for effective run, walk, sprint, crouch and crouch-walk selection. Actual stance and walk input can temporarily override a held sprint. |
 | `Movement` / `first_person_movement.gd` | Owns movement settings, live gait speed, physical jump feasibility, actual sprint travel reporting, velocity, gravity, coyote time, stair support and the single `move_and_slide()` call. Sprint and Jump phases invoke actions that authorize their movement requests. `move(delta, input, gait)` advances the simulation and defaults to running. |
-| `Attributes` / `ActorAttributes` | Owns the player's live stats and resources, including Movement Speed and Stamina; inherited by the caster scene rather than duplicated. |
+| `Attributes` / `ActorAttributes` | Owns the player's live stats and resources, including Movement Speed and Stamina. |
+| `ActionRouter` / `player_action_router.gd` | Reads the starting loadout, routes combat slot events from the Input Map and captures the grant and cast identity for held gestures. The Ability Editor owns starting assignments. |
+| `CastPresentation` | Maps authored cast cues to the actor's scene visuals. The ability's cast lifecycle controls cue lifetime. |
 | `AbilitySystem` | Registers the actor's Granted Abilities. Owns per-ability lifetimes and counted tags. Routes tagged gameplay events to granted and active abilities. Evaluates the actor's authored attribute event rules at threshold crossings. |
 | `first_person_stair_stepper.gd` | Per-movement `RefCounted` helper that verifies capsule stair clearance and retains terrain contacts for one physics frame. |
 | `Look` / `first_person_look.gd` | Captures/releases the mouse, rotates body yaw and local eye pitch, smooths lateral camera roll, and compensates stair height changes with a camera spring. Releases the pointer on application focus loss. |
-| `Look/Camera3D` | Saved first-person camera at a standing eye height of 1.62 m, with 80-degree FOV. Crouch changes the `Look` pivot height; camera roll and stair translation remain independent of eye pitch and body yaw. |
+| `Look/Camera3D` | Saved first-person camera at a standing eye height of 1.62 m, with a saved FOV of 60.4 degrees. Crouch changes the `Look` pivot height; camera roll and stair translation remain independent of eye pitch and body yaw. |
 | `CollisionShape3D` | Saved standing capsule, 1.8 m tall and 0.35 m in radius. The body origin is at the feet; crouch preserves its bottom while resizing. |
 
 Movement is the sole component referencing [`default_movement_settings.tres`](../player/default_movement_settings.tres),
@@ -263,7 +265,7 @@ The Playground grants Fireball for combat. Physical damage formulas still suppor
 
 Saved ability and effect definitions share one namespace of stable, positive integer IDs. The catalog and resource validator check for duplicate authored IDs. Saved ability definitions use `PhasedAbilityExecution` for lifecycle phases, target queries, delivery and actions. Domain actions delegate movement and stance requests to the controller components. The actor owns resource reservations, charge pools, timed school lockouts and cancellation. Per-execution receipts and phases belong to `AbilityCast`. Effects own retained budgets, counters and contribution handles. Typed outcomes are queued after commitment and carry shared execution identity into detached delivery, periodic ticks and reactions.
 
-The Qt composer edits a draft projection of the native ability. Headless Godot validates and stages the Resource with its UID and links. Qt compares the saved file revision before publishing the staged bytes atomically. The native Resource is the saved authority for gameplay and for reopening the composer.
+Each authored ability or effect has one JSON file containing a typed resource graph. The Qt editor reads and publishes those files directly with an atomic write and a disk revision check. It requests Godot's exported field metadata and can validate unsaved drafts headlessly. Godot decodes the same JSON into native gameplay objects and caches shared definitions for the game run. Scene grants and startup effects store JSON paths. External textures, scenes and other engine assets remain project references.
 
 The standalone editor owns registration in [gameplay_tags.json](../combat/tags/gameplay_tags.json). The Godot Inspector picker and headless authoring validator read that registry. Saved resources store the canonical tag names, which gameplay uses through counted tags and hierarchical matching.
 
@@ -279,7 +281,7 @@ The effect runtime gates hostile hit payloads through one shared Accuracy outcom
 
 `CombatMath` exposes pure fractional Accuracy probabilities. A connected trace or projectile resolves one check shared by its damage components and attached hostile effects. Modifier-only hostile spells also check. The target reports failed Accuracy, prevention, or confirmed contact independently of Health loss. Independent weapon, Accuracy and critical random streams support seeded checks. Successful damaging payloads share one action-scoped critical result. Modifier effects retain their ordinary potency. Detached contexts retain source levels and scoped Accuracy fallbacks. Carried Weight uses identity 39 and defaults to zero. The F3 editor supplies test weight. The character sheet pairs weight with Carry Capacity and shows the Encumbered state.
 
-The saved Playground grants Fireball as its combat ability. The dummy shows actual damage and MISS/RESIST feedback. The saved resource HUD binds current and maximum attribute signals. Its Fireball cast bar reads the owning animation's position relative to its release key and hides at release or cancellation. The F3 panel has Player, Dummy and Statistics tabs. The left editor supplies searchable overrides with whole steps for level and primaries and 0.01 steps for fractional attributes. Current-pool sliders follow live capacity. Action speed sliders can expand beyond their initial 0–100% range. The right sheet shows effective stats and the selected ability's hit chance and normal damage using the same combat calculations. F1 opens Statistics and F2 toggles the combat log.
+The arena instances the canonical Player and [Damage Dummy](../enemies/dummy.tscn). The dummy is a passive `Enemy` backed by a saved `StaticBody3D`. The shared [Enemy class](../enemies/enemy.gd) resolves ActorAttributes and AbilitySystem. DamageDummy owns its Health bar and actual-damage or MISS/RESIST feedback. The saved resource HUD binds current and maximum attribute signals. Its Fireball cast bar reads the owning animation's position relative to its release key and hides at release or cancellation. The F3 panel has Player, Dummy and Statistics tabs. The left editor supplies searchable overrides with whole steps for level and primaries and 0.01 steps for fractional attributes. Current-pool sliders follow live capacity. Action speed sliders can expand beyond their initial 0–100% range. The right sheet shows effective stats and the selected ability's hit chance and normal damage using the same combat calculations. F1 opens Statistics and F2 toggles the combat log.
 
 Focused headless suites cover attributes, stable IDs, Armor anchors/cap/diminishing gains/overcap, source penetration/order/scopes/detached delivery, shared critical rolls/chance boundaries/uncapped bonus/RNG independence, signed resistance bounds/school matching/hybrid damage, modifier ownership/order, all weapon categories, physical min/max and cycle normalization, source snapshots, direct-damage/no-ailment behavior, Accuracy curves/shared payload outcomes, periodic regeneration/death/reentrancy, attribute-driven gaits/sprint expenditure/exhaustion/order, action lifecycle, generic modifier cleanup, Fireball projectile delivery and Playground feedback. Behavior tests use in-memory fixture tuning. Saved-asset checks verify wiring and configuration invariants. Headless checks do not grant desktop permission.
 

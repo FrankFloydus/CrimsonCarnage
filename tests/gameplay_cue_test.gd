@@ -167,6 +167,22 @@ func _test_scene_lifetimes(spec: GameplayEffectSpec, attributes: ActorAttributes
 	_check(target.get_child_count() == 1 and scene_calls.size() == 7,
 			"Retained and one-shot scene lifetimes end independently")
 
+	scene_calls.clear()
+	cues.dispatch_effect(GameplayCueRouter.Event.ACTIVE, spec, attributes, 1)
+	cues.dispatch_cast(true, attributes, spec.context, CUE_TAG, 1)
+	await process_frame
+	_check(scene_calls.size() == 3 and scene_calls[0][0] != scene_calls[1][0] \
+			and scene_calls[1][0] == scene_calls[2][0],
+			"Cast and effect cues have independent scenes even when their numeric handles match")
+	cues.dispatch_cast(false, attributes, spec.context, CUE_TAG, 1)
+	await process_frame
+	_check(target.get_child_count() == 2 and scene_calls.size() == 4,
+			"Releasing a cast leaves the matching retained effect cue intact")
+	cues.dispatch_effect(GameplayCueRouter.Event.REMOVED, spec, attributes, 1)
+	await process_frame
+	_check(target.get_child_count() == 1 and scene_calls.size() == 5,
+			"The remaining effect cue ends with its own lifetime")
+
 
 func _test_startup_scene_cue() -> void:
 	var actor := Node.new()

@@ -520,7 +520,7 @@ Larger capacities take longer to refill at the same recovery rate. With 128 Inte
 
 ## Movement and sprinting
 
-The base player grants Sprint, Jump, Crouch, Encumbered and Stamina Exhaustion. The caster adds Fireball. Locomotion can overlap combat casting. Movement and Crouch own physical execution.
+The Player scene grants Sprint, Jump, Crouch, Encumbered, Stamina Exhaustion, Fireball and Test Ability. Locomotion can overlap combat casting. Movement and Crouch own physical execution.
 
 Movement applies the effective Movement Speed bonus, one gait ratio and the encumbrance factor each step. **Movement → Settings → Movement Baseline → Normal Run Speed** defines the physical baseline at **4 m/s** by default. At a 6 m/s baseline, 0% Movement Speed gives 6 m/s and +20% gives 7.2 m/s before gait ratios. The shared rules JSON supplies the bonus default and bounds.
 

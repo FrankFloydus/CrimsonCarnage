@@ -2,7 +2,7 @@ class_name CombatTestTools
 extends CanvasLayer
 ## Scene-local controls for inspecting and tuning the two playground actors at runtime.
 
-const SPRINT_ABILITY = preload("res://player/abilities/sprint.tres")
+const COMBAT_DEFINITION_JSON = preload("res://combat/abilities/combat_definition_json.gd")
 
 ## Player whose attributes, granted abilities, and combat events are inspected.
 @export var player_system: AbilitySystem
@@ -10,8 +10,8 @@ const SPRINT_ABILITY = preload("res://player/abilities/sprint.tres")
 @export var dummy: DamageDummy
 ## Mouse-look input receiver suspended while a test menu owns the pointer.
 @export var player_look: Node
-## Player ability input receiver whose selected ability is changed by the menu.
-@export var ability_input: Node
+## Player action router whose primary combat slot can be reassigned for testing.
+@export var action_router: PlayerActionRouter
 
 var recorder := CombatTestRecorder.new()
 var selected_ability_id: int = 0
@@ -31,6 +31,7 @@ var _last_attribute_tab: int = 0
 @onready var _tabs: TabBar = $Screen/Menu/Margin/Content/Header/Tabs
 @onready var _workspace: HBoxContainer = $Screen/Menu/Margin/Content/Workspace
 @onready var _ability_selector: OptionButton = $Screen/Menu/Margin/Content/Workspace/Inputs/Margin/Content/Ability/Select
+@onready var _sprint_id := COMBAT_DEFINITION_JSON.load_ability_id("res://player/abilities/sprint.ability.json")
 
 
 func _ready() -> void:
@@ -45,15 +46,16 @@ func _ready() -> void:
 	player_editor.values_refreshed.connect(_refresh_visible_sheet)
 	dummy_editor.values_refreshed.connect(_refresh_visible_sheet)
 	_tabs.tab_changed.connect(_on_tab_changed)
+	var configured_ability_id := action_router.get_slot_ability(PlayerActionRouter.PRIMARY_SLOT)
 	for definition in player_system.get_granted_ability_definitions():
-		if not AttributeModifier._has_match(definition.ability_tags, "Ability.Attack") \
+		if definition.ability_id != configured_ability_id \
+				and not AttributeModifier._has_match(definition.ability_tags, "Ability.Attack") \
 				and not GameplayEffectContext.is_spell_delivery(definition.ability_tags):
 			continue
 		_ability_selector.add_item(definition.display_name)
 		_ability_selector.set_item_metadata(_ability_selector.item_count - 1, definition.ability_id)
-	if not select_ability(int(ability_input.get("ability_id"))) \
-			and _ability_selector.item_count > 0:
-		select_ability(int(_ability_selector.get_item_metadata(0)))
+	if not select_ability(configured_ability_id, false) and _ability_selector.item_count > 0:
+		select_ability(int(_ability_selector.get_item_metadata(0)), false)
 	_menu.hide()
 	_backdrop.hide()
 	_on_tab_changed(_tabs.current_tab)
@@ -92,15 +94,16 @@ func _exit_tree() -> void:
 		close_menu()
 
 
-func select_ability(ability_id: int) -> bool:
+func select_ability(ability_id: int, assign_primary_slot: bool = true) -> bool:
 	var definition := player_system.get_ability_definition(ability_id)
 	if definition == null:
 		return false
 	for index in _ability_selector.item_count:
 		if int(_ability_selector.get_item_metadata(index)) == ability_id:
+			if assign_primary_slot and not action_router.set_slot_ability(PlayerActionRouter.PRIMARY_SLOT, ability_id):
+				return false
 			selected_ability_id = ability_id
 			_ability_selector.select(index)
-			ability_input.set("ability_id", ability_id)
 			var context := player_system.create_ability_context(ability_id)
 			var tags := context.ability_tags if context != null else definition.ability_tags
 			player_editor.set_context_tags(tags, definition.display_name)
@@ -129,9 +132,8 @@ func close_menu() -> void:
 	_backdrop.hide()
 	if is_instance_valid(player_look):
 		player_look.set_process_unhandled_input(_look_input_was_enabled)
-	if is_instance_valid(ability_input):
-		ability_input.reset_input_latch()
-		ability_input.set_process(_ability_process_was_enabled)
+	if is_instance_valid(action_router):
+		action_router.set_process_unhandled_input(_ability_process_was_enabled)
 	Input.mouse_mode = _previous_mouse_mode
 
 
@@ -216,11 +218,12 @@ func _open_menu(tab: int) -> void:
 		if is_instance_valid(player_look):
 			_look_input_was_enabled = player_look.is_processing_unhandled_input()
 			player_look.set_process_unhandled_input(false)
-		if is_instance_valid(ability_input):
-			_ability_process_was_enabled = ability_input.is_processing()
-			ability_input.set_process(false)
+		if is_instance_valid(action_router):
+			_ability_process_was_enabled = action_router.is_processing_unhandled_input()
+			action_router.set_process_unhandled_input(false)
+			action_router.cancel_pending_input()
 		player_system.cancel_animation()
-		player_system.release_ability(SPRINT_ABILITY.ability_id)
+		player_system.release_ability(_sprint_id)
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		_backdrop.show()
 		_menu.show()

@@ -1,0 +1,62 @@
+[gd_scene format=3 uid="uid://ljapu5yh1usr"]
+
+[ext_resource type="Script" uid="uid://k4xed82pd102" path="res://enemies/dummy.gd" id="1_dummy"]
+[ext_resource type="Script" uid="uid://diddh658ft18s" path="res://combat/attributes/actor_attributes.gd" id="2_attributes"]
+[ext_resource type="Script" uid="uid://12y3fas6g6mh" path="res://combat/abilities/ability_system.gd" id="3_system"]
+[ext_resource type="Script" uid="uid://bmu4hnn0quf7l" path="res://combat/attributes/attribute_modifier.gd" id="4_modifier"]
+[ext_resource type="PackedScene" path="res://examples/fireball/damage_number.tscn" id="5_number"]
+[ext_resource type="PackedScene" path="res://enemies/dummy_health_bar.tscn" id="6_health_bar"]
+
+[sub_resource type="CapsuleShape3D" id="Shape_dummy"]
+radius = 0.55
+
+[sub_resource type="StandardMaterial3D" id="Material_dummy"]
+albedo_color = Color(0.26, 0.42, 0.55, 1)
+roughness = 0.8
+
+[sub_resource type="CapsuleMesh" id="Mesh_dummy"]
+material = SubResource("Material_dummy")
+radius = 0.48
+height = 1.9
+radial_segments = 24
+
+[sub_resource type="Resource" id="Modifier_health"]
+script = ExtResource("4_modifier")
+attribute = 1
+operation = 2
+value = 2000.0
+required_context_tags = PackedStringArray()
+excluded_context_tags = PackedStringArray()
+
+[node name="DamageDummy" type="StaticBody3D" unique_id=397439251]
+script = ExtResource("1_dummy")
+damage_number_scene = ExtResource("5_number")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=266691559]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("Shape_dummy")
+
+[node name="BodyMesh" type="MeshInstance3D" parent="." unique_id=2059909204]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
+mesh = SubResource("Mesh_dummy")
+
+[node name="Attributes" type="Node" parent="." unique_id=838925387]
+script = ExtResource("2_attributes")
+initial_modifiers = Array[ExtResource("4_modifier")]([SubResource("Modifier_health")])
+
+[node name="AbilitySystem" type="Node" parent="." unique_id=492179464 node_paths=PackedStringArray("attributes", "actor_body")]
+script = ExtResource("3_system")
+attributes = NodePath("../Attributes")
+actor_body = NodePath("..")
+startup_effect_files = Array[String](["res://combat/effects/ge_default_attributes.effect.json", "res://combat/effects/ge_attribute_derivations.effect.json", "res://combat/effects/ge_resource_regeneration.effect.json"])
+initial_tags = PackedStringArray()
+faction_id = &"2"
+
+[node name="HealthBar" parent="." unique_id=123987975 node_paths=PackedStringArray("attributes") instance=ExtResource("6_health_bar")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.15, 0)
+attributes = NodePath("../Attributes")
+
+[node name="DamageNumberOrigin" type="Marker3D" parent="." unique_id=1211094216]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, 0)
+
+[node name="DamageNumbers" type="Node3D" parent="." unique_id=841418807]

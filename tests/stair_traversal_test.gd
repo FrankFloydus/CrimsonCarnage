@@ -2,7 +2,7 @@ extends SceneTree
 ## Headless Jolt regression checks for the saved controller and test-owned stair geometry.
 ## Run: godot --headless --path . --fixed-fps 60 --script res://tests/stair_traversal_test.gd
 
-const CONTROLLER = preload("res://player/first_person_controller.tscn")
+const CONTROLLER = preload("res://player/player.tscn")
 const LOCOMOTION_FIXTURE = preload("res://tests/locomotion_fixture.gd")
 
 var _world: Node3D
@@ -314,7 +314,7 @@ func _end_fixture() -> void:
 
 func _step(direction: Vector2 = Vector2.ZERO, jump_requested: bool = false) -> void:
 	await physics_frame
-	(_player as FirstPersonController).advance_locomotion(_delta, direction, jump_requested)
+	(_player as Player).advance_locomotion(_delta, direction, jump_requested)
 	_look._process(_delta)
 
 

@@ -1,8 +1,9 @@
 extends SceneTree
 ## Validates saved recipes separately from deterministic combat tests with test-owned tuning.
 
-const BLOOD_LASH_PATH := "res://tests/fixtures/ability_v2/blood_lash.tres"
-const CRIMSON_BOLT_PATH := "res://tests/fixtures/ability_v2/crimson_bolt.tres"
+const COMBAT_DEFINITION_JSON = preload("res://combat/abilities/combat_definition_json.gd")
+const BLOOD_LASH_PATH := "res://tests/fixtures/ability_v2/blood_lash.ability.json"
+const CRIMSON_BOLT_PATH := "res://tests/fixtures/ability_v2/crimson_bolt.ability.json"
 const CRIMSON_PROJECTILE_PATH := "res://tests/fixtures/ability_v2/crimson_bolt_projectile.tscn"
 const HEALTH := CombatAttributes.Id.HEALTH
 const MANA := CombatAttributes.Id.MANA
@@ -36,8 +37,8 @@ func _test_saved_assets() -> void:
 	var paths := PackedStringArray([BLOOD_LASH_PATH, CRIMSON_BOLT_PATH])
 	var issues := CombatResourceValidator.validate_paths(paths)
 	_check(issues.is_empty(), "Saved recipes validate: %s" % "\n".join(issues))
-	var lash := load(BLOOD_LASH_PATH) as AbilityDefinition
-	var bolt := load(CRIMSON_BOLT_PATH) as AbilityDefinition
+	var lash := COMBAT_DEFINITION_JSON.load_definition(BLOOD_LASH_PATH) as AbilityDefinition
+	var bolt := COMBAT_DEFINITION_JSON.load_definition(CRIMSON_BOLT_PATH) as AbilityDefinition
 	if lash == null or bolt == null:
 		_check(false, "Both saved recipes reload as AbilityDefinition")
 		return
@@ -79,7 +80,7 @@ func _test_validator_diagnostics() -> void:
 	_check(_has_issue(issues, "Duplicate effect ID"),
 			"An ability and an effect cannot share a definition ID")
 	_check(_has_issue(CombatResourceValidator.validate_paths(
-			PackedStringArray(["res://tests/no_such_ability.tres"])), "Resource file is missing"),
+			PackedStringArray(["res://tests/no_such_ability.ability.json"])), "Combat definition file is missing"),
 			"Missing definition paths receive a build-time diagnostic")
 	var projectile_ability := _crimson_bolt(0.0)
 	var execution := projectile_ability.execution as PhasedAbilityExecution

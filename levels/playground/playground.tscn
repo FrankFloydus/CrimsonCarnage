@@ -1,13 +1,13 @@
 [gd_scene format=3 uid="uid://dnp0mab635kx4"]
 
 [ext_resource type="Material" uid="uid://b2islhbhxuylt" path="res://materials/prototype/prototype_grid.tres" id="1_grid"]
-[ext_resource type="PackedScene" uid="uid://bjx6yyt5kk2bl" path="res://examples/fireball/caster.tscn" id="2_player"]
+[ext_resource type="PackedScene" uid="uid://bx6r2r5geskx" path="res://player/player.tscn" id="2_player"]
 [ext_resource type="Material" path="res://materials/prototype/parkour_grid.tres" id="3_parkour_grid"]
 [ext_resource type="PackedScene" path="res://levels/playground/parkour_stairs.tscn" id="4_stairs"]
 [ext_resource type="PackedScene" path="res://levels/playground/high_parkour_stairs.tscn" id="5_high_stairs"]
 [ext_resource type="Material" path="res://materials/prototype/arena_wall_grid.tres" id="6_wall_grid"]
 [ext_resource type="PackedScene" path="res://levels/playground/crouch_tunnels.tscn" id="7_crouch_tunnels"]
-[ext_resource type="PackedScene" uid="uid://ljapu5yh1usr" path="res://examples/fireball/dummy_actor.tscn" id="8_dummy"]
+[ext_resource type="PackedScene" uid="uid://ljapu5yh1usr" path="res://enemies/dummy.tscn" id="8_dummy"]
 [ext_resource type="PackedScene" path="res://levels/playground/testing/combat_test_tools.tscn" id="9_test_tools"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_playground"]
@@ -228,11 +228,11 @@ floor_snap_length = 0.2
 [node name="Dummy" parent="." unique_id=2144875978 instance=ExtResource("8_dummy")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 14.5)
 
-[node name="CombatTestTools" parent="." unique_id=872192195 node_paths=PackedStringArray("player_system", "dummy", "player_look", "ability_input") instance=ExtResource("9_test_tools")]
+[node name="CombatTestTools" parent="." unique_id=872192195 node_paths=PackedStringArray("player_system", "dummy", "player_look", "action_router") instance=ExtResource("9_test_tools")]
 player_system = NodePath("../Player/AbilitySystem")
 dummy = NodePath("../Dummy")
 player_look = NodePath("../Player/Look")
-ability_input = NodePath("../Player/AbilityInput")
+action_router = NodePath("../Player/ActionRouter")
 
 [node name="LowStairs" parent="." unique_id=745807070 instance=ExtResource("4_stairs")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 15)

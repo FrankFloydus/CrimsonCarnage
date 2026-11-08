@@ -28,7 +28,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"release_mouse"):
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(&"capture_mouse"):
+	elif Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and event.is_action_pressed(&"capture_mouse"):
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		get_viewport().set_input_as_handled()
 	elif event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:

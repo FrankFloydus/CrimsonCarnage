@@ -36,10 +36,9 @@ Combat testing uses the same `levels/playground/playground.tscn` as movement.
 Run it with F5 or F6: Player, Dummy, and the saved CombatTestTools UI are present
 in the main course. There are no separate combat arenas to open.
 
-- **F3:** edit Player/Dummy levels, all active combat attributes, and select
-  Fireball.
-- **LMB / F:** request the selected ability. The first click after releasing the
-  mouse recaptures it.
+- **F3:** edit Player/Dummy levels and combat attributes, or temporarily change Ability Slot 1.
+- **LMB / F:** hold and release Test Ability from Ability Slot 1. The first click after releasing the mouse recaptures it.
+- **Q:** cast Fireball from Ability Slot 2.
 - **R:** clear and restore the dummy.
 - **F1:** toggle per-ability combat statistics.
 - **F2:** toggle the combat log at the lower left.
@@ -59,14 +58,16 @@ Accuracy uses the shared level curve, starting at 80% against equal level and re
 | Shift (hold) | Sprint while standing and affordable; release to run |
 | Ctrl (hold) | Walk; also moves more slowly while crouched |
 | Escape | Release the mouse, clear sprint, and stop accepting movement input |
-| Left click | Capture the mouse when released; request the selected ability while captured |
-| F | Request the selected combat ability |
+| Left click | Capture the mouse when released; use Ability Slot 1 while captured |
+| F | Use Ability Slot 1, initially Test Ability |
+| Q | Use Ability Slot 2, initially Fireball |
+| E | Use Ability Slot 3 when assigned |
 | R | Clear and restore the test dummy |
 | F1 | Toggle per-ability combat statistics |
 | F2 | Toggle the lower-left combat log |
 | F3 | Open the Player/Dummy attribute and ability testing editor |
 
-The reusable player is in `player/first_person_controller.tscn`. Select its **Movement** node and expand
+The reusable Player is in [player/player.tscn](player/player.tscn). Select its **Movement** node and expand
 **Settings** in the Inspector to edit `player/default_movement_settings.tres`. This is the single place
 to tune Normal Run Speed (the 100% physical baseline), Walk/Sprint/Crouch multipliers, ground/air acceleration and deceleration, custom gravity, standing/crouched jump heights, coyote time,
 maximum stair height, and maximum walkable slope. Automatic stair ascent permits 0.30 m risers by
@@ -85,9 +86,9 @@ Movement Speed is a bonus percentage (normal 0%, minimum −100%, maximum +25%),
 
 Carried Weight is editable in F3. Crossing above capacity sends the gameplay event that starts Encumbered. Its effect grants State.Encumbered. Sprint lists that state in its activation blockers and interruption tags. Movement reduces speed and jump height based on load. At the default twice-capacity threshold, speed reaches half and jumping stops. The character sheet shows the current load and live penalties. The Encumbered debuff icon appears above the right side of the HUD, with room for buff icons above the left.
 
-The base player grants Sprint, Jump, Crouch, Encumbered and Stamina Exhaustion. The caster adds Fireball. Press LMB or F to cast it. [Ability authoring](docs/ability_system.md)
+The Player scene grants Sprint, Jump, Crouch, Encumbered, Stamina Exhaustion, Fireball and Test Ability. Set starting slot assignments by name in **Ability Editor → Player Actions** and default keys in **Godot → Project Settings → Input Map**. The arena uses the [Damage Dummy](enemies/dummy.tscn), a passive Enemy. [Ability authoring](docs/ability_system.md)
 
-Sprint upkeep is configured in [GE_StaminaUpkeep](player/ge_stamina_upkeep.tres), linked from **Sprint → Execution → Upkeep Effect**. The defaults charge 2 Stamina per 0.1 seconds of grounded sprint travel with input. Movement preserves unpaid travel across pauses. Idle, blocked and airborne travel cost nothing. The startup regeneration effect pauses Stamina recovery throughout active Sprint and exhaustion. Health and Mana keep recovering while alive. Release Shift and press again after exhaustion.
+Sprint upkeep is configured in [GE_StaminaUpkeep](player/ge_stamina_upkeep.effect.json), linked from **Sprint → Execution → Upkeep Effect**. The defaults charge 2 Stamina per 0.1 seconds of grounded sprint travel with input. Movement preserves unpaid travel across pauses. Idle, blocked and airborne travel cost nothing. The startup regeneration effect pauses Stamina recovery throughout active Sprint and exhaustion. Health and Mana keep recovering while alive. Release Shift and press again after exhaustion.
 
 Hold Shift to sprint and release it to run. Directional input is still needed to move. Holding
 Ctrl temporarily walks; releasing Ctrl while Shift is held resumes affordable sprint. Crouching

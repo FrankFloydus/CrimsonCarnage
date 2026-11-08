@@ -122,12 +122,16 @@
       "code_owned": true
     },
     {
+      "name": "GameplayCue.Cast.Fire",
+      "description": "Shows the actor's fire casting visual until release or interruption."
+    },
+    {
       "name": "School.Fire",
       "description": "Groups Fire casts for school lockouts."
     },
     {
       "name": "State.Casting",
-      "description": "Marks the Fireball cast for its cast cue.",
+      "description": "Identifies an actor performing an authored cast.",
       "code_owned": true
     },
     {

@@ -6,6 +6,7 @@ const PLAYGROUND = preload("res://levels/playground/playground.tscn")
 const FIREBALL_FIXTURE = preload("res://tests/fireball_fixture.gd")
 const SPRINT: int = 1
 const FIREBALL: int = FIREBALL_FIXTURE.FIREBALL
+const BOUND_ABILITY: int = 20
 const MOVEMENT_EXAMPLES: Array[int] = [SPRINT, 2, 3]
 const ENCUMBERED_ACTION: int = 4
 const EXHAUSTION_ACTION: int = 5
@@ -45,10 +46,13 @@ func _run() -> void:
 	_source = _tools.player_system.attributes
 	_target = _tools.dummy.attributes
 	_arena.get_node("Player").set_physics_process(false)
-	_tools.ability_input.set_process(false)
+	_tools.action_router.set_process_unhandled_input(false)
 	_tools.player_system.set_process(false)
 	_tools.dummy.ability_system.set_process(false)
 	_check_saved_grants()
+	_check(_tools.selected_ability_id == BOUND_ABILITY
+			and _tools.action_router.get_slot_ability(PlayerActionRouter.PRIMARY_SLOT) == BOUND_ABILITY,
+			"The saved input keeps the bound ability selected even without an Attack or Spell tag")
 	if not FIREBALL_FIXTURE.install(_tools.player_system):
 		_check(false, "The saved Fireball is wired to a valid animation and impact")
 		quit(1)
@@ -110,6 +114,12 @@ func _prepare_test_tuning() -> void:
 
 	var player := _arena.get_node("Player/AbilitySystem") as AbilitySystem
 	preload("res://tests/sprint_fixture.gd").configure(player)
+	for index: int in player.granted_abilities.size():
+		if player.granted_abilities[index].ability_id == BOUND_ABILITY:
+			var bound_ability := player.granted_abilities[index].duplicate() as AbilityDefinition
+			bound_ability.ability_tags = PackedStringArray()
+			player.granted_abilities[index] = bound_ability
+			break
 
 
 func _test_attribute_editors() -> void:
@@ -363,7 +373,7 @@ func _test_live_movement_speed_edits() -> void:
 		if child is ActorAttributes:
 			attribute_components += 1
 	_check(attribute_components == 1 and player.get_node("Attributes") == _source,
-			"The saved caster inherits one player attribute component used by F3")
+			"The saved Player owns one attribute component used by F3")
 	_check(movement != null and movement.attributes == _source,
 			"The saved movement component reads the same ActorAttributes that F3 edits")
 	if movement == null:
@@ -560,9 +570,9 @@ func _test_clearing_capacity_effect_restores_encumbrance() -> void:
 
 func _check_saved_grants() -> void:
 	var system := _tools.player_system
-	var ability_ids := MOVEMENT_EXAMPLES + [FIREBALL, ENCUMBERED_ACTION, EXHAUSTION_ACTION]
+	var ability_ids := MOVEMENT_EXAMPLES + [FIREBALL, BOUND_ABILITY, ENCUMBERED_ACTION, EXHAUSTION_ACTION]
 	_check(system.granted_abilities.size() == ability_ids.size(),
-			"The saved playground grants Fireball and its movement and status actions")
+			"The saved playground grants Fireball, the bound ability, and its movement and status actions")
 	for ability_id in ability_ids:
 		var definition := system.get_ability_definition(ability_id)
 		_check(definition != null and system.granted_abilities.has(definition)
@@ -623,7 +633,7 @@ func _test_menu_and_input_ownership() -> void:
 	var ability_ids: Array[int] = []
 	for index in selector.item_count:
 		ability_ids.append(selector.get_item_metadata(index))
-	_check(ability_ids == [FIREBALL], "The combat selector offers Fireball")
+	_check(ability_ids == [FIREBALL, BOUND_ABILITY], "The combat selector offers Fireball and the bound ability")
 	for locomotion_id in MOVEMENT_EXAMPLES:
 		_check(not ability_ids.has(locomotion_id) and not _tools.select_ability(locomotion_id),
 				"The combat selector excludes the %s movement ability" % locomotion_id)
@@ -631,30 +641,27 @@ func _test_menu_and_input_ownership() -> void:
 		_check(not ability_ids.has(status_id) and not _tools.select_ability(status_id),
 				"The combat selector excludes the granted %s status action" % status_id)
 	var look_enabled := _tools.player_look.is_processing_unhandled_input()
-	var ability_enabled := _tools.ability_input.is_processing()
+	var ability_enabled := _tools.action_router.is_processing_unhandled_input()
 	_tools.show_attributes(1)
 	_check(_tools.is_menu_open(), "F3's actor menu can be opened")
 	var actor_title := _tools.character_sheet.get_node("%ActorTitle") as Label
 	_check(_tools.dummy_editor.is_visible_in_tree() and not _tools.player_editor.is_visible_in_tree()
 			and actor_title.text == "Dummy", "The selected actor controls both sides of the split view")
 	_check(not _tools.player_look.is_processing_unhandled_input()
-			and not _tools.ability_input.is_processing(),
+			and not _tools.action_router.is_processing_unhandled_input(),
 			"An open menu suspends aiming and ability input")
 	_tools.show_statistics()
 	_check(_tools.statistics_panel.is_visible_in_tree()
 			and not _tools.character_sheet.is_visible_in_tree(),
 			"F1 shows statistics in place of the split attribute view")
-	_tools.ability_input.set("_controls_were_active", true)
 	var escape := InputEventKey.new()
 	escape.physical_keycode = KEY_ESCAPE
 	escape.pressed = true
 	_tools._input(escape)
 	_check(not _tools.is_menu_open()
 			and _tools.player_look.is_processing_unhandled_input() == look_enabled
-			and _tools.ability_input.is_processing() == ability_enabled,
+			and _tools.action_router.is_processing_unhandled_input() == ability_enabled,
 			"Escape closes the panel and restores the input receivers' original state")
-	_check(not bool(_tools.ability_input.get("_controls_were_active")),
-			"Closing the panel clears the ability input latch")
 	var visible_before := _tools.combat_log.visible
 	_tools.toggle_log()
 	_check(_tools.combat_log.visible != visible_before, "F2 toggles the log independently")

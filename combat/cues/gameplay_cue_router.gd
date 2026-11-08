@@ -2,7 +2,7 @@ class_name GameplayCueRouter
 extends RefCounted
 ## Routes presentation-only cue events to actor-scoped callbacks and saved scenes.
 
-## Presentation notification sent for a committed effect lifetime or execution.
+## Presentation notification sent for an ability cast or committed effect.
 enum Event {
 	## A retained cue became active.
 	ACTIVE,
@@ -16,7 +16,7 @@ enum Event {
 
 var _handlers: Dictionary[StringName, Array] = {}
 var _scenes: Dictionary[StringName, PackedScene] = {}
-var _active_scenes: Dictionary[int, Dictionary] = {}
+var _active_scenes: Dictionary[String, Dictionary] = {}
 var _pending: Array[Dictionary] = []
 var _dispatching: bool = false
 
@@ -63,29 +63,56 @@ func dispatch_effect(
 	if spec == null or spec.settings == null or spec.context == null \
 			or spec.settings.gameplay_cue_tags.is_empty() or not is_instance_valid(attributes):
 		return
-	var target := attributes.get_parent()
-	if target == null:
-		target = attributes
 	var parameters := spec.context.create_combat_event(&"gameplay_cue", attributes, spec.settings)
 	parameters.merge(details, true)
 	parameters["effect_level"] = spec.level
 	parameters["duration"] = spec.duration
 	parameters["period"] = spec.period
 	parameters["active_handle"] = handle
+	var lifetime := "effect:%d" % handle if handle > 0 else ""
 	var queued_tags: Dictionary[StringName, bool] = {}
 	for cue_tag in spec.settings.gameplay_cue_tags:
 		var tag := StringName(cue_tag)
 		if not is_cue_tag(tag) or queued_tags.has(tag):
 			continue
 		queued_tags[tag] = true
-		_pending.append({"target": weakref(target), "tag": tag,
-				"event": event, "parameters": parameters})
+		_enqueue(attributes, tag, event, parameters, lifetime)
+	_flush()
+
+
+## Sends an actor's cast presentation independently of its effects and input.
+func dispatch_cast(
+		active: bool, attributes: ActorAttributes, context: GameplayEffectContext,
+		cue_tag: StringName, cast_id: int
+) -> void:
+	if not is_cue_tag(cue_tag) or not is_instance_valid(attributes):
+		return
+	var parameters := context.create_combat_event(&"gameplay_cue", attributes)
+	parameters["active_handle"] = cast_id
+	parameters["cast_id"] = cast_id
+	var lifetime := "cast:%d" % cast_id
+	if active:
+		_enqueue(attributes, cue_tag, Event.ACTIVE, parameters, lifetime)
+		_enqueue(attributes, cue_tag, Event.WHILE_ACTIVE, parameters, lifetime)
+	else:
+		_enqueue(attributes, cue_tag, Event.REMOVED, parameters, lifetime)
 	_flush()
 
 
 static func is_cue_tag(tag: StringName) -> bool:
 	var value := String(tag)
 	return value.begins_with("GameplayCue.") and not value.ends_with(".") and not value.contains("..")
+
+
+func _enqueue(
+		attributes: ActorAttributes, tag: StringName, event: Event, parameters: Dictionary,
+		lifetime: String
+) -> void:
+	var target := attributes.get_parent()
+	if target == null:
+		target = attributes
+	_pending.append({"target": weakref(target), "tag": tag, "event": event,
+			"parameters": parameters, "lifetime": lifetime})
 
 
 func _flush() -> void:
@@ -106,26 +133,29 @@ func _flush() -> void:
 			if handler.is_valid() and is_instance_valid(target):
 				handler.call(target, cue_tag, event, parameters.duplicate(true))
 		if not _scenes.is_empty():
-			_defer_scene(item["target"], cue_tag, event, parameters)
+			_defer_scene(item["target"], cue_tag, event, parameters, item["lifetime"])
 	_dispatching = false
 
 
-func _defer_scene(target_ref: WeakRef, cue_tag: StringName, event: Event, parameters: Dictionary) -> void:
+func _defer_scene(
+		target_ref: WeakRef, cue_tag: StringName, event: Event, parameters: Dictionary, lifetime: String
+) -> void:
 	# Startup effects can fire while the actor is still entering the tree. Retain the router until
 	# delivery so a removal queued by an exiting AbilitySystem can also finish after the node is freed.
 	var deliver := func(router: GameplayCueRouter) -> void:
-		router._dispatch_scene(target_ref.get_ref() as Node, cue_tag, event, parameters)
+		router._dispatch_scene(target_ref.get_ref() as Node, cue_tag, event, parameters, lifetime)
 	deliver.call_deferred(self)
 
 
-func _dispatch_scene(target: Node, cue_tag: StringName, event: Event, parameters: Dictionary) -> void:
-	var handle: int = parameters["active_handle"]
-	var active: Dictionary = _active_scenes.get(handle, {})
+func _dispatch_scene(
+		target: Node, cue_tag: StringName, event: Event, parameters: Dictionary, lifetime: String
+) -> void:
+	var active: Dictionary = _active_scenes.get(lifetime, {})
 	var instance: Node = active.get(cue_tag)
 	if event == Event.REMOVED:
 		active.erase(cue_tag)
 		if active.is_empty():
-			_active_scenes.erase(handle)
+			_active_scenes.erase(lifetime)
 		if is_instance_valid(instance) and not instance.is_queued_for_deletion():
 			if is_instance_valid(target):
 				instance.call(&"handle_gameplay_cue", target, cue_tag, event, parameters.duplicate(true))
@@ -143,9 +173,9 @@ func _dispatch_scene(target: Node, cue_tag: StringName, event: Event, parameters
 			push_warning("Gameplay Cue scene root must implement handle_gameplay_cue: %s" % cue_tag)
 			instance.free()
 			return
-		if handle > 0:
+		if not lifetime.is_empty():
 			active[cue_tag] = instance
-			_active_scenes[handle] = active
+			_active_scenes[lifetime] = active
 		target.add_child(instance)
 	if is_instance_valid(instance) and is_instance_valid(target) and not instance.is_queued_for_deletion():
 		instance.call(&"handle_gameplay_cue", target, cue_tag, event, parameters.duplicate(true))

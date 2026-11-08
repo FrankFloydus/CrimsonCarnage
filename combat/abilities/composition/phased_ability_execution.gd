@@ -11,7 +11,7 @@ enum CastMode {
 	DELAY,
 	## Release at the authored method marker or configured fallback and allow animation recovery.
 	ANIMATION,
-	## Wait for input release and then release on the next physics step.
+	## Compatibility for saved Hold Release casts. New casts use the Hold + release gesture and Immediate timing.
 	HOLD_RELEASE,
 	## Schedule periodic deliveries until the duration ends or the cast is cancelled.
 	CHANNEL,
@@ -30,7 +30,7 @@ enum PhaseRoute {
 }
 
 ## Immediate releases on the next physics step. Delay waits for Cast Duration.
-## Animation uses a method marker or its fallback. Hold Release waits for input release.
+## Animation uses a method marker or its fallback. An ability with the Hold + release gesture starts its timing on button-up.
 ## Channel repeats at Channel Period. Sustained stays active until a phase or domain service ends it.
 @export var cast_mode: CastMode = CastMode.IMMEDIATE:
 	set(value):
@@ -178,8 +178,11 @@ func begin(cast: AbilityCast) -> void:
 	if cast.committed:
 		_dispatch(cast, &"ability.committed", _default_targets(cast))
 	_dispatch(cast, &"ability.cast_started", _default_targets(cast))
-	if cast.finished or cast_mode != CastMode.ANIMATION:
-		return
+	if not cast.finished and cast_mode == CastMode.ANIMATION and not _waits_for_input_release(cast):
+		_start_release_animation(cast, run)
+
+
+func _start_release_animation(cast: AbilityCast, run: PhaseRun) -> void:
 	var animation := _get_animation(cast.get_system())
 	if animation == null:
 		run.uses_animation_fallback = true
@@ -207,9 +210,11 @@ func physics_advance(cast: AbilityCast, delta: float) -> void:
 				PhaseRoute.QUEUED_GAMEPLAY)
 		if cast.finished:
 			return
+	if _waits_for_input_release(cast) and not run.release_requested:
+		return
 	run.elapsed += delta
 	match cast_mode:
-		CastMode.IMMEDIATE:
+		CastMode.IMMEDIATE, CastMode.HOLD_RELEASE:
 			_release(cast)
 		CastMode.DELAY:
 			if run.elapsed >= cast_duration:
@@ -217,17 +222,27 @@ func physics_advance(cast: AbilityCast, delta: float) -> void:
 		CastMode.ANIMATION:
 			if run.uses_animation_fallback and run.elapsed >= animation_fallback_seconds:
 				_release(cast)
-		CastMode.HOLD_RELEASE:
-			if run.release_requested:
-				_release(cast)
 		CastMode.CHANNEL:
 			_advance_channel(cast, run)
 
 
 func input_released(cast: AbilityCast) -> void:
+	var run := _get_run(cast)
+	if run == null:
+		return
+	var hold_release := _waits_for_input_release(cast)
+	if hold_release:
+		if run.release_requested:
+			return
+		run.release_requested = true
 	_dispatch(cast, &"ability.input_released", _default_targets(cast))
-	if not cast.finished and cast_mode == CastMode.HOLD_RELEASE:
-		_get_run(cast).release_requested = true
+	if not cast.finished and hold_release and cast_mode == CastMode.ANIMATION:
+		_start_release_animation(cast, run)
+
+
+func _waits_for_input_release(cast: AbilityCast) -> bool:
+	return cast_mode == CastMode.HOLD_RELEASE or (cast.trigger_event_tag.is_empty() \
+			and cast.definition.get_input_gesture() == AbilityDefinition.InputGesture.HOLD_RELEASE)
 
 
 func advance(cast: AbilityCast, delta: float) -> void:
@@ -389,6 +404,8 @@ func _release(cast: AbilityCast) -> void:
 	if cast.finished:
 		return
 	cast.released = true
+	if cast.finished:
+		return
 	_prepare_payloads(cast, run)
 	_dispatch(cast, &"ability.cast_completed", targets)
 	_dispatch(cast, &"ability.released", targets)

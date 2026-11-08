@@ -1,29 +1,38 @@
 # Composable abilities and effects
 
-All saved ability grants use the phase runner on the actor's `AbilitySystem` and single `ActorAttributes` node. Combat still uses the game's Combat 2.0 Accuracy, Critical Chance, Armor, penetration, and school resistances. The same runner invokes the focused movement actions and drives [Fireball](../examples/fireball/fireball.tres) in the Playground.
+All saved ability grants use the phase runner on the actor's `AbilitySystem` and single `ActorAttributes` node. Combat still uses the game's Combat 2.0 Accuracy, Critical Chance, Armor, penetration, and school resistances. The same runner invokes the focused movement actions and drives [Fireball](../examples/fireball/fireball.ability.json) in the Playground.
 
 The [fixture guide](ability_v2_fixtures.md) walks through saved Blood Lash and Crimson Bolt recipes. The [coverage report](ability_v2_coverage.md) separates the capabilities exercised here from the reference mechanics that still need an adapter or acceptance test. [World service contracts](ability_world_services.md) covers the optional link, threat, pet and resurrection integrations.
 
 ## Author and grant an ability
 
-1. Create an `AbilityDefinition` with a unique positive integer **Ability ID**, a display name and an optional **Icon** texture. Use **Phased Ability Execution**. Save the resource and put it in **AbilitySystem → Granted Abilities** or give it to the actor through `grant_ability_spec()`.
-2. Choose the cast mode and initial targeting. Choose Immediate, Delay, Animation, Hold Release, Channel, or Sustained. For Animation, author the method-track event that releases the ability. For Channel, specify both a duration and a pulse period. For Sustained, author the event or domain action that ends the cast. An explicit Single target comes from `try_activate_target(ability_id, target)`. An ordinary direct request uses `try_activate(ability_id)`.
-3. Choose a delivery and add ordered phases. Phases listen to a named lifecycle, delivery, animation, or gameplay event. Add target selection and conditions where needed, then add reusable actions. **Apply Effects** can deliver a shared hostile hit or apply a standalone effect. For a hostile hit, put its damage and attached statuses into the same action to share one Accuracy and one direct critical result.
-4. Set **Commitment** and **Interruption**. Choose a resource pool and amount for each cost. Use one charge and set its recharge time for a standard cooldown. Add a reaction on the ability for an execution-wide rule, or on a payload effect for a response to that payload's outcomes.
-5. Run the resource validator with the ability and its related assets. Actor-specific validation still checks scene references, eligible targets and animation when activation is requested.
+1. Create an ability in the [standalone editor](../tools/ability_editor/README.md#create-and-edit-definitions). Give it a display name and optional icon. The app initializes the standard phased execution, so you can edit the cast and add steps on the same page. Save its `.ability.json` and assign the path in **AbilitySystem → Granted Ability Files**. The app allocates its positive ID. Runtime callers can also grant a loaded definition through `grant_ability_spec()`.
+2. Choose an **Input gesture** and **Cast timing** in **Activation**, then set the initial targeting. For Animation, author the method-track event that releases the ability. For Channel, specify a duration and a pulse period. For Sustained, use Hold to end on button-up or author the event or domain action that ends the cast. An explicit Single target comes from `try_activate_target(ability_id, target)`. An ordinary direct request uses `try_activate(ability_id)`.
+3. Choose a delivery and add ordered phases. Phases listen to a named lifecycle, delivery, animation, or gameplay event. Each phase uses the targets supplied by its event by default. **Override targets** runs a separate query for that phase. Add conditions and reusable actions as needed. **Apply Effects** can deliver a shared hostile hit or apply a standalone effect. For a hostile hit, put its damage and attached statuses into the same action to share one Accuracy and one direct critical result.
+4. Set **Costs and cooldown** and **Interruptions and reactions**. Choose a payment pool and a cost amount in points. For **Resource Percent**, **Calculate from → Payment pool** reads the caster's live Current, Maximum or Missing points from that pool. Choose **Custom resource** to use a different basis. **Exact cost** pays the calculated amount. **Variable spending** treats it as the minimum and pays available points up to the **Spending cap**. Use one charge and set its recharge time for a standard cooldown. Add a reaction on the ability for an execution-wide rule, or on a payload effect for a response to that payload's outcomes.
+5. Use **Validate** in the standalone editor to check the current draft and its linked definitions. Actor-specific validation checks scene references, eligible targets and animation when activation is requested.
 
-The Inspector shows the fields that apply to the selected mode. Switching modes keeps the hidden values in the resource. They take effect again when you return to a mode that uses them.
+The editor uses the exported gameplay fields on one scrollable page per definition. Foldable sections separate Activation, Targeting, Delivery, Costs and cooldown, and What happens. Embedded amounts are edited beside their owning cost, action, or modifier. Switching modes keeps previously stored values in the JSON so they are available again in the mode that uses them.
+
+| Input gesture | Activation and delivery |
+| --- | --- |
+| Press | Activates on button-down and starts the configured cast timing. |
+| Hold | Starts Sustained or Channel behavior on button-down. Button-up runs the input-release step and finishes the active cast. A channel can also end at its authored duration. |
+| Release | Arms the selected action on button-down. Button-up attempts activation and starts the cast timing. |
+| Hold + release | Starts the cast on button-down and runs any cast-start steps. Button-up starts Immediate, Delay, or Animation timing. With Animation, the release marker controls delivery. |
+
+For a charged projectile, choose **Hold + release**, set **Cast timing** to **Immediate** or **Animation**, and choose **Projectile** under Delivery. Start effects can run from `ability.cast_started`, and `ability.input_released` is available for steps that should run before release timing. Costs and charges still follow their configured commitment policy. Older **Hold Release** cast data opens as **Hold + release** with **Immediate** timing.
 
 Saved abilities and effects share one namespace for their positive integer IDs. Zero leaves an ID unassigned. Choose unused IDs for new definitions and keep assigned IDs stable. The resource validator checks both types and their nested definitions together. Asset tags and granted tags have their own fields.
 
-The [standalone Ability Editor](../tools/ability_editor/README.md#create-and-edit-abilities) can create and edit standalone native abilities in the linked project. Its composer projects Activation, Delivery & Targets and a timing-based block timeline onto the existing execution, phases and reactions. Blocks in Delivered Hit share one contact resolution. After Confirmed Hit and After Damage Dealt are follow-up outcomes, with the latter requiring positive Health loss. The Effects tab catalogs linked effects by their authored Asset Tags.
+The [standalone Ability Editor](../tools/ability_editor/README.md#create-and-edit-definitions) authors both ability and effect JSON. Select existing effects from the project picker when authoring an **Apply effects** action. A Delivered Hit action shares one contact resolution. Confirmed Hit and Health Damaged are follow-up outcomes, with the latter requiring positive Health loss.
 
 Register new gameplay names in the Ability Editor's **Tags** tab. The Godot Inspector picker and headless authoring checks read [the shared tag registry](../combat/tags/gameplay_tags.json). Choose an explicitly registered tag for assignments and event producers. A matching field may also use an implied parent to query a whole branch. Phase lifecycle keys and animation events use their own authoring rules.
 
-| Resource | Inspector responsibility |
+| Native type | Authoring responsibility |
 | --- | --- |
-| `AbilityDefinition` | Stable identity, display name, icon, activation tags and event trigger, execution, costs, cooldown, interruption, reactions |
-| `PhasedAbilityExecution` | Cast mode, duration, animation release event, initial targeting, activation conditions, delivery and ordered phases |
+| `AbilityDefinition` | Stable identity, display name, icon, input gesture, activation tags and event trigger, execution, costs, cooldown, interruption, reactions and casting cue |
+| `PhasedAbilityExecution` | Cast timing, duration, animation release event, initial targeting, activation conditions, delivery and ordered phases |
 | `AbilityTargetingDefinition` | Origin, geometry, range, faction, life-state filters, line of sight, and explicit target limit |
 | `AbilityDeliveryDefinition` | Direct, hitscan, projectile, area burst, field, aura, trap, beam or chain delivery, with authored timing and ownership |
 | `AbilityPhaseDefinition` | Event key, optional target override, ordered conditions and actions, failure and repeat policy |
@@ -33,7 +42,7 @@ Register new gameplay names in the Ability Editor's **Tags** tab. The Godot Insp
 
 Ability conditions can check actor tags, life state, and current or fractional resource pools. Live faction filters use the target's **Faction ID** and the source's **Hostile Factions**. Actors with different factions outside that list are neutral. Area targeting considers registered AbilitySystems in the same world, so it counts an actor once even if it owns multiple collision shapes. A disk uses a horizontal radius plus explicit vertical tolerance. A ray uses physics geometry. A deliberate **Max Targets** limit is a separate balance decision.
 
-The Playground enables **Editable Children** on Player and Dummy. Faction changes made on those actors' **AbilitySystem** nodes in the Playground's Local scene tree save as Playground overrides. Editing the Caster or Dummy scene directly updates that actor's defaults. Fireball's inline **Targeting** settings belong to the shared `fireball.tres` resource.
+The Playground enables **Editable Children** on Player and Dummy. Faction changes made on those actors' **AbilitySystem** nodes in the Playground's Local scene tree save as Playground overrides. Editing the Player or Damage Dummy scene directly updates that actor's defaults. Fireball's **Targeting** settings are authored in [its JSON definition](../examples/fireball/fireball.ability.json).
 
 Use **Activation Conditions** to test the caster or an explicit Single target before reservation and again at release. For a trap or field, use **Point** targeting with a terrain collision mask and author **Maximum Surface Slope**. Placement validation runs before release commitment. An aura follows its caster and tracks occupant entry and exit. For **Chain**, choose a Single or Ray initial target, then author a Contact-centered Sphere for the hops. The chain visits the nearest eligible actor it has yet to reach, up to **Chain Hops**. The contacts share one attack identity.
 

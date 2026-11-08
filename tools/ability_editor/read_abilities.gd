@@ -1,75 +1,52 @@
 extends SceneTree
-## Reads definitions, checks deletion references and evaluates tuning previews without starting the game.
+## Runs native validation and previews for JSON authoring without starting the game.
 
-const CATALOG_PREFIX := "ABILITY_EDITOR_CATALOG "
-const DELETE_CHECK_PREFIX := "ABILITY_EDITOR_DELETE_CHECK "
 const ATTRIBUTE_DELETE_PREFIX := "ABILITY_EDITOR_ATTRIBUTE_DELETE "
 const ACCURACY_PREVIEW_PREFIX := "ABILITY_EDITOR_ACCURACY_PREVIEW "
+const VALIDATION_PREFIX := "ABILITY_EDITOR_VALIDATE "
 const ProjectFiles := preload("res://tools/ability_editor/ability_editor_files.gd")
-const PACKED_RESOURCE_EXTENSIONS := ["res", "tres", "scn", "tscn"]
-const DEPENDENCY_EXTENSIONS := ["res", "tres", "scn", "tscn", "gd", "cs", "godot"]
-# Script loaders do not report all literal references. Include quoted path constants.
-const SOURCE_PATH_PATTERN := r"""(?i)"((?:uid://[^"\r\n]+|[^"\r\n]+\.(?:tres|res)))"|'((?:uid://[^'\r\n]+|[^'\r\n]+\.(?:tres|res)))'"""
-const THUMBNAIL_MAX_SIZE := 48
+const CombatJson := preload("res://combat/abilities/combat_definition_json.gd")
+const PACKED_RESOURCE_EXTENSIONS := ["res", "tres", "scn", "tscn", "json"]
 
 
 func _initialize() -> void:
 	var arguments := OS.get_cmdline_user_args()
-	if not arguments.is_empty():
-		match arguments[0]:
-			"--check-delete":
-				print(DELETE_CHECK_PREFIX + JSON.stringify(_check_delete(arguments.slice(1))))
-			"--check-attribute-delete":
-				print(ATTRIBUTE_DELETE_PREFIX + JSON.stringify(_check_attribute_delete(arguments.slice(1))))
-			"--preview-accuracy":
-				print(ACCURACY_PREVIEW_PREFIX + JSON.stringify(_preview_accuracy(arguments.slice(1))))
-			_:
-				push_error("Unknown ability editor command: %s" % arguments[0])
-				quit(1)
-				return
-		quit()
+	if arguments.is_empty():
+		push_error("Choose an ability editor command.")
+		quit(1)
 		return
-
-	var paths: Array[String] = []
-	var warnings: Array[String] = []
-	ProjectFiles.collect("res://", paths, warnings)
-	paths.sort()
-	var abilities: Array[Dictionary] = []
-	var effects: Array[Dictionary] = []
-	var definitions: Array[Resource] = []
-	for path: String in paths:
-		if not ProjectFiles.has_script_dependency(path):
-			continue
-		var resource := ResourceLoader.load(path)
-		if resource == null:
-			warnings.append("Could not load %s." % path)
-			continue
-		if resource is AbilityDefinition:
-			var ability := resource as AbilityDefinition
-			definitions.append(ability)
-			abilities.append(_make_entry(
-				ability.ability_id, ability.display_name, ability.ability_tags,
-				ability.icon, path, warnings
-			))
-		elif resource is GameplayEffectDefinition:
-			var effect := resource as GameplayEffectDefinition
-			definitions.append(effect)
-			effects.append(_make_entry(
-				effect.effect_id, effect.display_name, effect.asset_tags,
-				effect.icon, path, warnings
-			))
-	warnings.append_array(CombatResourceValidator.validate_catalog(definitions))
-	var attribute_error := CombatAttributes.registry_error()
-	if not attribute_error.is_empty():
-		warnings.append(attribute_error)
-	var assets := ProjectFiles.composer_assets(warnings)
-	print(CATALOG_PREFIX + JSON.stringify({
-		"abilities": abilities,
-		"effects": effects,
-		"assets": assets,
-		"warnings": warnings,
-	}))
+	match arguments[0]:
+		"--check-attribute-delete":
+			print(ATTRIBUTE_DELETE_PREFIX + JSON.stringify(_check_attribute_delete(arguments.slice(1))))
+		"--preview-accuracy":
+			print(ACCURACY_PREVIEW_PREFIX + JSON.stringify(_preview_accuracy(arguments.slice(1))))
+		"--validate-definition":
+			print(VALIDATION_PREFIX + JSON.stringify(_validate_definition(arguments.slice(1))))
+		_:
+			push_error("Unknown ability editor command: %s" % arguments[0])
+			quit(1)
+			return
 	quit()
+
+
+func _validate_definition(arguments: PackedStringArray) -> Dictionary:
+	if arguments.is_empty() or arguments.size() > 2:
+		return {"issues": ["Expected a draft JSON file and optional project path."]}
+	var file := FileAccess.open(arguments[0], FileAccess.READ)
+	if file == null:
+		return {"issues": ["Could not read the draft JSON file."]}
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	if not parsed is Dictionary:
+		return {"issues": ["The draft must be a JSON object."]}
+	var path := arguments[1] if arguments.size() == 2 else ""
+	var result := CombatJson.decode_document(parsed, path)
+	if result.definition == null:
+		return {"issues": [result.error]}
+	var issues := CombatResourceValidator.validate_definitions([result.definition])
+	for issue: String in CombatResourceValidator.validate_catalog([result.definition]):
+		if issue not in issues:
+			issues.append(issue)
+	return {"issues": issues}
 
 
 func _preview_accuracy(arguments: PackedStringArray) -> Dictionary:
@@ -108,12 +85,21 @@ func _check_attribute_delete(arguments: PackedStringArray) -> Dictionary:
 	var paths: Array[String] = []
 	ProjectFiles.collect("res://", paths, issues, PACKED_RESOURCE_EXTENSIONS, ProjectFiles.AUTHORING_IGNORED)
 	paths.sort()
+	var json_paths := PackedStringArray()
 	for path: String in paths:
+		if path.ends_with(".json"):
+			if CombatJson.is_definition_path(path):
+				json_paths.append(path)
+			continue
 		var resource := ResourceLoader.load(path)
 		if resource == null:
 			issues.append("Could not check attribute references in %s." % path)
 			continue
 		_find_attribute_references(resource, attribute_id, path, {}, issues)
+	var authored := CombatJson.read_definitions(json_paths)
+	issues.append_array(authored.issues)
+	for definition: Resource in authored.definitions:
+		_find_attribute_references(definition, attribute_id, CombatJson.source_path(definition), {}, issues)
 	return {"id": attribute_id, "issues": issues}
 
 
@@ -167,143 +153,3 @@ func _is_attribute_reference(resource: Resource, property: StringName) -> bool:
 	if resource is StatusProfile:
 		return property == &"resistance_attribute"
 	return resource is AbilityConditionDefinition and property == &"resource"
-
-
-func _check_delete(selection: PackedStringArray) -> Dictionary:
-	var paths: Array[String] = []
-	var issues: Array[String] = []
-	ProjectFiles.collect("res://", paths, issues, DEPENDENCY_EXTENSIONS, ProjectFiles.AUTHORING_IGNORED)
-	var targets: Dictionary[String, String] = {}
-	var referrers: Dictionary[String, Array] = {}
-	if selection.is_empty():
-		issues.append("Choose at least one saved definition.")
-	for path: String in selection:
-		if not path.begins_with("res://") or not ProjectFiles.DEFINITION_EXTENSIONS.has(path.get_extension().to_lower()) \
-				or not paths.has(path):
-			issues.append("Definition is missing or outside the project scan: %s" % path)
-			continue
-		if referrers.has(path):
-			issues.append("Definition selected more than once: %s" % path)
-			continue
-		var resource := ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE)
-		if not (resource is AbilityDefinition or resource is GameplayEffectDefinition):
-			issues.append("Expected a saved ability or effect at %s." % path)
-			continue
-		targets[_path_key(path)] = path
-		referrers[path] = []
-		var uid := ResourceLoader.get_resource_uid(path)
-		if uid != ResourceUID.INVALID_ID:
-			var uid_text := ResourceUID.id_to_text(uid)
-			if targets.has(uid_text):
-				issues.append("%s and %s share a resource UID." % [path, targets[uid_text]])
-			targets[uid_text] = path
-	if not issues.is_empty():
-		return {"paths": [], "issues": issues}
-
-	var source_paths := RegEx.create_from_string(SOURCE_PATH_PATTERN)
-	for path: String in paths:
-		for reference: String in _read_references(path, source_paths, issues):
-			for key: String in _reference_keys(reference, path):
-				var target := targets.get(key, "") as String
-				if target.is_empty():
-					continue
-				var owners: Array = referrers[target]
-				if not owners.has(path):
-					owners.append(path)
-	for target: String in selection:
-		for owner: String in referrers[target]:
-			if not referrers.has(owner):
-				issues.append("%s is referenced by %s." % [target, owner])
-	if not issues.is_empty():
-		return {"paths": [], "issues": issues}
-
-	# Move dependents first. Stopping after a failed move then leaves remaining links intact.
-	var order: Array[String] = []
-	while order.size() < selection.size():
-		var previous_count := order.size()
-		for path: String in selection:
-			if order.has(path):
-				continue
-			if referrers[path].all(func(owner: String) -> bool: return order.has(owner)):
-				order.append(path)
-		if order.size() == previous_count:
-			return {"paths": [], "issues": ["The selected definitions reference each other in a cycle."]}
-	return {"paths": order, "issues": []}
-
-
-func _read_references(path: String, source_paths: RegEx, issues: Array[String]) -> Array[String]:
-	var references: Array[String] = []
-	if path.get_extension().to_lower() in PACKED_RESOURCE_EXTENSIONS:
-		for dependency: String in ResourceLoader.get_dependencies(path):
-			references.append(dependency.get_slice("::", 0))
-			var fallback := dependency.get_slice("::", 2)
-			if not fallback.is_empty():
-				references.append(fallback)
-		return references
-
-	var source := FileAccess.open(path, FileAccess.READ)
-	if source == null:
-		issues.append("Could not read %s for references." % path)
-		return references
-	for result: RegExMatch in source_paths.search_all(source.get_as_text()):
-		var reference := result.get_string(1)
-		if reference.is_empty():
-			reference = result.get_string(2)
-		references.append(reference.c_unescape())
-	return references
-
-
-func _reference_keys(reference: String, owner: String) -> Array[String]:
-	if reference.begins_with("uid://"):
-		var uid := ResourceUID.text_to_id(reference)
-		if ResourceUID.has_id(uid):
-			return [reference, _path_key(ResourceUID.get_id_path(uid))]
-		return [reference]
-	var path := reference.replace("\\", "/")
-	if path.is_relative_path():
-		return [_path_key(owner.get_base_dir().path_join(path)), _path_key("res://".path_join(path))]
-	return [_path_key(ProjectSettings.localize_path(path))]
-
-
-func _path_key(path: String) -> String:
-	var simplified := path.simplify_path()
-	return simplified.to_lower() if OS.has_feature("windows") else simplified
-
-
-func _make_entry(
-	id: int,
-	display_name: String,
-	tags: PackedStringArray,
-	icon: Texture2D,
-	path: String,
-	warnings: Array[String]
-) -> Dictionary:
-	var icon_png := _get_icon_png(icon)
-	if icon != null and icon_png.is_empty():
-		warnings.append("Could not make an icon thumbnail for %s." % path)
-	return {
-		"id": id,
-		"name": display_name,
-		"tags": Array(tags),
-		"icon_png": icon_png,
-		"path": path,
-	}
-
-
-func _get_icon_png(icon: Texture2D) -> String:
-	if icon == null:
-		return ""
-	var image := icon.get_image()
-	if image == null or image.is_empty():
-		return ""
-	# The headless renderer may return its stored image directly.
-	var thumbnail := image.duplicate() as Image
-	if thumbnail.is_compressed() and thumbnail.decompress() != OK:
-		return ""
-	var largest_side := maxi(thumbnail.get_width(), thumbnail.get_height())
-	if largest_side > THUMBNAIL_MAX_SIZE:
-		var scale_factor := float(THUMBNAIL_MAX_SIZE) / largest_side
-		var width := maxi(1, roundi(thumbnail.get_width() * scale_factor))
-		var height := maxi(1, roundi(thumbnail.get_height() * scale_factor))
-		thumbnail.resize(width, height, Image.INTERPOLATE_LANCZOS)
-	return Marshalls.raw_to_base64(thumbnail.save_png_to_buffer())

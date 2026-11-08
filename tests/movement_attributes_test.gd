@@ -1,8 +1,7 @@
 extends SceneTree
 ## Actor-driven gait speeds and grounded sprint upkeep through saved first-person assets.
 
-const CONTROLLER = preload("res://player/first_person_controller.tscn")
-const CASTER = preload("res://examples/fireball/caster.tscn")
+const PLAYER_SCENE = preload("res://player/player.tscn")
 const EDITOR = preload("res://levels/playground/testing/attribute_editor.tscn")
 const SPRINT_FIXTURE = preload("res://tests/sprint_fixture.gd")
 const SPRINT: int = SPRINT_FIXTURE.SPRINT
@@ -11,7 +10,7 @@ const EXHAUSTED_EFFECT_ID: int = 10
 const REGENERATION_PERIOD: float = 0.1
 
 var _world: Node3D
-var _player: FirstPersonController
+var _player: Player
 var _movement: FirstPersonMovement
 var _has_authored_movement_settings := false
 var _upkeep_calculation: SprintStaminaUpkeepCalculation
@@ -104,23 +103,23 @@ func _test_saved_wiring_and_live_modifiers() -> void:
 	var changed := [4.4, 2.2, 6.6, 2.64, 1.32]
 	for gait: int in range(5):
 		_near(_movement.get_speed_for_gait(gait), changed[gait], "Live base changes immediately affect every gait")
-	var caster := CASTER.instantiate() as FirstPersonController
-	var caster_system := caster.get_node("AbilitySystem") as AbilitySystem
-	# Reproduce an editor resave dropping the inherited exported Node reference.
-	caster_system.attributes = null
-	_world.add_child(caster)
-	_disable_processing(caster)
-	var caster_movement := caster.get_node("Movement") as FirstPersonMovement
-	_check(caster_movement.attributes == caster_system.attributes
-			and caster.get_node("Attributes") == caster_system.attributes,
-			"A missing serialized reference resolves the same inherited actor attributes")
-	_check(caster_system.effects != null,
-			"The missing-reference recovery completes ability initialization for the saved caster")
+	var second_player := PLAYER_SCENE.instantiate() as Player
+	var second_system := second_player.get_node("AbilitySystem") as AbilitySystem
+	# Reproduce an editor resave dropping the exported Node reference.
+	second_system.attributes = null
+	_world.add_child(second_player)
+	_disable_processing(second_player)
+	var second_movement := second_player.get_node("Movement") as FirstPersonMovement
+	_check(second_movement.attributes == second_system.attributes
+			and second_player.get_node("Attributes") == second_system.attributes,
+			"A missing serialized reference resolves the same player attributes")
+	_check(second_system.effects != null,
+			"The missing-reference recovery completes ability initialization for the saved player")
 	for ability_id: int in [SPRINT, 2, 3, 4, SPRINT_FIXTURE.EXHAUSTION, 6]:
-		var definition := caster_system.get_ability_definition(ability_id)
-		_check(definition != null and caster_system.granted_abilities.has(definition),
-				"The saved caster registers %s from Granted Abilities" % ability_id)
-	var saved_execution := caster_system.get_ability_definition(SPRINT).execution as PhasedAbilityExecution
+		var definition := second_system.get_ability_definition(ability_id)
+		_check(definition != null and second_system.granted_abilities.has(definition),
+				"The saved player registers %s from Granted Abilities" % ability_id)
+	var saved_execution := second_system.get_ability_definition(SPRINT).execution as PhasedAbilityExecution
 	var saved_sprint := saved_execution.phases[0].actions[0] as PlayerSprintAction
 	var upkeep := saved_sprint.upkeep_effect
 	_check(upkeep != null and upkeep.effect_id == UPKEEP_ID
@@ -129,10 +128,10 @@ func _test_saved_wiring_and_live_modifiers() -> void:
 			and upkeep.period_inhibition_policy == GameplayEffectDefinition.PeriodInhibitionPolicy.EXECUTE_AND_RESET_PERIOD,
 			"The saved Sprint grant references an Infinite, due-gated periodic upkeep effect")
 	var attribute_nodes := 0
-	for child in caster.get_children():
+	for child in second_player.get_children():
 		if child is ActorAttributes:
 			attribute_nodes += 1
-	_check(attribute_nodes == 1, "Moving Attributes into the reusable controller creates no duplicate actor state")
+	_check(attribute_nodes == 1, "The saved Player has exactly one ActorAttributes component")
 	await _end_fixture()
 
 
@@ -634,7 +633,7 @@ func _start_fixture(position: Vector3 = Vector3(0.0, 0.03, 0.0), settle: bool = 
 	_world = Node3D.new()
 	root.add_child(_world)
 	_add_box(Vector3(0.0, -0.5, 0.0), Vector3(400.0, 1.0, 400.0))
-	_player = CONTROLLER.instantiate() as FirstPersonController
+	_player = PLAYER_SCENE.instantiate() as Player
 	_player.position = position
 	var system := _player.get_node("AbilitySystem") as AbilitySystem
 	preload("res://tests/attribute_fixture.gd").configure(system, REGENERATION_PERIOD)
@@ -672,7 +671,7 @@ func _start_fixture(position: Vector3 = Vector3(0.0, 0.03, 0.0), settle: bool = 
 			await _step()
 
 
-func _disable_processing(player: FirstPersonController) -> void:
+func _disable_processing(player: Player) -> void:
 	player.set_physics_process(false)
 	player.get_node("AbilitySystem").set_process(false)
 	player.get_node("Crouch").set_process(false)
