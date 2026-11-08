@@ -7,8 +7,13 @@ func get_validation_error(_system: AbilitySystem) -> StringName:
 	return &""
 
 
-## Override to choose a later commit point. The execution then calls cast.commit() itself.
-func should_commit_on_activation() -> bool:
+## Validates an explicit actor request before creating a cast or paying its costs.
+func get_target_validation_error(_system: AbilitySystem, _target: AbilitySystem) -> StringName:
+	return &""
+
+
+## Starts any pre-commit execution phases. False rejects this cast.
+func request_start(_cast: AbilityCast) -> bool:
 	return true
 
 
@@ -44,6 +49,11 @@ func end(_cast: AbilityCast, _cancelled: bool) -> void:
 
 func get_animation_name() -> StringName:
 	return &""
+
+
+## Returns observable windup progress, or -1 if there is no current windup.
+func get_windup_progress(_cast: AbilityCast) -> float:
+	return -1.0
 
 
 ## Returns the immutable effects authored on an execution for activation validation.

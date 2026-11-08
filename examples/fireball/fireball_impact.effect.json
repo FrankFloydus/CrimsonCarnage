@@ -1,0 +1,96 @@
+{
+	"format": "godot_combat_definition",
+	"version": 1,
+	"uid": "uid://dbvh7mn2ah1vv",
+	"root": "r1",
+	"resources": {
+		"r1": {
+			"type": "GameplayEffectDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"effect_id": 7,
+				"display_name": "Fireball Impact",
+				"icon": {
+					"$asset": "res://examples/fireball/fireball_icon.svg",
+					"uid": "uid://dj6saa4qbkydw"
+				},
+				"hud_category": 0,
+				"timing": 0,
+				"asset_tags": [],
+				"gameplay_cue_tags": [],
+				"damage_type": 1,
+				"magic_school": 0,
+				"damage_profile": null,
+				"damage_tags": [],
+				"granted_tags": [],
+				"required_target_tags": [],
+				"blocked_target_tags": [
+					"State.Dead"
+				],
+				"duration": 0.0,
+				"period": 0.0,
+				"execute_periodic_on_application": true,
+				"period_inhibition_policy": 0,
+				"ongoing_required_target_tags": [],
+				"ongoing_blocked_target_tags": [],
+				"modifiers": [],
+				"executions": [
+					{
+						"$resource": "r2"
+					}
+				],
+				"stacking_type": 0,
+				"stack_limit_count": 0,
+				"deny_overflow_application": false,
+				"clear_stack_on_overflow": false,
+				"stack_duration_policy": 0,
+				"stack_period_policy": 0,
+				"stack_expiration_policy": 0,
+				"components": [],
+				"status_profile": null,
+				"snapshot_source": false,
+				"tick_at_end": true,
+				"exclusive_owner_slot": "",
+				"transferable": false,
+				"reactions": []
+			}
+		},
+		"r2": {
+			"type": "GameplayEffectDamageExecution",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"amount": {
+					"$resource": "r3"
+				},
+				"use_weapon_damage": false,
+				"power_coefficient": 1.0,
+				"weapon_power_share": 1.0
+			}
+		},
+		"r3": {
+			"type": "AmountDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"source": 0,
+				"unit": 0,
+				"fixed_amount": 5.0,
+				"percentage": 100.0,
+				"actor": 0,
+				"stat": 42,
+				"resource": 1,
+				"resource_basis": 1,
+				"outcome_basis": 0,
+				"timing": 0,
+				"curve_input": 0,
+				"curve": null,
+				"amount_per_target": 1.0,
+				"clamp_enabled": false,
+				"minimum": 0.0,
+				"maximum": 100.0
+			}
+		}
+	}
+}

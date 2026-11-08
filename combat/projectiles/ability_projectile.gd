@@ -1,8 +1,11 @@
 class_name AbilityProjectile
 extends Node3D
-## Carries outgoing Gameplay Effect Specs to the first swept collision along its path.
+## Reports the first swept collision or expiration of one projectile flight.
 
-signal impacted(collider: Node, world_position: Vector3)
+## Contact with the first swept body, including surface geometry for phase targeting.
+signal contact_reached(collider: Node, world_position: Vector3, normal: Vector3)
+## Flight ended without a contact.
+signal expired(world_position: Vector3)
 
 ## Travel speed in meters per second along the projectile's local forward axis.
 @export_range(0.1, 200.0, 0.1) var speed: float = 18.0
@@ -11,21 +14,13 @@ signal impacted(collider: Node, world_position: Vector3)
 ## Physics body layers hit by the swept ray; the source body is excluded at launch.
 @export_flags_3d_physics var collision_mask: int = 1
 
-var _context: GameplayEffectContext
-var _specs: Array[GameplayEffectSpec] = []
 var _excluded: Array[RID] = []
 var _elapsed: float = 0.0
 var _launched: bool = false
 var _direction: Vector3 = Vector3.FORWARD
 
 
-func launch(
-		context: GameplayEffectContext,
-		specs: Array[GameplayEffectSpec],
-		excluded_body: CollisionObject3D = null
-) -> void:
-	_context = context
-	_specs = specs.duplicate()
+func launch(excluded_body: CollisionObject3D = null) -> void:
 	_excluded.clear()
 	if is_instance_valid(excluded_body):
 		_excluded.append(excluded_body.get_rid())
@@ -48,18 +43,18 @@ func _physics_process(delta: float) -> void:
 		global_position = collision["position"]
 		_launched = false
 		var collider := collision["collider"] as Node
-		var target := AbilitySystem.find_for(collider)
-		if target != null and _context != null:
-			var hit_context := _context.duplicate_for_hit(0.5)
-			hit_context.hit_position = global_position
-			hit_context.hit_normal = collision["normal"]
-			hit_context.has_hit_result = true
-			target.receive_hit_specs(hit_context, _specs)
-		impacted.emit(collider, global_position)
+		contact_reached.emit(collider, global_position, collision["normal"])
 		queue_free()
 		return
 	global_position = destination
 	_elapsed += delta
 	if _elapsed >= lifetime:
 		_launched = false
+		expired.emit(global_position)
 		queue_free()
+
+
+## Cancels the flight without emitting a contact or expiration phase.
+func stop() -> void:
+	_launched = false
+	queue_free()

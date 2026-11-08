@@ -38,10 +38,12 @@ func _test_baselines_and_retired_catalogue() -> void:
 	_close(actor.get_value(CombatAttributes.Id.MAX_MANA), 100.0, "Starting Mana includes Intellect")
 	_close(actor.get_value(CombatAttributes.Id.CARRY_CAPACITY), 100.0, "Starting capacity includes Strength")
 	_close(actor.get_value(CombatAttributes.Id.MAGIC_POWER), 20.0, "Starting Intellect supplies Magic Power")
-	_check(CombatAttributes.all_ids().size() == 31, "Exactly thirty-one attributes are active")
+	var builtin_ids := CombatAttributes.all_ids().filter(
+			func(id: int) -> bool: return id < CombatAttributes.FIRST_CUSTOM_ID)
+	_check(builtin_ids.size() == 31, "Exactly thirty-one built-in attributes are active")
 	_check(CombatAttributes.current_ids() == [0, 2, 4], "Only Health, Stamina and Mana are current pools")
 	for id: int in range(57):
-		if id in CombatAttributes.ACTIVE_IDS:
+		if id in CombatAttributes.BUILTIN_IDS:
 			continue
 		_check(not CombatAttributes.is_active(id), "Legacy slot remains inactive: %d" % id)
 		actor.set_base_value(id, 1000.0)

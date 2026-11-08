@@ -330,12 +330,11 @@ func _test_automatic_asc_recovery() -> void:
 	holder.add_child(system)
 	root.add_child(holder)
 	var startup_handles := system.effects.get_retained_effects().keys()
-	_check(system.effects.active_count(&"Effect.DefaultAttributes") == 0
-			and system.effects.active_count(&"Effect.AttributeDerivations") == 1
-			and system.effects.active_count(&"Effect.ResourceRegeneration") == 1,
+	_check(system.effects.active_count(11) == 0
+			and system.effects.active_count(12) == 1
+			and system.effects.active_count(13) == 1,
 			"Startup executes the default effect and retains exactly one instance of each ongoing effect")
 	var transient := GameplayEffectDefinition.new()
-	transient.kind = GameplayEffectDefinition.Kind.MODIFIERS
 	transient.timing = GameplayEffectDefinition.Timing.INFINITE
 	transient.granted_tags = PackedStringArray(["State.Fixture.Transient"])
 	var transient_handle := system.effects.apply_effect(transient, system.create_effect_context())

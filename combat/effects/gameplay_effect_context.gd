@@ -6,9 +6,12 @@ var source_id: int = 0
 var source_name: String = ""
 ## Optional source of the ability or effect, such as the Resource that supplied its grant.
 var source_object: Object
-var ability_id: StringName = &""
+## Authored ability identity, or zero for a payload without an ability.
+var ability_id: int = 0
 var ability_name: String = ""
 var ability_tags := PackedStringArray()
+## Per-execution identity shared with detached descendants.
+var outcome_context: CombatOutcomeContext
 ## Optional collision geometry available to impact executions and Gameplay Cues.
 var hit_position: Vector3 = Vector3.ZERO
 var hit_normal: Vector3 = Vector3.ZERO
@@ -28,6 +31,7 @@ var source_level: int:
 		return source.level if source != null else _fallback_level
 
 var _source_attributes: WeakRef
+var _source_system: WeakRef
 var _source_tags: GameplayTagSet
 var _fallback_level: int = 1
 var _fallback_values: Dictionary = {}
@@ -44,6 +48,7 @@ static func capture(
 		context_tags: PackedStringArray = PackedStringArray()
 ) -> GameplayEffectContext:
 	var context := GameplayEffectContext.new()
+	context.outcome_context = CombatOutcomeContext.create(source_attributes)
 	context.ability_tags = context_tags.duplicate()
 	context._source_tags = source_tags
 	if is_instance_valid(source_attributes):
@@ -71,7 +76,7 @@ func create_combat_event(
 		"ability_id": ability_id,
 		"ability_name": ability_name,
 		"ability_tags": ability_tags.duplicate(),
-		"effect_id": &"",
+		"effect_id": 0,
 		"effect_name": "",
 		"amount": 0.0,
 		"resolved_amount": 0.0,
@@ -96,6 +101,8 @@ func create_combat_event(
 	if has_hit_result:
 		event["hit_position"] = hit_position
 		event["hit_normal"] = hit_normal
+	if outcome_context != null:
+		outcome_context.add_attribution(event)
 	return event
 
 
@@ -168,10 +175,12 @@ func duplicate_for_hit(weapon_roll: float = -1.0) -> GameplayEffectContext:
 	context.ability_id = ability_id
 	context.ability_name = ability_name
 	context.ability_tags = ability_tags.duplicate()
+	context.outcome_context = outcome_context
 	context.hit_position = hit_position
 	context.hit_normal = hit_normal
 	context.has_hit_result = has_hit_result
 	context._source_attributes = _source_attributes
+	context._source_system = _source_system
 	context._source_tags = _source_tags
 	context._fallback_level = _fallback_level
 	context._fallback_values = _fallback_values.duplicate(true)
@@ -181,6 +190,20 @@ func duplicate_for_hit(weapon_roll: float = -1.0) -> GameplayEffectContext:
 	context._weapon_damage_max = _weapon_damage_max
 	context.weapon_power_coefficient = weapon_power_coefficient
 	context._weapon_damage_roll = clampf(weapon_roll, 0.0, 1.0) if weapon_roll >= 0.0 else randf()
+	return context
+
+
+## Returns the originating system while it still exists. Payloads do not keep actors alive.
+func get_source_system() -> AbilitySystem:
+	return _source_system.get_ref() as AbilitySystem if _source_system != null else null
+
+
+## Captures current source values for an effect while target defenses remain live.
+func with_snapshotted_source(context_tags: PackedStringArray) -> GameplayEffectContext:
+	var context := with_critical_result(is_critical, critical_multiplier, critical_damage_percent)
+	context.cache_source_values(ability_tags)
+	context.cache_source_values(context_tags)
+	context._source_attributes = null
 	return context
 
 

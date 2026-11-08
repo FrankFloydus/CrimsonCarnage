@@ -98,17 +98,17 @@ func get_totals(source_id: int = 0) -> Dictionary:
 
 func _accumulate(event: Dictionary) -> void:
 	var source_id := int(event.get("source_id", 0))
-	var ability_id := str(event.get("ability_id", ""))
-	if ability_id.is_empty():
-		ability_id = "unattributed"
-	var key := "%s|%s" % [source_id, ability_id]
+	var ability_id := int(event.get("ability_id", 0))
+	var key := "%d|%d" % [source_id, ability_id]
 	if not _rows.has(key):
 		var row := _empty_row()
 		row["source_id"] = source_id
 		row["source_name"] = str(event.get("source_name", "Unknown"))
 		row["ability_id"] = ability_id
 		var ability_name := str(event.get("ability_name", ""))
-		row["ability_name"] = ability_name if not ability_name.is_empty() else ability_id.capitalize()
+		if ability_name.is_empty():
+			ability_name = "Ability %d" % ability_id if ability_id > 0 else "Unattributed"
+		row["ability_name"] = ability_name
 		_rows[key] = row
 	var row: Dictionary = _rows[key]
 	match StringName(event.get("type", &"")):

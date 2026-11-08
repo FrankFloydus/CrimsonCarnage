@@ -5,7 +5,15 @@ extends VBoxContainer
 ## Emitted after values are refreshed for the editor and its computed sheet.
 signal values_refreshed
 
-enum UtilityAction { RESET_EDITS, CLEAR_EFFECTS, RESTORE_RESOURCES }
+## Stable menu item IDs for the playground's actor utilities.
+enum UtilityAction {
+	## Clears this editor's attribute overrides and restores its original actor level.
+	RESET_EDITS,
+	## Clears active transient effects while preserving the actor's startup effects.
+	CLEAR_EFFECTS,
+	## Refills current Health, Mana, and Stamina to their effective capacities.
+	RESTORE_RESOURCES,
+}
 
 ## Saved row layout instantiated once for each active code-defined combat attribute.
 @export var row_scene: PackedScene

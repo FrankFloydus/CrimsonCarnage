@@ -2,13 +2,14 @@ class_name AbilitySystem
 extends Node
 ## Coordinates unlocked abilities, authored execution, resource costs and delivered payloads.
 
-signal ability_started(ability_id: StringName)
-signal ability_ended(ability_id: StringName, cancelled: bool)
-signal activation_failed(ability_id: StringName, reason: StringName)
+signal ability_started(ability_id: int)
+signal ability_ended(ability_id: int, cancelled: bool)
+signal activation_failed(ability_id: int, reason: StringName)
 signal hit_resolved(result: Dictionary)
 ## Detached per-cast, delivery, and effect telemetry; target events are emitted only here.
 signal combat_event(event: Dictionary)
 
+const COMBAT_DEFINITION_JSON = preload("res://combat/abilities/combat_definition_json.gd")
 
 ## The actor's single attribute component, used for costs and effect calculations.
 ## If empty, resolves the actor's sibling node named Attributes when entering the scene.
@@ -23,20 +24,27 @@ signal combat_event(event: Dictionary)
 @export var aim_origin: Node3D
 ## Source physics body excluded from its own projectile collision queries.
 @export var actor_body: CollisionObject3D
-## Abilities granted directly to this actor at startup, usable by direct requests or gameplay events.
-@export var granted_abilities: Array[AbilityDefinition] = []
-## Effects applied to this actor in order at startup. Retained startup handles survive a combat reset.
-@export var startup_effects: Array[GameplayEffectDefinition] = []
+## Ability JSON files granted directly to this actor at startup, in list order.
+@export_file("*.ability.json") var granted_ability_files: Array[String] = []
+## Effect JSON files applied to this actor at startup. Retained startup handles survive a combat reset.
+@export_file("*.effect.json") var startup_effect_files: Array[String] = []
 ## Maps Gameplay Cue tags to optional presentation scenes for this actor.
 @export var gameplay_cue_bindings: Array[GameplayCueBinding] = []
 ## Counted hierarchical tags initially granted to this actor.
 @export var initial_tags: PackedStringArray = PackedStringArray()
+## Faction identity used by authored friendly and hostile target filters.
+@export var faction_id: StringName
+## Factions this actor treats as hostile. Unlisted, different factions are neutral.
+@export var hostile_factions: Array[StringName] = []
 
 var tags := GameplayTagSet.new()
 var effects: GameplayEffectRuntime
 var _startup_effect_handles: Array[int] = []
 var _ability_specs: Dictionary[int, GameplayAbilitySpec] = {}
 var _active_casts: Dictionary[int, AbilityCast] = {}
+var _charge_pools: Dictionary[Variant, AbilityChargePool] = {}
+var _school_lockouts: Dictionary[int, Dictionary] = {}
+var _next_lockout: int = 1
 var _blocked_ability_tags := GameplayTagSet.new()
 var _animation_cast: AbilityCast
 var _animation_step_cast: AbilityCast
@@ -53,6 +61,36 @@ var _attribute_events_pending: bool = false
 var _weapon_random := RandomNumberGenerator.new()
 var _accuracy_random := RandomNumberGenerator.new()
 var _critical_random := RandomNumberGenerator.new()
+var _loaded_grants := false
+var _loaded_startup := false
+
+## Runtime definitions, with an in-memory override for isolated behavior fixtures.
+var granted_abilities: Array[AbilityDefinition]:
+	get:
+		if not _loaded_grants:
+			_loaded_grants = true
+			for path: String in granted_ability_files:
+				var definition := COMBAT_DEFINITION_JSON.load_definition(path) as AbilityDefinition
+				if definition != null:
+					granted_abilities.append(definition)
+		return granted_abilities
+	set(value):
+		_loaded_grants = true
+		granted_abilities = value
+
+## Runtime startup effects, with an in-memory override for isolated behavior fixtures.
+var startup_effects: Array[GameplayEffectDefinition]:
+	get:
+		if not _loaded_startup:
+			_loaded_startup = true
+			for path: String in startup_effect_files:
+				var definition := COMBAT_DEFINITION_JSON.load_definition(path) as GameplayEffectDefinition
+				if definition != null:
+					startup_effects.append(definition)
+		return startup_effects
+	set(value):
+		_loaded_startup = true
+		startup_effects = value
 
 
 func _ready() -> void:
@@ -64,6 +102,7 @@ func _ready() -> void:
 		set_physics_process(false)
 		return
 	attributes.initialize()
+	add_to_group(&"ability_actors")
 	effects = GameplayEffectRuntime.new(attributes, tags, _critical_random, self)
 	effects.cues.configure(gameplay_cue_bindings)
 	for tag in initial_tags:
@@ -103,8 +142,9 @@ func _exit_tree() -> void:
 	_activation_cleanup_depth += 1
 	cancel_all_abilities()
 	if effects != null and is_instance_valid(attributes):
-		effects.clear()
+		effects.clear([], GameplayEffectRuntime.RemovalReason.SCENE_UNLOAD)
 	_startup_effect_handles.clear()
+	_school_lockouts.clear()
 	_attribute_events_ready = false
 	_attribute_events_pending = false
 	_attribute_event_states.clear()
@@ -115,6 +155,13 @@ func _exit_tree() -> void:
 func advance(delta: float) -> void:
 	if delta <= 0.0 or not is_finite(delta):
 		return
+	for pool in _charge_pools.values():
+		pool.advance(delta)
+	for handle: int in _school_lockouts.keys():
+		var lockout := _school_lockouts[handle]
+		lockout["remaining"] -= delta
+		if float(lockout["remaining"]) <= 1.0e-9:
+			_school_lockouts.erase(handle)
 	if effects != null:
 		effects.advance(delta)
 	for cast: AbilityCast in _active_casts.values():
@@ -128,7 +175,9 @@ func advance(delta: float) -> void:
 func create_effect_context(
 		context_tags: PackedStringArray = PackedStringArray()
 ) -> GameplayEffectContext:
-	return GameplayEffectContext.capture(attributes, tags, context_tags)
+	var context := GameplayEffectContext.capture(attributes, tags, context_tags)
+	context._source_system = weakref(self)
+	return context
 
 
 ## Builds a per-application spec on the source before it is delivered to a target.
@@ -183,22 +232,35 @@ func receive_hit_specs(
 			or attributes.get_value(CombatAttributes.Id.HEALTH) <= 0.0 \
 			or not is_finite(accuracy_roll) or not is_finite(critical_roll):
 		return result
-	var eligible: Array[GameplayEffectSpec] = []
-	for spec: GameplayEffectSpec in specs:
-		if effects.can_apply_spec(spec):
-			eligible.append(spec)
-	if eligible.is_empty():
+	if not effects.has_hit_candidate(specs):
 		return result
 	var hit_context := context.duplicate_for_hit(_weapon_random.randf())
+	if hit_context.outcome_context == null:
+		hit_context.outcome_context = CombatOutcomeContext.create(null)
+	hit_context.outcome_context = hit_context.outcome_context.for_contact(attributes)
 	var roll := accuracy_roll if accuracy_roll >= 0.0 else _accuracy_random.randf()
-	result = effects.apply_hit_specs(eligible, hit_context, roll, critical_roll)
-	if result["outcome"] == &"invalid":
-		return result
-	hit_resolved.emit(result)
-	var event := hit_context.create_combat_event(&"hit_outcome", attributes)
-	event.merge(result, true)
-	combat_event.emit(event)
+	CombatOutcomeDispatcher.begin_batch()
+	result = effects.apply_hit_specs(specs, hit_context, roll, critical_roll)
+	publish_hit_outcome(hit_context, result)
+	CombatOutcomeDispatcher.end_batch()
 	return result
+
+
+## Queues a resolved contact, including observer state retained from depleted barriers.
+func publish_hit_outcome(context: GameplayEffectContext, result: Dictionary) -> void:
+	if result.get("outcome", &"invalid") == &"invalid":
+		return
+	var observers: Array = result.get("_depleted_hit_observers", [])
+	result.erase("_depleted_hit_observers")
+	var event := context.create_combat_event(&"hit_outcome", attributes)
+	event.merge(result, true)
+	CombatOutcomeDispatcher.begin_batch()
+	var outcome := CombatOutcomeDispatcher.publish(context.outcome_context, event)
+	if not observers.is_empty():
+		effects.dispatch_depleted_hit_observers(outcome, observers)
+	hit_resolved.emit(result)
+	combat_event.emit(outcome.get_event())
+	CombatOutcomeDispatcher.end_batch()
 
 
 ## Seeds independent weapon damage, Accuracy and critical streams for tests and replays.
@@ -220,12 +282,16 @@ func grant_ability(definition: AbilityDefinition, weapon_source: WeaponDefinitio
 	return grant_ability_spec(definition, 1, weapon_source) > 0
 
 
-## Grants a distinct instance with a level and optional source. Zero means the grant was invalid.
+## Grants a distinct instance with a level and optional source.
+## Returns zero if the grant is invalid or a different definition already owns its ID.
 func grant_ability_spec(
 		definition: AbilityDefinition, grant_level: int = 1, source_object: Object = null,
 		granting_effect_handle: int = 0, set_by_caller: Dictionary[StringName, float] = {}
 ) -> int:
-	if definition == null or definition.ability_id.is_empty() or definition.execution == null or grant_level < 1:
+	if definition == null or definition.ability_id <= 0 or definition.execution == null or grant_level < 1:
+		return 0
+	var existing := _get_ability_spec_for_id(definition.ability_id)
+	if existing != null and existing.definition != definition:
 		return 0
 	var spec := GameplayAbilitySpec.new(definition, grant_level, source_object, granting_effect_handle, set_by_caller)
 	_ability_specs[spec.handle] = spec
@@ -237,7 +303,7 @@ func get_ability_spec(handle: int) -> GameplayAbilitySpec:
 	return _ability_specs.get(handle)
 
 
-func revoke_ability(ability_id: StringName) -> void:
+func revoke_ability(ability_id: int) -> void:
 	var spec := _get_ability_spec_for_id(ability_id)
 	if spec != null:
 		revoke_ability_spec(spec.handle)
@@ -261,18 +327,20 @@ func remove_ability_spec_on_end(handle: int) -> void:
 
 
 ## Reads the current runtime grant so previews and AI use the actual ability selected.
-func get_ability_definition(ability_id: StringName) -> AbilityDefinition:
+func get_ability_definition(ability_id: int) -> AbilityDefinition:
 	var spec := _get_ability_spec_for_id(ability_id)
 	return spec.definition if spec != null else null
 
 
 ## Reads the current grant's optional runtime weapon profile.
-func get_ability_weapon_source(ability_id: StringName) -> WeaponDefinition:
+func get_ability_weapon_source(ability_id: int) -> WeaponDefinition:
 	var spec := _get_ability_spec_for_id(ability_id)
 	return spec.get_weapon_source() if spec != null else null
 
 
-func _get_ability_spec_for_id(ability_id: StringName) -> GameplayAbilitySpec:
+func _get_ability_spec_for_id(ability_id: int) -> GameplayAbilitySpec:
+	if ability_id <= 0:
+		return null
 	for spec: GameplayAbilitySpec in _ability_specs.values():
 		if spec.definition.ability_id == ability_id:
 			return spec
@@ -280,7 +348,7 @@ func _get_ability_spec_for_id(ability_id: StringName) -> GameplayAbilitySpec:
 
 
 ## Captures a compatible granted action without spending resources, rolling, or activating it.
-func create_ability_context(ability_id: StringName) -> GameplayEffectContext:
+func create_ability_context(ability_id: int) -> GameplayEffectContext:
 	var spec := _get_ability_spec_for_id(ability_id)
 	if spec == null or not spec.definition.get_validation_error().is_empty() \
 			or not get_weapon_source_error(spec.definition, spec.get_weapon_source()).is_empty():
@@ -288,7 +356,7 @@ func create_ability_context(ability_id: StringName) -> GameplayEffectContext:
 	return AbilityCast.capture_context(self, spec.definition, spec.get_weapon_source())
 
 
-func get_activation_failure(ability_id: StringName, event_tag: StringName = &"") -> StringName:
+func get_activation_failure(ability_id: int, event_tag: StringName = &"") -> StringName:
 	return _get_activation_failure(_get_ability_spec_for_id(ability_id), event_tag)
 
 
@@ -296,10 +364,12 @@ func get_activation_failure_for_spec(handle: int, event_tag: StringName = &"") -
 	return _get_activation_failure(get_ability_spec(handle), event_tag)
 
 
-func _get_activation_failure(spec: GameplayAbilitySpec, event_tag: StringName) -> StringName:
+func _get_activation_failure(
+		spec: GameplayAbilitySpec, event_tag: StringName, target: AbilitySystem = null
+) -> StringName:
 	if not is_instance_valid(attributes) or effects == null:
 		return &"missing_attributes"
-	if attributes.get_value(CombatAttributes.Id.HEALTH) <= 0.0:
+	if attributes.get_value(CombatAttributes.Id.HEALTH) <= 0.0 or tags.has_tag(&"State.Dead"):
 		return &"actor_dead"
 	if not is_inside_tree() or _activation_cleanup_depth > 0:
 		return &"activation_unavailable"
@@ -321,40 +391,67 @@ func _get_activation_failure(spec: GameplayAbilitySpec, event_tag: StringName) -
 		return &"action_in_progress"
 	if _matches_any_ability_tag(definition, _blocked_ability_tags.get_tags()):
 		return &"blocked_by_ability_tags"
-	if tags.has_any(definition.blocked_tags):
-		return &"blocked_by_tags"
+	var policy := definition.interruption_policy
+	if policy != null:
+		if policy.blocks_activation(tags):
+			return &"blocked_by_tags"
+		if is_school_locked(policy.school):
+			return &"school_locked"
+		for active in _active_casts.values():
+			if policy.conflicts_with(active.definition.interruption_policy):
+				return &"execution_channel_occupied"
 	if not tags.has_all(definition.required_tags):
 		return &"missing_required_tags"
 	if not definition.execution.get_animation_name().is_empty() \
 			and (_animation_cast != null or _animation_step_cast != null):
 		return &"animation_in_use"
-	var cost_spec: GameplayEffectSpec
-	if definition.cost_effect != null:
-		var context := AbilityCast.capture_context(self, definition, spec.get_weapon_source())
-		cost_spec = effects.make_effect_spec(definition.cost_effect, context)
-		cost_spec.level = spec.level
-		spec.copy_set_by_caller_to(cost_spec)
-	var commit_failure := _get_commit_failure(definition, cost_spec)
-	if not commit_failure.is_empty():
-		return commit_failure
-	return definition.execution.get_validation_error(self)
+	var error := definition.execution.get_validation_error(self)
+	if not error.is_empty():
+		return error
+	error = definition.execution.get_target_validation_error(self, target)
+	if not error.is_empty():
+		return error
+	var pool := _get_charge_pool(definition)
+	if pool != null:
+		if not pool.matches(definition.charge_pool):
+			return &"conflicting_charge_profile"
+		if pool.available() <= 0:
+			return &"no_charges"
+	if not definition.resource_costs.is_empty() and not _can_pay_debits(_read_costs(spec, target)):
+		return &"insufficient_resource"
+	return &""
 
 
-func try_activate(ability_id: StringName) -> bool:
-	return _try_activate_spec(_get_ability_spec_for_id(ability_id), &"", {}, ability_id)
+func try_activate(ability_id: int) -> bool:
+	return _try_activate_spec(_get_ability_spec_for_id(ability_id), &"", {}, ability_id) != null
 
 
 func try_activate_spec(handle: int) -> bool:
+	return try_activate_input_spec(handle) != null
+
+
+## Returns the exact accepted activation for the input that started it, or null on rejection.
+func try_activate_input_spec(handle: int) -> AbilityCast:
 	return _try_activate_spec(get_ability_spec(handle))
+
+
+## Requests a granted ability using an explicitly selected actor.
+func try_activate_target(ability_id: int, target: AbilitySystem) -> bool:
+	return _try_activate_spec(_get_ability_spec_for_id(ability_id), &"", {}, ability_id, target) != null
+
+
+## Inspects a targeted request without reserving a charge, spending, or rolling.
+func get_target_activation_failure(ability_id: int, target: AbilitySystem) -> StringName:
+	return _get_activation_failure(_get_ability_spec_for_id(ability_id), &"", target)
 
 
 func _try_activate_spec(
 		spec: GameplayAbilitySpec, event_tag: StringName = &"", payload: Dictionary = {},
-		requested_id: StringName = &""
-) -> bool:
+		requested_id: int = 0, target: AbilitySystem = null
+) -> AbilityCast:
 	var definition := spec.definition if spec != null else null
 	var ability_id := definition.ability_id if definition != null else requested_id
-	var failure := _get_activation_failure(spec, event_tag)
+	var failure := _get_activation_failure(spec, event_tag, target)
 	if not failure.is_empty():
 		activation_failed.emit(ability_id, failure)
 		var context_tags := definition.ability_tags if definition != null else PackedStringArray()
@@ -364,11 +461,16 @@ func _try_activate_spec(
 			failure_context.ability_name = definition.display_name
 		var event := failure_context.create_combat_event(&"cast_failed", attributes)
 		event["reason"] = failure
+		if failure == &"blocked_by_tags" or failure == &"missing_required_tags":
+			event["actor_tags"] = tags.get_tags()
 		combat_event.emit(event)
-		return false
-	var cast := AbilityCast.new(self, spec)
+		return null
+	var cast := AbilityCast.new(self, spec, target)
 	cast.trigger_event_tag = event_tag
 	cast.trigger_event_payload = payload.duplicate(true)
+	if not _reserve_cast(cast):
+		activation_failed.emit(ability_id, &"commit_reservation_failed")
+		return null
 	_active_casts[spec.handle] = cast
 	if not definition.execution.get_animation_name().is_empty():
 		_animation_cast = cast
@@ -380,17 +482,31 @@ func _try_activate_spec(
 	if _is_active(cast):
 		_cancel_matching_abilities(cast)
 	if not _is_active(cast):
-		return false
-	if definition.execution.should_commit_on_activation() and not cast.commit():
-		cast.cancel()
-		return false
+		return null
+	if not cast._reserved_costs.is_empty() or cast._charge_pool != null:
+		var reservation := cast.context.create_combat_event(&"cast_reserved", attributes)
+		reservation["resources"] = cast._reserved_costs.duplicate()
+		reservation["reserved_charge"] = cast._charge_pool != null
+		combat_event.emit(reservation)
 	if not _is_active(cast):
-		return false
+		return null
+	if not definition.execution.request_start(cast):
+		cast.cancel()
+		return null
+	if not _is_active(cast):
+		return null
+	if not _commit_cast(cast, AbilityInterruptionPolicy.CommitTiming.ON_START):
+		cast.cancel()
+		return null
+	if not _is_active(cast):
+		return null
 	ability_started.emit(ability_id)
 	combat_event.emit(cast.context.create_combat_event(&"cast", attributes))
 	if _is_active(cast):
+		cast._start_casting_cue()
+	if _is_active(cast):
 		definition.execution.begin(cast)
-	return true
+	return cast
 
 
 func _cancel_matching_abilities(initiator: AbilityCast) -> void:
@@ -455,65 +571,129 @@ func _on_effect_combat_event(event: Dictionary) -> void:
 	combat_event.emit(event)
 
 
-## Applies cooldown and cost to the owner after rechecking the active cast's eligibility.
+## Commits the active cast's release-based costs and charge once.
 func commit_ability(cast: AbilityCast) -> bool:
+	if not _is_active(cast):
+		return false
+	if cast.phase == AbilityCast.Phase.WINDUP:
+		return cast.committed
+	return _commit_cast(cast, AbilityInterruptionPolicy.CommitTiming.ON_RELEASE)
+
+
+func _commit_cast(cast: AbilityCast, timing: AbilityInterruptionPolicy.CommitTiming) -> bool:
 	if not _is_active(cast) or cast._committing:
 		return false
 	if cast.committed:
 		return true
-	var definition := cast.definition
-	if not definition.get_validation_error().is_empty():
+	var policy := cast.definition.interruption_policy
+	var default_timing := AbilityInterruptionPolicy.CommitTiming.ON_START
+	var cost_timing := policy.cost_timing if policy != null else default_timing
+	var cooldown_timing := policy.cooldown_timing if policy != null else default_timing
+	var pay_cost := not cast._cost_committed and not cast._reserved_costs.is_empty() \
+			and cost_timing == timing
+	var spend_charge := not cast._cooldown_committed and cast._charge_pool != null \
+			and cooldown_timing == timing
+	if pay_cost and not _can_pay_debits(cast._reserved_costs, cast):
 		return false
-	var cooldown_spec := cast.make_effect_spec(definition.cooldown_effect)
-	var cost_spec := cast.make_effect_spec(definition.cost_effect)
-	if not _get_commit_failure(definition, cost_spec).is_empty():
-		return false
-	if (cooldown_spec != null and not effects.can_apply_spec(cooldown_spec)) \
-			or (cost_spec != null and not effects.can_apply_spec(cost_spec)):
-		return false
+
 	cast._committing = true
-	var cooldown_handle := effects.apply_effect_spec(cooldown_spec) if cooldown_spec != null else 0
-	var cooldown_applied := cooldown_spec == null or effects.has_retained_effect(cooldown_handle)
-	var cost_paid := cooldown_applied and _is_active(cast) and (cost_spec == null \
-			or (_can_pay_cost(cost_spec) and effects.apply_effect_spec(cost_spec) > 0))
+	if spend_charge:
+		cast._charge_receipt = cast._charge_pool.spend(cast.get_instance_id())
+		cast._cooldown_committed = cast._charge_receipt > 0
+	var charge_spent := not spend_charge or cast._cooldown_committed
+	var cost_paid := not pay_cost or (charge_spent and _pay_cast_cost(cast))
 	cast._committing = false
-	cast.committed = cost_paid
-	if not cost_paid and cooldown_handle > 0:
-		effects.remove_effect(cooldown_handle)
-	return cost_paid
+	if spend_charge and not cost_paid:
+		_refund_cast_cooldown(cast)
+	if cast._cancelled:
+		_refund_cancelled_cast(cast)
+	cast.committed = ((cast._cost_committed or cast._reserved_costs.is_empty())
+			and (cast._cooldown_committed or cast._charge_pool == null))
+	return cost_paid and charge_spent
 
 
-func _get_commit_failure(definition: AbilityDefinition, cost_spec: GameplayEffectSpec) -> StringName:
-	if definition.cooldown_effect != null and tags.has_any(definition.cooldown_effect.granted_tags):
-		return &"on_cooldown"
-	if cost_spec != null and not _can_pay_cost(cost_spec):
-		return &"insufficient_resource"
-	return &""
+func _pay_cast_cost(cast: AbilityCast) -> bool:
+	cast._cost_committed = true
+	cast.spend_receipt = ResourceService.commit_spend(attributes, cast._reserved_costs)
+	if cast.spend_receipt == null:
+		cast._cost_committed = false
+		return false
+	cast.context.outcome_context.set_spend_receipt(cast.spend_receipt)
+	var event := cast.context.create_combat_event(&"cast_spent", attributes)
+	event["resources"] = cast.spend_receipt.get_amounts()
+	combat_event.emit(event)
+	return true
 
 
-func _can_pay_cost(spec: GameplayEffectSpec) -> bool:
-	var costs: Dictionary[int, float] = {}
-	var context_tags := spec.settings.get_context_tags(spec.context.ability_tags)
-	for modifier in spec.modifiers:
-		if not modifier.matches_context(context_tags):
-			continue
-		var output := modifier.copy()
-		output.value = spec.get_set_by_caller_magnitude(output.set_by_caller_tag, output.value)
-		var debit := -output.get_magnitude(attributes, context_tags)
-		if not is_finite(debit) or debit < 0.0:
+func _reserve_cast(cast: AbilityCast) -> bool:
+	var definition := cast.definition
+	cast._reserved_costs = _read_costs(cast.grant_spec, cast.target_request)
+	if not _can_pay_debits(cast._reserved_costs):
+		return false
+	if definition.charge_pool != null:
+		var pool := _get_charge_pool(definition, true)
+		if not pool.matches(definition.charge_pool) or not pool.reserve(cast.get_instance_id()):
 			return false
-		costs[modifier.attribute] = costs.get(modifier.attribute, 0.0) + debit
+		cast._charge_pool = pool
+	return true
+
+
+func _get_charge_pool(definition: AbilityDefinition, create: bool = false) -> AbilityChargePool:
+	var profile := definition.charge_pool
+	if profile == null:
+		return null
+	var key: Variant = definition.ability_id if profile.shared_group.is_empty() else profile.shared_group
+	if create and not _charge_pools.has(key):
+		_charge_pools[key] = AbilityChargePool.new(profile)
+	return _charge_pools.get(key)
+
+
+func _read_costs(spec: GameplayAbilitySpec, target: AbilitySystem) -> Dictionary[int, float]:
+	var costs: Dictionary[int, float] = {}
+	if spec.definition.resource_costs.is_empty():
+		return costs
+	var context := AmountEvaluationContext.new()
+	context.source = attributes
+	context.payer = attributes
+	context.target = target.attributes if is_instance_valid(target) else null
+	context.scope_tags = spec.definition.get_context_tags()
+	context.rank = spec.level
+	var weapon := spec.get_weapon_source()
+	if weapon != null:
+		context.scope_tags.append_array(weapon.get_context_tags())
+	for cost in spec.definition.resource_costs:
+		if context.snapshot == null and not cost.uses_payment_pool() \
+				and cost.amount.timing == AmountDefinition.Timing.SNAPSHOT:
+			context.snapshot = context.capture()
+		var attribute := cost.get_attribute()
+		var debit := cost.get_debit(_unreserved_current(attribute), context)
+		if debit != 0.0:
+			costs[attribute] = debit
+	return costs
+
+
+func _unreserved_current(attribute: int, except: AbilityCast = null) -> float:
+	var available := attributes.get_value(attribute)
+	for cast in _active_casts.values():
+		if cast != except and not cast._cost_committed:
+			available -= float(cast._reserved_costs.get(attribute, 0.0))
+	return maxf(available, 0.0)
+
+
+func _can_pay_debits(costs: Dictionary[int, float], cast: AbilityCast = null) -> bool:
 	for attribute in costs:
-		if not can_spend_current(attribute, costs[attribute]):
+		var amount := costs[attribute]
+		if not CombatAttributes.is_current_resource(attribute) or not is_finite(amount) or amount < 0.0:
+			return false
+		var available := _unreserved_current(attribute, cast)
+		if available + amount * 1.0e-9 < amount:
 			return false
 	return true
 
 
 ## Checks an exact current-pool debit, allowing only floating-point roundoff at the boundary.
 func can_spend_current(attribute: int, amount: float) -> bool:
-	return is_instance_valid(attributes) and CombatAttributes.is_current_resource(attribute) \
-			and is_finite(amount) and amount >= 0.0 \
-			and attributes.get_value(attribute) + amount * 1.0e-9 >= amount
+	return is_instance_valid(attributes) and _can_pay_debits({ attribute: amount })
 
 
 ## Commits one affordable current-pool debit. A rejected amount leaves the pool untouched.
@@ -524,21 +704,46 @@ func try_spend_current(attribute: int, amount: float) -> bool:
 	return true
 
 
-func get_cooldown_remaining(ability_id: StringName) -> float:
+func get_cooldown_remaining(ability_id: int) -> float:
 	var spec := _get_ability_spec_for_id(ability_id)
 	return get_cooldown_remaining_for_spec(spec.handle) if spec != null else 0.0
 
 
 func get_cooldown_remaining_for_spec(handle: int) -> float:
 	var spec := get_ability_spec(handle)
-	if spec == null or spec.definition.cooldown_effect == null or effects == null:
-		return 0.0
-	return effects.get_remaining_for_granted_tags(spec.definition.cooldown_effect.granted_tags)
+	var pool := _get_charge_pool(spec.definition) if spec != null else null
+	return pool.get_remaining() if pool != null and pool.available() <= 0 else 0.0
+
+
+## Returns the charges available for another reservation, excluding in-flight casts.
+func get_available_charges(ability_id: int) -> int:
+	var definition := get_ability_definition(ability_id)
+	if definition == null or definition.charge_pool == null:
+		return 0
+	var pool := _get_charge_pool(definition)
+	return pool.available() if pool != null else definition.charge_pool.capacity
+
+
+## Captures recharge clocks for a granted ability's pool, excluding reservations.
+func capture_charge_recharge(ability_id: int) -> Array[float]:
+	var definition := get_ability_definition(ability_id)
+	var pool := _get_charge_pool(definition) if definition != null else null
+	return pool.capture_recharge() if pool != null else []
+
+
+## Restores clocks on an idle actor. Shared groups refer to the same saved pool.
+func restore_charge_recharge(ability_id: int, clocks: Array[float]) -> bool:
+	var definition := get_ability_definition(ability_id)
+	if definition == null or definition.charge_pool == null or not _active_casts.is_empty() \
+			or not definition.charge_pool.get_validation_error().is_empty():
+		return false
+	var pool := _get_charge_pool(definition, true)
+	return pool.matches(definition.charge_pool) and pool.restore_recharge(clocks)
 
 
 ## Lists the first grant of each ID, in grant order, for ID-based input and UI.
 func get_granted_ability_definitions() -> Array[AbilityDefinition]:
-	var definitions: Dictionary[StringName, AbilityDefinition] = {}
+	var definitions: Dictionary[int, AbilityDefinition] = {}
 	for spec: GameplayAbilitySpec in _ability_specs.values():
 		if not definitions.has(spec.definition.ability_id):
 			definitions[spec.definition.ability_id] = spec.definition
@@ -550,7 +755,7 @@ func get_granted_ability_specs() -> Array[GameplayAbilitySpec]:
 
 
 ## Resolves the active instance of the first grant for this ID.
-func get_active_cast(ability_id: StringName) -> AbilityCast:
+func get_active_cast(ability_id: int) -> AbilityCast:
 	var spec := _get_ability_spec_for_id(ability_id)
 	return get_active_cast_for_spec(spec.handle) if spec != null else null
 
@@ -636,22 +841,28 @@ func cancel_animation() -> void:
 
 
 ## Forwards an input release or equivalent AI request to the named activation only.
-func release_ability(ability_id: StringName) -> void:
+func release_ability(ability_id: int) -> void:
 	var spec := _get_ability_spec_for_id(ability_id)
 	if spec != null:
 		release_ability_spec(spec.handle)
 
 
 func release_ability_spec(handle: int) -> void:
-	var cast := get_active_cast_for_spec(handle)
+	release_cast_input(get_active_cast_for_spec(handle))
+
+
+## Releases the captured cast only. A later use of the same grant has its own lifetime.
+func release_cast_input(cast: AbilityCast) -> void:
 	if _is_active(cast):
 		cast._dispatch_task_input_release()
 	if _is_active(cast):
 		cast.definition.execution.input_released(cast)
+	if _is_active(cast) and cast.definition.get_input_gesture() == AbilityDefinition.InputGesture.HOLD:
+		cast.finish()
 
 
 ## Cancels a named activation without disturbing unrelated casts.
-func cancel_ability(ability_id: StringName) -> void:
+func cancel_ability(ability_id: int) -> void:
 	var spec := _get_ability_spec_for_id(ability_id)
 	if spec != null:
 		cancel_ability_spec(spec.handle)
@@ -671,12 +882,85 @@ func cancel_all_abilities() -> void:
 	_activation_cleanup_depth -= 1
 
 
-func complete_cast(cast: AbilityCast, cancelled: bool) -> void:
+## Interrupts the earliest eligible cast or channel. Lockout applies only to actual schools stopped.
+func interrupt_cast(
+		lockout_seconds: float = 0.0, all_eligible: bool = false,
+		source: AbilitySystem = null
+) -> AbilityInterruptResult:
+	var result := AbilityInterruptResult.new()
+	if not is_finite(lockout_seconds) or lockout_seconds < 0.0:
+		result.reason = &"invalid_lockout_duration"
+		return result
+	result.reason = &"no_interruptible_cast"
+	for cast: AbilityCast in _active_casts.values():
+		if not _is_active(cast):
+			continue
+		var policy := cast.definition.interruption_policy
+		if policy == null or not policy.interruptible_by_action \
+				or not policy.permits_interruption(cast.phase):
+			result.reason = &"uninterruptible_phase"
+			continue
+		if not policy.school.is_empty():
+			if not result.interrupted_schools.has(policy.school):
+				result.interrupted_schools.append(policy.school)
+			_add_school_lockout(policy.school, lockout_seconds, source)
+		result.interrupted_abilities.append(cast.definition.ability_id)
+		complete_cast(cast, true, &"interrupt_action")
+		if not all_eligible:
+			break
+	if result.is_success():
+		result.reason = &""
+	return result
+
+
+## Reports whether an independent timed restriction covers this school.
+func is_school_locked(school: StringName) -> bool:
+	for lockout in _school_lockouts.values():
+		if GameplayTagSet.matches(school, lockout["school"]):
+			return true
+	return false
+
+
+## Handles movement intent and reports whether a remaining cast locks locomotion.
+func handle_movement_intent(requested: bool) -> bool:
+	var locked := false
+	for cast: AbilityCast in _active_casts.values():
+		if not _is_active(cast):
+			continue
+		var policy := cast.definition.interruption_policy
+		if policy == null:
+			continue
+		match policy.get_movement_rule(cast.phase):
+			AbilityInterruptionPolicy.MovementRule.LOCK:
+				locked = true
+			AbilityInterruptionPolicy.MovementRule.CANCEL_ON_REQUEST:
+				if requested:
+					complete_cast(cast, true, &"movement_requested")
+	return locked
+
+
+func _add_school_lockout(school: StringName, seconds: float, source: AbilitySystem) -> void:
+	if seconds <= 0.0:
+		return
+	_school_lockouts[_next_lockout] = {
+		"school": school,
+		"remaining": seconds,
+		"source_id": source.get_instance_id() if is_instance_valid(source) else 0,
+	}
+	_next_lockout += 1
+
+
+func complete_cast(
+		cast: AbilityCast, cancelled: bool, reason: StringName = &"cancelled"
+) -> void:
 	if not _is_active(cast):
 		return
 	var ability_id := cast.context.ability_id
 	cast.finished = true
+	cast._cancelled = cancelled
 	_active_casts.erase(cast.grant_spec.handle)
+	if cast._charge_pool != null:
+		cast._charge_pool.release(cast.get_instance_id())
 	if _animation_cast == cast:
 		if _animation_step_cast == null:
 			_stop_cast_animation()
@@ -688,7 +972,37 @@ func complete_cast(cast: AbilityCast, cancelled: bool) -> void:
 	unblock_abilities_by_tags(cast.blocked_ability_tags)
 	for tag in cast.granted_tags:
 		tags.remove_tag(StringName(tag))
+	if cancelled and not cast._committing:
+		_refund_cancelled_cast(cast)
+	var event := cast.context.create_combat_event(&"cast_ended", attributes)
+	event["reason"] = reason if cancelled else &"completed"
+	event["phase"] = cast.phase
+	cast._stop_casting_cue()
+	combat_event.emit(event)
 	ability_ended.emit(ability_id, cancelled)
+
+
+func _refund_cancelled_cast(cast: AbilityCast) -> void:
+	var policy := cast.definition.interruption_policy
+	if policy == null:
+		return
+	if policy.refund_cooldown_on_cancel:
+		_refund_cast_cooldown(cast)
+	if policy.refund_cost_on_cancel and cast.spend_receipt != null and is_instance_valid(attributes):
+		var receipt := cast.spend_receipt
+		cast.spend_receipt = null
+		var refunded := ResourceService.refund_spend(attributes, receipt)
+		var event := cast.context.create_combat_event(&"cast_refunded", attributes)
+		event["resources"] = refunded
+		event["reason"] = &"cancelled"
+		combat_event.emit(event)
+
+
+func _refund_cast_cooldown(cast: AbilityCast) -> void:
+	if cast._charge_receipt > 0:
+		cast._charge_pool.refund(cast._charge_receipt)
+		cast._charge_receipt = 0
+	cast._cooldown_committed = false
 
 
 func _is_active(cast: AbilityCast) -> bool:
@@ -716,10 +1030,19 @@ func _stop_cast_animation() -> void:
 		animation_player.stop()
 
 
-func _on_tags_changed(_tag: StringName, _present: bool) -> void:
+func _on_tags_changed(tag: StringName, present: bool) -> void:
+	if not present:
+		return
 	for cast: AbilityCast in _active_casts.values():
-		if _is_active(cast) and tags.has_any(cast.definition.interruption_tags):
-			complete_cast(cast, true)
+		if not _is_active(cast):
+			continue
+		var policy := cast.definition.interruption_policy
+		if policy == null or not policy.permits_interruption(cast.phase):
+			continue
+		for query in policy.cancel_on_tags:
+			if GameplayTagSet.matches(tag, StringName(query)):
+				complete_cast(cast, true, &"interrupting_tag")
+				break
 
 
 func _on_attribute_changed(attribute: int, previous: float, value: float) -> void:
@@ -741,7 +1064,8 @@ func _update_death_state(health: float) -> void:
 		_owns_dead_tag = true
 		tags.add_tag(&"State.Dead")
 		cancel_all_abilities()
-		clear_transient_effects()
+		if effects != null:
+			effects.clear(_startup_effect_handles, GameplayEffectRuntime.RemovalReason.DEATH)
 		_activation_cleanup_depth -= 1
 	elif health > 0.0 and _owns_dead_tag:
 		_owns_dead_tag = false
@@ -802,7 +1126,8 @@ static func get_weapon_source_error(ability: AbilityDefinition, source: WeaponDe
 	var weapon_damage := false
 	if ability.execution != null:
 		for effect in ability.execution.get_effect_payload():
-			if effect != null and effect.use_weapon_damage:
+			var damage := effect.get_damage_execution() if effect != null else null
+			if damage != null and damage.use_weapon_damage:
 				weapon_damage = true
 				break
 	if source == null:

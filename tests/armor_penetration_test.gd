@@ -44,8 +44,8 @@ func _context(source: ActorAttributes, spell: bool = false) -> GameplayEffectCon
 func _physical(amount: float = 100.0) -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
 	effect.executions = [GameplayEffectDamageExecution.new()]
-	effect.effect_id = &"Effect.PenetrationPhysicalTest"
-	effect.base_magnitude = amount
+	effect.effect_id = 247
+	effect.get_damage_execution().amount = AmountDefinition.fixed(amount)
 	return effect
 
 
@@ -66,7 +66,6 @@ func _modifier(amount: float,
 
 func _buff() -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
-	effect.kind = GameplayEffectDefinition.Kind.MODIFIERS
 	effect.timing = GameplayEffectDefinition.Timing.DURATION
 	effect.duration = 2.0
 	var modifier := _modifier(10.0)

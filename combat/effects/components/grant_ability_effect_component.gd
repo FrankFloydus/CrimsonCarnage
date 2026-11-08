@@ -3,7 +3,15 @@ class_name GrantAbilityEffectComponent
 extends GameplayEffectComponent
 ## Grants one ordinary ability spec while an effect is active.
 
-enum RemovalPolicy { CANCEL_IMMEDIATELY, REMOVE_ON_END, KEEP_ABILITY }
+## Determines what happens to the effect's granted ability when the effect stops contributing.
+enum RemovalPolicy {
+	## Cancels any running use and revokes the grant immediately.
+	CANCEL_IMMEDIATELY,
+	## Prevents new activations and revokes the grant when its current cast ends.
+	REMOVE_ON_END,
+	## Leaves the ability grant in place after this effect ends.
+	KEEP_ABILITY,
+}
 
 ## Shared ability to grant on the effect target while this retained effect is active.
 @export var ability: AbilityDefinition
@@ -21,7 +29,7 @@ func _validate_property(property: Dictionary) -> void:
 func get_validation_error(definition: GameplayEffectDefinition) -> StringName:
 	if definition.timing == GameplayEffectDefinition.Timing.INSTANT:
 		return &"Effect.AbilityGrantRequiresLifetime"
-	if ability == null or ability.ability_id.is_empty() or ability.execution == null or grant_level < 0:
+	if ability == null or ability.ability_id <= 0 or ability.execution == null or grant_level < 0:
 		return &"Effect.InvalidAbilityGrant"
 	if removal_policy not in RemovalPolicy.values():
 		return &"Effect.InvalidAbilityRemovalPolicy"

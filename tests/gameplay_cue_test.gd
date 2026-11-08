@@ -14,6 +14,8 @@ class CueProbe extends Node:
 const SYSTEM = preload("res://combat/abilities/ability_system.gd")
 const CUE_TAG: StringName = &"GameplayCue.Test.Impact"
 const PARENT_TAG: StringName = &"GameplayCue.Test"
+const CUE_EFFECT_ID := 266
+const CUE_ABILITY_ID := 267
 
 var _checks: int = 0
 var _failures: int = 0
@@ -43,10 +45,10 @@ func _run() -> void:
 
 func _make_spec(source: ActorAttributes) -> GameplayEffectSpec:
 	var effect := GameplayEffectDefinition.new()
-	effect.effect_id = &"Effect.Test.Cue"
+	effect.effect_id = CUE_EFFECT_ID
 	effect.gameplay_cue_tags = PackedStringArray([String(CUE_TAG), String(CUE_TAG)])
 	var context := GameplayEffectContext.capture(source, null)
-	context.ability_id = &"ability_test"
+	context.ability_id = CUE_ABILITY_ID
 	var spec := GameplayEffectSpec.new(effect, context)
 	spec.level = 3.0
 	return spec
@@ -59,7 +61,7 @@ func _test_handlers(spec: GameplayEffectSpec, attributes: ActorAttributes) -> vo
 	var parent_handler := func(_target: Node, tag: StringName, _event: int, _data: Dictionary) -> void:
 		parent_calls.append(tag)
 	var mutating_handler := func(_target: Node, _tag: StringName, _event: int, data: Dictionary) -> void:
-		data["effect_id"] = &"Effect.Unrelated"
+		data["effect_id"] = 268
 	var exact_handler := func(target: Node, _tag: StringName, event: int, data: Dictionary) -> void:
 		_check(target == attributes.get_parent() and event == GameplayCueRouter.Event.EXECUTED,
 				"The callback receives the affected actor and event")
@@ -76,7 +78,7 @@ func _test_handlers(spec: GameplayEffectSpec, attributes: ActorAttributes) -> vo
 	_check(seen_parameters.size() == 1, "Each exact callback sees one dispatched event")
 	if not seen_parameters.is_empty():
 		var payload := seen_parameters[0]
-		_check(payload["effect_id"] == &"Effect.Test.Cue" and payload["ability_id"] == &"ability_test"
+		_check(payload["effect_id"] == CUE_EFFECT_ID and payload["ability_id"] == CUE_ABILITY_ID
 				and payload["effect_level"] == 3.0 and payload["health_damage"] == 15.0,
 				"Cue metadata comes from the spec and resolved details, isolated from other handlers")
 	cues.unregister_handler(CUE_TAG, mutating_handler)
@@ -100,8 +102,9 @@ func _test_effect_lifecycle(spec: GameplayEffectSpec, attributes: ActorAttribute
 	attributes.set_base_value(CombatAttributes.Id.MAX_HEALTH, 100.0)
 	attributes.set_base_value(CombatAttributes.Id.HEALTH, 100.0)
 	var instant := spec.settings.duplicate() as GameplayEffectDefinition
-	instant.base_magnitude = 12.0
-	instant.executions = [GameplayEffectDamageExecution.new()]
+	var execution := GameplayEffectDamageExecution.new()
+	execution.amount = AmountDefinition.fixed(12.0)
+	instant.executions = [execution]
 	_check(runtime.apply_effect(instant, spec.context) > 0 and events == [GameplayCueRouter.Event.EXECUTED],
 			"An instant effect dispatches only Executed")
 	if not payloads.is_empty():
@@ -109,7 +112,6 @@ func _test_effect_lifecycle(spec: GameplayEffectSpec, attributes: ActorAttribute
 				"An instant damage cue receives the actual applied damage")
 	events.clear()
 	var period := GameplayEffectDefinition.new()
-	period.kind = GameplayEffectDefinition.Kind.MODIFIERS
 	period.timing = GameplayEffectDefinition.Timing.INFINITE
 	period.period = 0.25
 	period.gameplay_cue_tags = spec.settings.gameplay_cue_tags
@@ -165,6 +167,22 @@ func _test_scene_lifetimes(spec: GameplayEffectSpec, attributes: ActorAttributes
 	_check(target.get_child_count() == 1 and scene_calls.size() == 7,
 			"Retained and one-shot scene lifetimes end independently")
 
+	scene_calls.clear()
+	cues.dispatch_effect(GameplayCueRouter.Event.ACTIVE, spec, attributes, 1)
+	cues.dispatch_cast(true, attributes, spec.context, CUE_TAG, 1)
+	await process_frame
+	_check(scene_calls.size() == 3 and scene_calls[0][0] != scene_calls[1][0] \
+			and scene_calls[1][0] == scene_calls[2][0],
+			"Cast and effect cues have independent scenes even when their numeric handles match")
+	cues.dispatch_cast(false, attributes, spec.context, CUE_TAG, 1)
+	await process_frame
+	_check(target.get_child_count() == 2 and scene_calls.size() == 4,
+			"Releasing a cast leaves the matching retained effect cue intact")
+	cues.dispatch_effect(GameplayCueRouter.Event.REMOVED, spec, attributes, 1)
+	await process_frame
+	_check(target.get_child_count() == 1 and scene_calls.size() == 5,
+			"The remaining effect cue ends with its own lifetime")
+
 
 func _test_startup_scene_cue() -> void:
 	var actor := Node.new()
@@ -174,7 +192,6 @@ func _test_startup_scene_cue() -> void:
 	attributes.name = &"Attributes"
 	actor.add_child(attributes)
 	var effect := GameplayEffectDefinition.new()
-	effect.kind = GameplayEffectDefinition.Kind.MODIFIERS
 	effect.timing = GameplayEffectDefinition.Timing.INFINITE
 	effect.gameplay_cue_tags = PackedStringArray([String(CUE_TAG)])
 	var system := SYSTEM.new()

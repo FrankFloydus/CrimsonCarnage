@@ -65,15 +65,14 @@ func _context(source: ActorAttributes, tags: PackedStringArray) -> GameplayEffec
 func _damage(amount: float = 20.0) -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
 	effect.executions = [GameplayEffectDamageExecution.new()]
-	effect.effect_id = &"Effect.AccuracyDamage"
-	effect.base_magnitude = amount
+	effect.effect_id = 244
+	effect.get_damage_execution().amount = AmountDefinition.fixed(amount)
 	return effect
 
 
 func _control() -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
-	effect.effect_id = &"Effect.AccuracyControl"
-	effect.kind = GameplayEffectDefinition.Kind.MODIFIERS
+	effect.effect_id = 245
 	effect.timing = GameplayEffectDefinition.Timing.DURATION
 	effect.duration = 5.0
 	effect.granted_tags = PackedStringArray(["State.TestControl"])
@@ -256,11 +255,11 @@ func _test_system_events_costs_and_randomness() -> void:
 	var source := _system()
 	var target := _system()
 	var ability := AbilityDefinition.new()
-	ability.ability_id = &"accuracy_spell"
+	ability.ability_id = 246
 	ability.ability_tags = PackedStringArray(["Ability.Spell"])
-	var commit_effects := preload("res://tests/ability_effect_fixture.gd")
-	ability.cost_effect = commit_effects.make_cost(CombatAttributes.Id.MANA, 20.0)
-	ability.cooldown_effect = commit_effects.make_cooldown("Cooldown.AccuracyFixture", 3.0)
+	var commitment := preload("res://tests/ability_commit_fixture.gd")
+	ability.resource_costs = [commitment.make_cost(AmountDefinition.Pool.MANA, 20.0)]
+	ability.charge_pool = commitment.make_cooldown(3.0)
 	ability.execution = WaitingExecution.new()
 	source.grant_ability(ability)
 	var events: Array[Dictionary] = []

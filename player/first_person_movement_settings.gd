@@ -1,3 +1,4 @@
+@tool
 class_name FirstPersonMovementSettings
 extends Resource
 ## Editable normal speed, gait multipliers and locomotion physics.
@@ -5,7 +6,10 @@ extends Resource
 @export_group("Movement Baseline")
 ## Normal running speed in meters per second at 0% Movement Speed bonus (100% normal speed).
 ## Actor bonuses and gait multipliers apply afterward. Zero disables horizontal movement.
-@export_range(0.0, 30.0, 0.1, "or_greater") var normal_run_speed: float = 4.0
+@export_range(0.0, 30.0, 0.1, "or_greater") var normal_run_speed: float = 4.0:
+	set(value):
+		normal_run_speed = value
+		notify_property_list_changed()
 
 @export_group("Movement Multipliers")
 ## Fraction of the actor's modified normal movement speed while the walk modifier is held.
@@ -49,3 +53,10 @@ extends Resource
 @export_range(0.0, 1.0, 0.01, "or_greater") var max_step_height: float = 0.3
 ## Maximum walkable floor and stair tread angle, in degrees from horizontal.
 @export_range(0.0, 89.0, 0.1) var max_slope_angle: float = 45.0
+
+
+func _validate_property(property: Dictionary) -> void:
+	if (normal_run_speed <= 0.0 or not is_finite(normal_run_speed)) and property.name in [
+		&"walk_speed_multiplier", &"sprint_speed_multiplier", &"crouch_speed_multiplier",
+	]:
+		property.usage &= ~PROPERTY_USAGE_EDITOR

@@ -1,0 +1,148 @@
+{
+	"format": "godot_combat_definition",
+	"version": 1,
+	"uid": "uid://bcsqor8fx8cwc",
+	"root": "r1",
+	"resources": {
+		"r1": {
+			"type": "AbilityDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"ability_id": 3,
+				"display_name": "Crouch",
+				"icon": {
+					"$asset": "res://player/abilities/icons/crouch.svg",
+					"uid": "uid://doern5vycwm7y"
+				},
+				"ability_tags": [
+					"Ability.Movement.Crouch"
+				],
+				"required_tags": [],
+				"activation_tags": [],
+				"cancel_ability_tags": [],
+				"block_ability_tags": [],
+				"activation_event_tag": "",
+				"reactions": [],
+				"interruption_policy": null,
+				"resource_costs": [],
+				"charge_pool": null,
+				"execution": {
+					"$resource": "r2"
+				}
+			}
+		},
+		"r2": {
+			"type": "PhasedAbilityExecution",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"cast_mode": 5,
+				"cast_duration": 0.0,
+				"channel_period": 1.0,
+				"animation_name": "",
+				"release_event": "Event.Combat.ProjectileRelease",
+				"animation_fallback_seconds": -1.0,
+				"targeting": null,
+				"activation_conditions": [],
+				"delivery": {
+					"$resource": "r3"
+				},
+				"phases": [
+					{
+						"$resource": "r4"
+					},
+					{
+						"$resource": "r6"
+					}
+				]
+			}
+		},
+		"r3": {
+			"type": "AbilityDeliveryDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"kind": 8,
+				"projectile_scene": null,
+				"spawn_offset": {
+					"$variant": {
+						"type": "Vector3",
+						"args": [
+							0.0,
+							0.0,
+							0.0
+						]
+					}
+				},
+				"detach_on_cancel": true,
+				"area_targeting": null,
+				"lifetime": 1.0,
+				"period": 0.0,
+				"arm_delay": 0.0,
+				"maximum_surface_slope": 90.0,
+				"chain_targeting": null,
+				"chain_hops": 2,
+				"stop_chain_on_failed_hit": false
+			}
+		},
+		"r4": {
+			"type": "AbilityPhaseDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"event_key": "ability.cast_started",
+				"synchronous_gameplay_event": false,
+				"targeting": null,
+				"conditions": [],
+				"actions": [
+					{
+						"$resource": "r5"
+					}
+				],
+				"execution_mode": 0,
+				"failure_policy": 2,
+				"run_once_per_execution": false,
+				"run_once_per_target": false,
+				"max_fires": 0
+			}
+		},
+		"r5": {
+			"type": "PlayerCrouchAction",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"operation": 0
+			}
+		},
+		"r6": {
+			"type": "AbilityPhaseDefinition",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"event_key": "ability.input_released",
+				"synchronous_gameplay_event": false,
+				"targeting": null,
+				"conditions": [],
+				"actions": [
+					{
+						"$resource": "r7"
+					}
+				],
+				"execution_mode": 0,
+				"failure_policy": 1,
+				"run_once_per_execution": false,
+				"run_once_per_target": false,
+				"max_fires": 0
+			}
+		},
+		"r7": {
+			"type": "PlayerCrouchAction",
+			"properties": {
+				"resource_local_to_scene": false,
+				"resource_name": "",
+				"operation": 1
+			}
+		}
+	}
+}

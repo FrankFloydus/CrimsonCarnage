@@ -3,6 +3,7 @@ extends SceneTree
 ## Run: godot --headless --path . --script res://tests/effects_test.gd
 
 const ATTRIBUTE_FIXTURE = preload("res://tests/attribute_fixture.gd")
+const EMPOWERED_ID := 257
 
 var _checks: int = 0
 var _failures: int = 0
@@ -69,9 +70,11 @@ func _context(source: ActorAttributes) -> GameplayEffectContext:
 
 func _damage(amount: float) -> GameplayEffectDefinition:
 	var definition := GameplayEffectDefinition.new()
-	definition.effect_id = &"Effect.TestDamage"
+	definition.effect_id = 256
 	definition.display_name = "Test damage"
-	definition.base_magnitude = amount
+	var execution := GameplayEffectDamageExecution.new()
+	execution.amount = AmountDefinition.fixed(amount)
+	definition.executions = [execution]
 	definition.damage_type = GameplayEffectDefinition.DamageType.MAGIC
 	return definition
 
@@ -87,9 +90,8 @@ func _modifier(attribute: CombatAttributes.Id, value: float,
 
 func _buff(duration: float = 2.0) -> GameplayEffectDefinition:
 	var definition := GameplayEffectDefinition.new()
-	definition.effect_id = &"Effect.Empowered"
+	definition.effect_id = EMPOWERED_ID
 	definition.display_name = "Empowered"
-	definition.kind = GameplayEffectDefinition.Kind.MODIFIERS
 	definition.timing = GameplayEffectDefinition.Timing.DURATION
 	definition.duration = duration
 	definition.modifiers = [_modifier(CombatAttributes.Id.MAGIC_POWER, 50.0)]
@@ -105,7 +107,7 @@ func _test_direct_damage_and_telemetry() -> void:
 	var events: Array[Dictionary] = []
 	runtime.combat_event.connect(func(event: Dictionary) -> void: events.append(event))
 	var definition := _damage(30.0)
-	definition.power_coefficient = 0.5
+	definition.get_damage_execution().power_coefficient = 0.5
 	var mana := target.get_value(CombatAttributes.Id.MANA)
 	var stamina := target.get_value(CombatAttributes.Id.STAMINA)
 	var handle := runtime.apply_effect(definition, _context(source))
@@ -196,10 +198,10 @@ func _test_immutable_application_data() -> void:
 	definition.duration = 1000.0
 	definition.modifiers[0].value = 999.0
 	definition.granted_tags = PackedStringArray(["Buff.Changed"])
-	definition.effect_id = &"Effect.Changed"
+	definition.effect_id = 258
 	_near(actor.get_value(CombatAttributes.Id.MAGIC_POWER), base + original,
 			"Application copies its modifier values")
-	_check(runtime.active_count(&"Effect.Empowered") == 1,
+	_check(runtime.active_count(EMPOWERED_ID) == 1,
 			"An active instance retains its application identity")
 	runtime.advance(2.0)
 	_check(runtime.active_count() == 0 and not tags.has_tag(&"Buff"),
@@ -224,6 +226,7 @@ func _test_requirements_and_invalid_payloads() -> void:
 	_check(not runtime.can_apply_effect(definition), "Invalid authored duration is rejected")
 	var invalid := _buff()
 	invalid.timing = GameplayEffectDefinition.Timing.INSTANT
+	invalid.modifiers[0].value = NAN
 	var payload: Array[GameplayEffectDefinition] = [null, invalid, _damage(10.0)]
 	var result := runtime.apply_hit_payload(payload, _context(actor), 0.0)
 	_check(result.applied_effects == 1, "A delivered payload counts only accepted effects")

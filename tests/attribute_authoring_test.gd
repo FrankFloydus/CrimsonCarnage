@@ -20,7 +20,8 @@ func _initialize() -> void:
 func _run() -> void:
 	preload("res://tests/combat_rules_fixture.gd").install()
 	_test_inspector_catalogue()
-	_test_ability_commit_effect_selectors()
+	_test_ability_commitment_selectors()
+	_test_dependent_inspector_fields()
 	_test_stale_metadata_refresh()
 	_test_modifier_roundtrips()
 	_test_legacy_movement_identity_roundtrip()
@@ -37,36 +38,26 @@ func _test_inspector_catalogue() -> void:
 	var metadata := _property(modifier, &"attribute")
 	_check(metadata.get("hint") == PROPERTY_HINT_ENUM, "Attribute selection has explicit enum choices")
 	var choices := _choices(metadata.get("hint_string", ""))
-	_check(choices.size() == EXPECTED_IDS.size(), "The modifier offers only the active attributes")
-	_check(CombatAttributes.all_ids() == EXPECTED_IDS, "The catalogue has the agreed saved identities")
+	var registered_ids := CombatAttributes.all_ids()
+	var builtin_ids := registered_ids.filter(
+			func(id: int) -> bool: return id < CombatAttributes.FIRST_CUSTOM_ID)
+	_check(CombatAttributes.registry_error().is_empty(), "The saved attribute catalogue is valid")
+	_check(choices.size() == registered_ids.size(), "The modifier offers only the registered attributes")
+	_check(builtin_ids == EXPECTED_IDS, "The catalogue preserves every built-in identity")
+	for id: int in registered_ids:
+		_check(choices.get(id) == CombatAttributes.display_name(id), "The selector displays the registered name: %d" % id)
 	for id: int in EXPECTED_IDS:
-		_check(choices.has(id), "Every current attribute is available: %d" % id)
-		_check(not CombatAttributes.description(id).is_empty(), "Every current attribute has a description: %d" % id)
-	_check(choices.get(39) == "Carried Weight", "Carried Weight restores its original saved identity")
-	_check(choices.get(40) == "Accuracy Rating", "Accuracy Rating retains stable ID40")
-	_check(choices.get(53) == "Physical Power", "Physical Power uses the appended ID53")
-	_check(choices.get(54) == "Movement Speed" and not choices.has(27),
-			"Movement Speed keeps identity fifty-four for the live bonus and hides retired slot twenty-seven")
+		_check(not CombatAttributes.description(id).is_empty(), "Every built-in attribute has a description: %d" % id)
 	_check(CombatAttributes.Id.MOVEMENT_SPEED == 54 and CombatAttributes.Id.LEGACY_MOVEMENT_SPEED_PERCENT == 27,
 			"The live Movement Speed bonus does not reuse a retired saved identity")
-	_check(choices.get(55) == "Attack Speed" and choices.get(56) == "Cast Speed"
-			and not choices.has(25) and not choices.has(26),
-			"Speed bonuses use new saved IDs while old ratings remain retired")
 	_check(CombatAttributes.uses_percentage_units(55) and CombatAttributes.uses_percentage_units(56),
 			"Both speed attributes use percentage-point authoring units")
-	_check(choices.get(18) == "Armor", "Armor restores its original saved identity")
-	_check(choices.get(34) == "Armor Penetration", "Armor Penetration restores its original saved identity")
-	_check(choices.get(57) == "Spell Penetration" and CombatAttributes.uses_percentage_units(57),
+	_check(choices.has(57) and CombatAttributes.uses_percentage_units(57),
 			"Spell Penetration has its own saved identity and uses percentage-point units")
-	_check(choices.get(14) == "Critical Chance" and choices.get(15) == "Critical Damage",
-			"Critical selectors retain their original identities and canonical designer names")
 	_check(CombatAttributes.Id.CRITICAL_MULTIPLIER == 15,
 			"The legacy critical multiplier spelling aliases the bonus-stat identity")
 	_check(CombatAttributes.uses_percentage_units(14) and CombatAttributes.uses_percentage_units(15),
 			"Both critical attributes use percentage-point authoring units")
-	_check(choices.get(19) == "Fire Resistance" and choices.get(20) == "Cold Resistance"
-			and choices.get(21) == "Lightning Resistance" and choices.get(22) == "Necrotic Resistance"
-			and choices.get(44) == "Void Resistance", "Resistance selectors use the five canonical school names")
 	_check(CombatAttributes.Id.FROST_RESISTANCE == 20 and CombatAttributes.Id.POISON_RESISTANCE == 22,
 			"Legacy Frost and Poison spellings preserve their saved identities")
 	_check(not choices.has(32), "Retired Attack Power is not reused as Physical Power")
@@ -74,17 +65,83 @@ func _test_inspector_catalogue() -> void:
 	for id: int in CombatAttributes.RETIRED_IDS:
 		_check(not choices.has(id), "Old combat attributes are absent from new authoring: %d" % id)
 	var optional := _choices(CombatAttributes.inspector_hint(true))
-	_check(optional.size() == EXPECTED_IDS.size() + 1 and optional.get(-1) == "None",
+	_check(optional.size() == registered_ids.size() + 1 and optional.get(-1) == "None",
 			"Optional selectors add only the None sentinel")
 
 
-func _test_ability_commit_effect_selectors() -> void:
+func _test_ability_commitment_selectors() -> void:
 	var ability := AbilityDefinition.new()
-	for property: StringName in [&"cost_effect", &"cooldown_effect"]:
-		var metadata := _property(ability, property)
-		_check(metadata.get("hint") == PROPERTY_HINT_RESOURCE_TYPE
-				and metadata.get("hint_string") == "GameplayEffectDefinition",
-				"%s selects an editable Gameplay Effect resource" % property)
+	var pool := _property(ability, &"charge_pool")
+	_check(pool.get("hint") == PROPERTY_HINT_RESOURCE_TYPE
+			and pool.get("hint_string") == "AbilityChargeDefinition",
+			"The cooldown selects an editable charge profile")
+	var amount := _property(AbilityResourceCost.new(), &"amount")
+	_check(amount.get("hint") == PROPERTY_HINT_RESOURCE_TYPE
+			and amount.get("hint_string") == "AmountDefinition",
+			"Resource payment selects an editable semantic amount")
+
+
+func _test_dependent_inspector_fields() -> void:
+	var cost := AbilityResourceCost.new()
+	cost.maximum = 31.0
+	var refreshes := [0]
+	cost.property_list_changed.connect(func() -> void: refreshes[0] += 1)
+	_check(_hidden_and_stored(cost, &"maximum"), "Fixed spending hides the variable maximum")
+	cost.spend_up_to_maximum = true
+	_check(_visible(cost, &"maximum") and cost.maximum == 31.0 and refreshes[0] == 1,
+			"Variable spending refreshes the Inspector and exposes the saved cap")
+
+	var charge := AbilityChargeDefinition.new()
+	charge.parallel_recharge = true
+	_check(_hidden_and_stored(charge, &"parallel_recharge") and not charge.uses_parallel_recharge(),
+			"A one-charge cooldown hides and ignores the parallel option")
+	charge.capacity = 2
+	_check(_visible(charge, &"parallel_recharge") and charge.uses_parallel_recharge(),
+			"Adding a charge brings back the saved parallel option")
+
+	var policy := AbilityInterruptionPolicy.new()
+	_check(_hidden_and_stored(policy, &"compatible_channels"),
+			"Compatibility hides until a channel is occupied")
+	policy.occupied_channels = PackedStringArray(["offense"])
+	_check(_visible(policy, &"compatible_channels"), "Occupied channels can declare compatibility")
+	policy.interrupt_windup = false
+	policy.interrupt_channel = false
+	_check(_hidden_and_stored(policy, &"cancel_on_tags")
+			and _hidden_and_stored(policy, &"interruptible_by_action"),
+			"Interruption options hide when no phase can be interrupted")
+	policy.interrupt_channel = true
+	_check(_visible(policy, &"cancel_on_tags") and _visible(policy, &"interruptible_by_action"),
+			"An interruptible phase shows its policy controls")
+
+	var modifier := AttributeModifier.new()
+	modifier.capture_coefficient = 2.0
+	_check(_hidden_and_stored(modifier, &"capture_coefficient"),
+			"Fixed modifiers hide the coefficient for captured attributes")
+	modifier.capture_attribute = CombatAttributes.Id.STRENGTH
+	_check(_visible(modifier, &"capture_coefficient") and modifier.capture_coefficient == 2.0,
+			"Selecting a captured attribute shows its saved coefficient")
+	modifier.attribute = CombatAttributes.Id.MOVEMENT_SPEED
+	modifier.value = -50.0
+	modifier.operation = AttributeModifier.Operation.FINAL_MOVEMENT_PERCENT
+	_check(_hidden_and_stored(modifier, &"capture_attribute")
+			and _hidden_and_stored(modifier, &"capture_coefficient")
+			and _hidden_and_stored(modifier, &"set_by_caller_tag"),
+			"Final Movement Percent hides settings for a dynamic magnitude")
+	_check(GameplayEffectDefinition.is_valid_modifier(modifier, false)
+			and modifier.get_magnitude(null, PackedStringArray()) == -50.0,
+			"Final Movement Percent uses its fixed value while the captured attribute is dormant")
+	modifier.operation = AttributeModifier.Operation.ADD
+	_check(_visible(modifier, &"capture_coefficient") and modifier.capture_coefficient == 2.0,
+			"Returning to an ordinary modifier restores its capture settings")
+
+
+func _hidden_and_stored(resource: Resource, property_name: StringName) -> bool:
+	var usage := int(_property(resource, property_name).get("usage", 0))
+	return (usage & PROPERTY_USAGE_EDITOR) == 0 and (usage & PROPERTY_USAGE_STORAGE) != 0
+
+
+func _visible(resource: Resource, property_name: StringName) -> bool:
+	return (int(_property(resource, property_name).get("usage", 0)) & PROPERTY_USAGE_EDITOR) != 0
 
 
 func _test_stale_metadata_refresh() -> void:
@@ -92,10 +149,8 @@ func _test_stale_metadata_refresh() -> void:
 			"hint_string": "Old Burn Chance:47,Old Movement Percent:27,Old Critical Multiplier:15"}
 	AttributeModifier.new()._validate_property(metadata)
 	var choices := _choices(metadata.hint_string)
-	_check(choices.size() == EXPECTED_IDS.size() and choices.has(53) and choices.has(54)
+	_check(choices.size() == CombatAttributes.all_ids().size() and choices.has(53) and choices.has(54)
 			and choices.has(44) and choices.has(18) and choices.has(34) and choices.has(57)
-			and choices.get(39) == "Carried Weight"
-			and choices.get(14) == "Critical Chance" and choices.get(15) == "Critical Damage"
 			and not choices.has(13) and not choices.has(27) and not choices.has(47),
 			"Tool metadata refresh removes stale Combat 1.0 choices")
 	var operations := _choices(_property(AttributeModifier.new(), &"operation").hint_string)

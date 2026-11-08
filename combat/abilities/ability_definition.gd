@@ -3,35 +3,57 @@ class_name AbilityDefinition
 extends Resource
 ## Authored ability configuration, shared by player input and AI activation requests.
 
-## Stable identifier used to grant and activate this ability.
-@export var ability_id: StringName = &""
+## How a player action assigned to this ability responds to a button.
+enum InputGesture {
+	## Use Hold + release for older Hold Release casts and Press for other saved abilities.
+	AUTOMATIC,
+	## Activate when the player presses the button.
+	PRESS,
+	## Start on button-down and end sustained or channeled behavior on button-up.
+	HOLD,
+	## Arm on button-down and attempt activation on button-up.
+	RELEASE,
+	## Start on button-down and begin the configured release timing on button-up.
+	HOLD_RELEASE,
+}
+
+## Stable positive integer used to grant and activate this ability. Keep it unique across abilities and effects.
+## Zero leaves the ID unassigned.
+@export var ability_id: int = 0
 ## Human-readable name shown by interfaces and debugging tools.
 @export var display_name: String = "Ability"
+## Optional texture that represents this ability in the Ability Editor and other interfaces.
+@export var icon: Texture2D
 ## Hierarchical action categories supplied to effect and attribute-modifier queries.
 ## Weapon tags come from the grant's source profile.
 @export var ability_tags: PackedStringArray = PackedStringArray()
 ## All of these owner tags must be present before activation.
 @export var required_tags: PackedStringArray = PackedStringArray()
-## Activation fails while the owner has any matching tag, including descendants.
-@export var blocked_tags: PackedStringArray = PackedStringArray(["State.Dead"])
 ## Counted owner tags granted for this cast and removed on completion or interruption.
 @export var activation_tags: PackedStringArray = PackedStringArray()
-## A matching tag gained during execution interrupts the cast; excludes its own action tag.
-@export var interruption_tags: PackedStringArray = PackedStringArray([
-	"State.Dead"
-])
 ## Matching asset tags on other active abilities cancel those activations when this ability starts.
 @export var cancel_ability_tags: PackedStringArray = PackedStringArray()
 ## Blocks other abilities with matching asset tags while this ability is active.
 @export var block_ability_tags: PackedStringArray = PackedStringArray()
+## Button gesture for player actions assigned to this ability. Cast timing controls when delivery follows.
+@export var input_gesture: InputGesture = InputGesture.AUTOMATIC
 @export_group("Gameplay Events")
 ## An incoming gameplay event with this tag or a child tag starts this grant. Empty allows direct requests.
 @export var activation_event_tag: StringName = &""
-@export_group("Commit Effects")
-## Optional instant effect with additive current-pool debits, applied once at commit.
-@export var cost_effect: GameplayEffectDefinition
-## Optional finite effect that grants cooldown tags. Abilities sharing those tags share the cooldown.
-@export var cooldown_effect: GameplayEffectDefinition
+## Outcome-driven responses scoped to this activation, including detached deliveries.
+@export var reactions: Array[ReactionDefinition] = []
+@export_group("Interruption")
+## Cast school, interruptible phases, action channels and commitment timing.
+@export var interruption_policy: AbilityInterruptionPolicy
+@export_group("Commitment")
+## Fixed or variable current-pool costs reserved at activation and paid at the commitment phase.
+@export var resource_costs: Array[AbilityResourceCost] = []
+## Optional actor-owned charge pool. Use a single charge for a standard cooldown.
+@export var charge_pool: AbilityChargeDefinition
+@export_group("Presentation")
+## Optional Gameplay Cue shown from cast start until payload release or cancellation.
+## The actor binds the cue to its own visual.
+@export var casting_cue: StringName = &""
 @export_group("")
 ## Reusable GDScript behavior with its own Inspector configuration.
 @export var execution: AbilityExecution
@@ -48,39 +70,45 @@ func get_context_tags() -> PackedStringArray:
 	return result
 
 
+## Resolves the gesture of both explicitly configured abilities and older authored casts.
+func get_input_gesture() -> InputGesture:
+	if input_gesture != InputGesture.AUTOMATIC:
+		return input_gesture
+	var phased := execution as PhasedAbilityExecution
+	if phased != null and phased.cast_mode == PhasedAbilityExecution.CastMode.HOLD_RELEASE:
+		return InputGesture.HOLD_RELEASE
+	return InputGesture.PRESS
+
+
 func get_validation_error() -> StringName:
 	if execution == null:
 		return &"missing_execution"
-	if cost_effect != null and not _has_valid_cost_effect():
-		return &"invalid_cost_effect"
-	if cooldown_effect != null and not _has_valid_cooldown_effect():
-		return &"invalid_cooldown_effect"
+	if input_gesture < InputGesture.AUTOMATIC or input_gesture > InputGesture.HOLD_RELEASE:
+		return &"invalid_input_gesture"
+	var phased := execution as PhasedAbilityExecution
+	if phased != null:
+		var gesture := get_input_gesture()
+		var is_ongoing := phased.cast_mode in [PhasedAbilityExecution.CastMode.CHANNEL,
+				PhasedAbilityExecution.CastMode.SUSTAINED]
+		if gesture == InputGesture.HOLD and not is_ongoing:
+			return &"hold_requires_sustained_or_channel"
+		if gesture == InputGesture.HOLD_RELEASE and is_ongoing:
+			return &"hold_release_requires_delivery_timing"
+		if phased.cast_mode == PhasedAbilityExecution.CastMode.HOLD_RELEASE \
+				and gesture != InputGesture.HOLD_RELEASE:
+			return &"legacy_cast_timing_requires_hold_release"
+	var resources: Dictionary[int, bool] = {}
+	for cost: AbilityResourceCost in resource_costs:
+		if cost == null or not cost.get_validation_error().is_empty():
+			return &"invalid_resource_cost"
+		if resources.has(cost.pool):
+			return &"duplicate_resource_cost"
+		resources[cost.pool] = true
+	if charge_pool != null and not charge_pool.get_validation_error().is_empty():
+		return &"invalid_charge_pool"
+	if interruption_policy != null and not interruption_policy.get_validation_error().is_empty():
+		return &"invalid_interruption_policy"
+	for reaction: ReactionDefinition in reactions:
+		if reaction == null or not reaction.get_validation_error().is_empty():
+			return &"invalid_ability_reaction"
 	return &""
-
-
-func _has_valid_cost_effect() -> bool:
-	if cost_effect.is_damage_effect() \
-			or cost_effect.timing != GameplayEffectDefinition.Timing.INSTANT \
-			or not cost_effect.executions.is_empty() or cost_effect.modifiers.is_empty() \
-			or not cost_effect.get_validation_error().is_empty():
-		return false
-	for modifier in cost_effect.modifiers:
-		if not CombatAttributes.is_current_resource(modifier.attribute) \
-				or modifier.operation != AttributeModifier.Operation.ADD:
-			return false
-		if modifier.value > 0.0 and modifier.capture_attribute == CombatAttributes.Id.NONE \
-				and modifier.set_by_caller_tag.is_empty():
-			return false
-	return true
-
-
-func _has_valid_cooldown_effect() -> bool:
-	if cooldown_effect.timing != GameplayEffectDefinition.Timing.DURATION \
-			or cooldown_effect.duration <= 0.0 or cooldown_effect.period > 0.0 \
-			or cooldown_effect.granted_tags.is_empty() \
-			or not cooldown_effect.get_validation_error().is_empty():
-		return false
-	for tag in cooldown_effect.granted_tags:
-		if tag.is_empty():
-			return false
-	return true

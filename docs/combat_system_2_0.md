@@ -38,7 +38,7 @@ Starting values and contribution rates below are the current editable tuning def
 
 ## Attributes
 
-There are **thirty-one active attributes**, including four primaries, three current resource pools, Carried Weight, and Attack Speed and Cast Speed bonuses. The proposed caster weapon timing factor is a separate equipment property.
+The combat foundation defines **thirty-one built-in attributes**, including four primaries, three current resource pools, Carried Weight, and Attack Speed and Cast Speed bonuses. Additional generic attributes are registered through the [Ability Editor](../tools/ability_editor/README.md#manage-attributes). The proposed caster weapon timing factor is a separate equipment property.
 
 ### Attribute value meanings
 
@@ -488,7 +488,7 @@ Activation requires Current Mana ≥ Authored Mana cost
 
 **Limits:** minimum **0**; maximum **current Maximum Mana**.
 
-Mana regenerates periodically while alive, including during casting. A miss or resist does not refund the cost effect. Mana Efficiency is outside the foundation.
+Mana regenerates periodically while alive, including during casting. A miss or resist leaves the committed Mana payment spent. Mana Efficiency is outside the foundation.
 
 ## Resource regeneration
 
@@ -520,7 +520,7 @@ Larger capacities take longer to refill at the same recovery rate. With 128 Inte
 
 ## Movement and sprinting
 
-The base player grants Sprint, Jump, Crouch, Encumbered and Stamina Exhaustion. The caster adds Fireball. Locomotion can overlap combat casting. Movement and Crouch own physical execution.
+The Player scene grants Sprint, Jump, Crouch, Encumbered, Stamina Exhaustion, Fireball and Test Ability. Locomotion can overlap combat casting. Movement and Crouch own physical execution.
 
 Movement applies the effective Movement Speed bonus, one gait ratio and the encumbrance factor each step. **Movement → Settings → Movement Baseline → Normal Run Speed** defines the physical baseline at **4 m/s** by default. At a 6 m/s baseline, 0% Movement Speed gives 6 m/s and +20% gives 7.2 m/s before gait ratios. The shared rules JSON supplies the bonus default and bounds.
 

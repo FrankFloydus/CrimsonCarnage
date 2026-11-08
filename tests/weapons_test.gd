@@ -13,6 +13,7 @@ func _initialize() -> void:
 func _run() -> void:
 	_test_families()
 	_test_physical_profiles()
+	_test_inspector_visibility()
 	_test_saved_profile()
 	print("Weapon checks: %d; failures: %d" % [_checks, _failures])
 	quit(0 if _failures == 0 else 1)
@@ -111,11 +112,29 @@ func _test_physical_profiles() -> void:
 	_check(weapon.get_validation_error().is_empty(), "Finite large physical damage has no arbitrary cap")
 
 
+func _test_inspector_visibility() -> void:
+	var weapon := WEAPON_SCRIPT.new() as WeaponDefinition
+	var physical_fields := [&"physical_damage_min", &"physical_damage_max", &"base_attack_cycle"]
+	for kind: WeaponDefinition.Kind in [WeaponDefinition.Kind.BOW, WeaponDefinition.Kind.FOCUS]:
+		weapon.kind = kind
+		var field_count := 0
+		for property: Dictionary in weapon.get_property_list():
+			if property.name not in physical_fields:
+				continue
+			field_count += 1
+			var editor_visible := (int(property.usage) & PROPERTY_USAGE_EDITOR) != 0
+			_check(editor_visible == weapon.is_physical_weapon(),
+					"The Inspector visibility of %s follows the weapon family" % property.name)
+			_check((int(property.usage) & PROPERTY_USAGE_STORAGE) != 0,
+					"The resource keeps %s serializable in either family" % property.name)
+		_check(field_count == physical_fields.size(), "All physical fields remain in the property list")
+
+
 func _test_saved_profile() -> void:
 	var weapon := WEAPON_SCRIPT.new() as WeaponDefinition
-	weapon.weapon_id = &"test_sword"
-	weapon.display_name = "Test Sword"
-	weapon.kind = WeaponDefinition.Kind.SWORD_ONE_HAND
+	weapon.weapon_id = &"test_weapon"
+	weapon.display_name = "Test Weapon"
+	weapon.kind = WeaponDefinition.Kind.FOCUS
 	weapon.physical_damage_min = 20.0
 	weapon.physical_damage_max = 30.0
 	weapon.base_attack_cycle = 1.25
@@ -124,11 +143,12 @@ func _test_saved_profile() -> void:
 	var restored := ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE) as WeaponDefinition
 	_check(restored != null, "Saved weapon resource loads")
 	if restored != null:
-		_check(restored.kind == WeaponDefinition.Kind.SWORD_ONE_HAND, "Saved weapon family is preserved")
-		_check(restored.weapon_id == &"test_sword", "Saved weapon identity is preserved")
-		_close(restored.physical_damage_min, 20.0, "Saved minimum damage is preserved")
-		_close(restored.physical_damage_max, 30.0, "Saved maximum damage is preserved")
-		_close(restored.get_power_coefficient(), 1.25, "Saved base cycle is preserved")
+		_check(restored.kind == WeaponDefinition.Kind.FOCUS, "Saved weapon family is preserved")
+		_check(restored.weapon_id == &"test_weapon", "Saved weapon identity is preserved")
+		_close(restored.physical_damage_min, 20.0, "Hidden minimum damage survives serialization")
+		_close(restored.physical_damage_max, 30.0, "Hidden maximum damage survives serialization")
+		restored.kind = WeaponDefinition.Kind.SWORD_ONE_HAND
+		_close(restored.get_power_coefficient(), 1.25, "Switching back restores the saved base cycle")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
 
 

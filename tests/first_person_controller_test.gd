@@ -2,7 +2,7 @@ extends SceneTree
 ## Headless behavioral checks using the saved controller and temporary collision fixtures.
 ## Run with: godot --headless --path . --script res://tests/first_person_controller_test.gd
 
-const CONTROLLER = preload("res://player/first_person_controller.tscn")
+const CONTROLLER = preload("res://player/player.tscn")
 const LOCOMOTION_FIXTURE = preload("res://tests/locomotion_fixture.gd")
 
 var _world: Node3D
@@ -19,6 +19,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	preload("res://tests/combat_rules_fixture.gd").install()
+	_test_settings_inspector()
 	_world = Node3D.new()
 	root.add_child(_world)
 	_add_floor(Vector3(0.0, -0.5, 0.0), Vector3(100.0, 1.0, 100.0))
@@ -32,6 +33,42 @@ func _run() -> void:
 	_world.queue_free()
 	await process_frame
 	quit(0 if _failures == 0 else 1)
+
+
+func _test_settings_inspector() -> void:
+	var look := FirstPersonLookSettings.new()
+	look.full_tilt_speed = 7.0
+	look.maximum_tilt = 0.0
+	_check(_property_usage(look, &"full_tilt_speed") & PROPERTY_USAGE_EDITOR == 0,
+			"Zero maximum tilt hides Full Tilt Speed")
+	_check(_property_usage(look, &"tilt_response") & PROPERTY_USAGE_EDITOR != 0,
+			"Tilt Response remains available to settle existing camera roll")
+	var restored := look.duplicate() as FirstPersonLookSettings
+	restored.maximum_tilt = 3.0
+	_check(_property_usage(restored, &"full_tilt_speed") & PROPERTY_USAGE_EDITOR != 0,
+			"Positive maximum tilt reveals Full Tilt Speed")
+	_check_close(restored.full_tilt_speed, 7.0, "Duplicating a setting retains hidden tilt speed")
+
+	var movement := FirstPersonMovementSettings.new()
+	var gait_fields := [&"walk_speed_multiplier", &"sprint_speed_multiplier", &"crouch_speed_multiplier"]
+	for field: StringName in gait_fields:
+		movement.set(field, 0.75)
+	movement.normal_run_speed = 0.0
+	var copy := movement.duplicate() as FirstPersonMovementSettings
+	copy.normal_run_speed = 4.0
+	for field: StringName in gait_fields:
+		_check(_property_usage(movement, field) & PROPERTY_USAGE_EDITOR == 0,
+				"Zero baseline hides %s" % field)
+		_check(_property_usage(copy, field) & PROPERTY_USAGE_EDITOR != 0,
+				"Positive baseline reveals %s" % field)
+		_check_close(float(copy.get(field)), 0.75, "Duplicating a setting retains hidden %s" % field)
+
+
+func _property_usage(object: Object, name: StringName) -> int:
+	for property: Dictionary in object.get_property_list():
+		if property.name == name:
+			return int(property.usage)
+	return 0
 
 
 func _test_ground_movement() -> void:
@@ -212,7 +249,7 @@ func _settle() -> void:
 
 func _step(direction: Vector2 = Vector2.ZERO, jump_requested: bool = false) -> void:
 	await physics_frame
-	(_player as FirstPersonController).advance_locomotion(_delta, direction, jump_requested)
+	(_player as Player).advance_locomotion(_delta, direction, jump_requested)
 
 
 func _walk_off_platform() -> void:

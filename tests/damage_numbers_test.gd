@@ -3,13 +3,14 @@ extends SceneTree
 ## Run headless with --fixed-fps 60 --script res://tests/damage_numbers_test.gd.
 
 const ATTRIBUTE_FIXTURE = preload("res://tests/attribute_fixture.gd")
+const COMBAT_DEFINITION_JSON = preload("res://combat/abilities/combat_definition_json.gd")
 
-const DUMMY_SCENE = preload("res://examples/fireball/dummy_actor.tscn")
-const FIREBALL = preload("res://examples/fireball/fireball.tres")
+const DUMMY_SCENE = preload("res://enemies/dummy.tscn")
 const ARENA = preload("res://levels/playground/playground.tscn")
-const ENCUMBERED = preload("res://player/encumbered_effect.tres")
 const NUMBER_LIFETIME: float = 0.2
 
+var _fireball := COMBAT_DEFINITION_JSON.load_definition("res://examples/fireball/fireball.ability.json") as AbilityDefinition
+var _encumbered := COMBAT_DEFINITION_JSON.load_definition("res://player/encumbered_effect.effect.json") as GameplayEffectDefinition
 var _checks: int = 0
 var _failures: int = 0
 
@@ -20,6 +21,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	preload("res://tests/combat_rules_fixture.gd").install()
+	_test_feedback_inspector()
 	var dummy := DUMMY_SCENE.instantiate() as DamageDummy
 	(dummy.get_node("Attributes") as ActorAttributes).initial_modifiers = []
 	ATTRIBUTE_FIXTURE.configure(dummy.get_node("AbilitySystem") as AbilitySystem)
@@ -31,15 +33,14 @@ func _run() -> void:
 	root.add_child(source)
 	source.set_base_value(CombatAttributes.Id.INTELLECT, 20.0)
 	var context := GameplayEffectContext.capture(source, GameplayTagSet.new(),
-			FIREBALL.get_context_tags())
-	var execution := FIREBALL.execution as ProjectileCastExecution
-	var saved_impact := execution.on_hit_effects[0]
+			_fireball.get_context_tags())
+	var execution := _fireball.execution as PhasedAbilityExecution
+	var saved_impact := execution.get_effect_payload()[0]
 	var impact := GameplayEffectDefinition.new()
 	impact.executions = [GameplayEffectDamageExecution.new()]
 	impact.damage_type = GameplayEffectDefinition.DamageType.MAGIC
 	impact.magic_school = GameplayEffectDefinition.MagicSchool.FIRE
-	impact.base_magnitude = 0.0
-	impact.power_coefficient = 1.0
+	impact.get_damage_execution().power_coefficient = 1.0
 	var numbers := dummy.get_node("DamageNumbers")
 	_check(dummy.ability_system.effects.apply_effect(impact, context),
 			"The isolated Fireball feedback fixture applies")
@@ -51,7 +52,7 @@ func _run() -> void:
 			"Magic Power from Intellect supplies the direct damage")
 	var bar := dummy.get_node("HealthBar")
 	_near(float(bar.fill_ratio), 0.8, "The text-free Health bar follows the actual Health fraction")
-	_check(execution.on_hit_effects.size() == 1
+	_check(execution.get_effect_payload().size() == 1
 			and saved_impact.executions.size() == 1
 			and saved_impact.executions[0] is GameplayEffectDamageExecution
 			and saved_impact.timing == GameplayEffectDefinition.Timing.INSTANT
@@ -100,6 +101,40 @@ func _run() -> void:
 	quit(0 if _failures == 0 else 1)
 
 
+func _test_feedback_inspector() -> void:
+	var dummy := DamageDummy.new()
+	dummy.damage_number_spacing = 0.7
+	_check(_property_usage(dummy, &"damage_number_spacing") & PROPERTY_USAGE_EDITOR == 0,
+			"Without a damage number scene, lane spacing is hidden")
+	_check(_property_usage(dummy, &"damage_number_spacing") & PROPERTY_USAGE_STORAGE != 0,
+			"Hidden lane spacing remains serializable")
+	dummy.damage_number_scene = PackedScene.new()
+	_check(_property_usage(dummy, &"damage_number_spacing") & PROPERTY_USAGE_EDITOR != 0,
+			"Selecting a damage number scene reveals lane spacing")
+	_near(dummy.damage_number_spacing, 0.7, "Changing the scene preserves lane spacing")
+	dummy.free()
+
+	var number := FloatingDamageNumber.new()
+	number.critical_pop_peak = 1.6
+	number.critical_pop_duration = 0.0
+	_check(_property_usage(number, &"critical_pop_peak") & PROPERTY_USAGE_EDITOR == 0,
+			"Zero critical pop duration hides the critical pop peak")
+	_check(_property_usage(number, &"critical_pop_peak") & PROPERTY_USAGE_STORAGE != 0,
+			"Hidden critical pop peak remains serializable")
+	number.critical_pop_duration = 0.25
+	_check(_property_usage(number, &"critical_pop_peak") & PROPERTY_USAGE_EDITOR != 0,
+			"Positive critical pop duration reveals the critical pop peak")
+	_near(number.critical_pop_peak, 1.6, "Changing the duration preserves the critical pop peak")
+	number.free()
+
+
+func _property_usage(object: Object, name: StringName) -> int:
+	for property: Dictionary in object.get_property_list():
+		if property.name == name:
+			return int(property.usage)
+	return 0
+
+
 func _test_critical_damage_feedback(
 		dummy: DamageDummy, source: ActorAttributes, impact: GameplayEffectDefinition
 ) -> void:
@@ -108,7 +143,7 @@ func _test_critical_damage_feedback(
 	source.set_base_value(CombatAttributes.Id.ACCURACY_RATING, 30.0)
 	source.set_base_value(CombatAttributes.Id.CRITICAL_CHANCE, 100.0)
 	source.set_base_value(CombatAttributes.Id.CRITICAL_DAMAGE, 0.0)
-	var context := GameplayEffectContext.capture(source, GameplayTagSet.new(), FIREBALL.get_context_tags())
+	var context := GameplayEffectContext.capture(source, GameplayTagSet.new(), _fireball.get_context_tags())
 	var payload: Array[GameplayEffectDefinition] = [impact]
 	var numbers := dummy.get_node("DamageNumbers")
 	var result := dummy.ability_system.receive_hit(context, payload)
@@ -163,7 +198,7 @@ func _test_combat_hud() -> void:
 		attributes.allocated_vitality = 0
 	root.add_child(arena)
 	arena.get_node("Player").set_physics_process(false)
-	arena.get_node("Player/AbilityInput").set_process(false)
+	arena.get_node("Player/ActionRouter").set_process_unhandled_input(false)
 	var tools := arena.get_node("CombatTestTools") as CombatTestTools
 	tools.player_system.set_process(false)
 	tools.dummy.ability_system.set_process(false)
@@ -242,7 +277,7 @@ func _test_combat_hud() -> void:
 	_near(float(success_value.text.trim_suffix("%")), 80.0, "The spell preview shows actual success chance")
 	_near(float(failure_value.text.trim_suffix("%")), 20.0, "The spell preview shows actual resistance chance")
 	target.level = 11
-	tools.select_ability(&"fireball")
+	tools.select_ability(_fireball.ability_id)
 	tools.show_attributes(1)
 	var actor_level := sheet.get_node("%ActorLevel") as Label
 	_check(actor_level.text == "Lv. 11", "The sheet reports the edited dummy level")
@@ -274,7 +309,6 @@ func _test_effect_hud(hud: Control, system: AbilitySystem, dummy: AbilitySystem)
 	texture.gradient = Gradient.new()
 	var buff := GameplayEffectDefinition.new()
 	buff.display_name = "Test Buff"
-	buff.kind = GameplayEffectDefinition.Kind.MODIFIERS
 	buff.timing = GameplayEffectDefinition.Timing.DURATION
 	buff.duration = 1.0
 	buff.icon = texture
@@ -352,8 +386,8 @@ func _test_effect_hud(hud: Control, system: AbilitySystem, dummy: AbilitySystem)
 	var capacity := attributes.get_value(CombatAttributes.Id.CARRY_CAPACITY)
 	attributes.set_base_value(CombatAttributes.Id.CARRIED_WEIGHT, capacity + 50.0)
 	var encumbered_icon := debuffs.get_child(0) as Control if debuffs.get_child_count() == 1 else null
-	_check(encumbered_icon != null and encumbered_icon.tooltip_text == ENCUMBERED.display_name
-			and (encumbered_icon.get_node("Texture") as TextureRect).texture == ENCUMBERED.icon,
+	_check(encumbered_icon != null and encumbered_icon.tooltip_text == _encumbered.display_name
+			and (encumbered_icon.get_node("Texture") as TextureRect).texture == _encumbered.icon,
 			"Crossing carry capacity displays the saved Encumbered debuff icon")
 	attributes.set_base_value(CombatAttributes.Id.CARRIED_WEIGHT, capacity)
 	_check(not strips.visible, "Returning to carry capacity removes the Encumbered icon")

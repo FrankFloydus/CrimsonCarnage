@@ -32,8 +32,7 @@ static func new_attributes() -> ActorAttributes:
 ## Overrides an actor's startup effect assets for this test. Call before it enters the tree.
 static func configure(system: AbilitySystem, regen_period: float = REGENERATION_PERIOD) -> void:
 	var defaults := GameplayEffectDefinition.new()
-	defaults.effect_id = &"Effect.DefaultAttributes"
-	defaults.kind = GameplayEffectDefinition.Kind.MODIFIERS
+	defaults.effect_id = 11
 	for id: int in STARTUP_BASES:
 		var modifier := AttributeModifier.new()
 		modifier.attribute = id
@@ -41,8 +40,7 @@ static func configure(system: AbilitySystem, regen_period: float = REGENERATION_
 		modifier.value = STARTUP_BASES[id]
 		defaults.modifiers.append(modifier)
 	var derivations := GameplayEffectDefinition.new()
-	derivations.effect_id = &"Effect.AttributeDerivations"
-	derivations.kind = GameplayEffectDefinition.Kind.MODIFIERS
+	derivations.effect_id = 12
 	derivations.timing = GameplayEffectDefinition.Timing.INFINITE
 	derivations.modifiers = _derivations()
 	system.startup_effects = [defaults, derivations, regeneration_effect(regen_period)]
@@ -50,8 +48,7 @@ static func configure(system: AbilitySystem, regen_period: float = REGENERATION_
 
 static func regeneration_effect(period: float = REGENERATION_PERIOD) -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
-	effect.effect_id = &"Effect.ResourceRegeneration"
-	effect.kind = GameplayEffectDefinition.Kind.MODIFIERS
+	effect.effect_id = 13
 	effect.timing = GameplayEffectDefinition.Timing.INFINITE
 	effect.period = period
 	effect.execute_periodic_on_application = false

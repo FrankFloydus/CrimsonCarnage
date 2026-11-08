@@ -31,6 +31,10 @@ Example of a documented export:
 
 Godot uses documented exports for Inspector tooltips; see [GDScript documentation comments](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_documentation_comments.html). Use `#` for ordinary comments and `##` for documentation. Never use Python-style triple-quoted strings as comments or documentation.
 
+Put a `##` description immediately above every enum type and each enum member. Give each choice its own line. Describe the behavior it selects and preserve serialized values when adding or rearranging comments.
+
+When a mode makes another property irrelevant, refresh the property list on mode changes and remove only `PROPERTY_USAGE_EDITOR` from the dependent property. Keep storage enabled so an authored value returns when the designer switches back. Read and validate the dependent value only in modes where it applies.
+
 ## Scene components and internal helpers
 
 Expose a component as a scene node only when it gives the user useful editor authoring or tuning.

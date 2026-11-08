@@ -8,7 +8,7 @@ The [shared Accuracy and level curve](combat_system_2_0.md#accuracy-and-levels) 
 
 ## Active attributes
 
-The code-defined catalogue contains thirty-one active attributes.
+The [attribute catalog](../combat/attributes/attributes.json) contains thirty-one protected built-ins and any custom attributes registered in the [Ability Editor](../tools/ability_editor/README.md#manage-attributes). Custom attributes use permanent numeric IDs starting at 100 and can participate in generic modifiers, stat captures and attribute events.
 
 | Group | Attributes |
 | --- | --- |
@@ -35,7 +35,7 @@ A single governing primary contributes to each action. Context tags are `Weapon.
 
 ## Defaults and modifier order
 
-Starting base values are authored in [GE_DefaultAttributes](../combat/effects/ge_default_attributes.tres). [GE_AttributeDerivations](../combat/effects/ge_attribute_derivations.tres) applies the five persistent primary-to-attribute contributions. Combat bounds, level progression and context-specific combat coefficients are in [combat_rules.json](../combat/combat_rules.json).
+Starting base values are authored in [GE_DefaultAttributes](../combat/effects/ge_default_attributes.effect.json). [GE_AttributeDerivations](../combat/effects/ge_attribute_derivations.effect.json) applies the five persistent primary-to-attribute contributions. Combat bounds, level progression and context-specific combat coefficients are in [combat_rules.json](../combat/combat_rules.json).
 
 Characters start with 10 in each primary. Base capacities before primary contributions are 100 Health, 50 Stamina, 50 Mana and 80 Carry Capacity, producing starting totals of 200/100/100/100. Level is capped at 60; the validated allocation budget grants 2 points per gained level, 118 by level 60. Level alone does not raise damage or capacities.
 
@@ -65,7 +65,9 @@ One min/max roll is shared by a delivered hit's weapon components. A new deliver
 
 Physical attack animations fit the authored weapon cycle when a weapon source supplies one. The Attack Speed multiplier then scales that playback rate. Cast Speed scales spell animation playback. Method keys control release or contact, and the weapon coefficient still uses its authored base cycle.
 
-Generic explicit damage effects use `base_magnitude + applicable Power × power_coefficient` before target mitigation. The saved Fireball is a simple direct Magic/Fire payload. The [impact effect](../examples/fireball/fireball_impact.tres) owns base damage 5 and Power Coefficient 1.0. Starting Magic Power 20 gives 25 raw damage. The [ability](../examples/fireball/fireball.tres) owns Mana cost and cooldown.
+The effect's Gameplay Effect Damage Execution adds its semantic Amount to applicable Power × Power Coefficient before target mitigation. The saved Fireball is a direct Magic/Fire payload. Its impact execution has a fixed Amount of 5 and Power Coefficient of 1.0. Starting Magic Power of 20 gives 25 raw damage. The ability definition owns Mana cost and cooldown. [Fireball impact](../examples/fireball/fireball_impact.effect.json) · [Fireball ability](../examples/fireball/fireball.ability.json)
+
+An optional Damage Profile selects explicit defenses. It may use the live Armor curve and multiply independent, ordered percentage resistance stages drawn from the existing resistance attributes. Each stage authors its effective bounds and direct Spell Penetration eligibility. A nonlethal profile caps Health loss after mitigation, absorption and routing, leaving a living recipient with at least one Health when it started above that threshold. Damage without a profile uses the standard Combat 2.0 path.
 
 ## Attack Speed and Cast Speed
 
@@ -137,7 +139,7 @@ Use Add Flat for percentage points and scope modifiers with ability or damage ta
 
 ## Accuracy and outcomes
 
-`CombatMath.get_hit_chance(attacker_level, target_level, accuracy)` is a pure calculation returning a fraction from 0 to 1. `get_hit_chance_details()` also exposes base/maximum probabilities and the required rating. The curve arrays, rating conversion and continuation constants are editable in `combat_rules.json`; the design table and examples are in [Accuracy and levels](combat_system_2_0.md#accuracy-and-levels).
+`CombatMath.get_hit_chance(attacker_level, target_level, accuracy)` is a pure calculation returning a fraction from 0 to 1. `get_hit_chance_details()` also exposes base/maximum probabilities and the required rating. The curve arrays, rating conversion and continuation constants live in `combat_rules.json`. The Ability Editor's Accuracy Rating view edits the base and ceiling arrays and previews draft points with `CombatMath`. Each whole level gap from +0 through +10 has its own anchor. See [Accuracy and levels](combat_system_2_0.md#accuracy-and-levels) for the design table and examples.
 
 `AbilitySystem.receive_hit()` duplicates the delivery context, samples one Accuracy outcome and applies eligible effects only on success. All damage components and attached hostile modifier effects share the result. A modifier-only hostile spell still checks Accuracy. Modifier-only self deliveries and explicitly `Ability.Beneficial` ally deliveries bypass the hostile check; any eligible damage keeps the check mandatory. Direct `effects.apply_effect()` remains the explicit buff/effect operation rather than another hit roll.
 
@@ -147,7 +149,7 @@ The target emits one `hit_outcome` event per eligible delivery, carrying `hit`, 
 
 Health Regeneration starts at **0/sec**, Stamina Regeneration at **10/sec**, and Mana Regeneration at **5/sec**. These nonnegative, uncapped stats use ordinary flat/increased/more modifiers. Primaries and maximum pools do not automatically raise the rates.
 
-The ASC applies [GE_ResourceRegeneration](../combat/effects/ge_resource_regeneration.tres) at startup. Its execution reads live rates and restores `rate × period`, capped by missing capacity. It is inhibited while dead. `State.Stamina.RecoveryBlocked` pauses Stamina recovery. The Sprint ability owns that tag throughout activation, and the exhaustion effect grants it for its authored duration after Stamina crosses from positive to zero. Health and Mana recover independently. An ordinary spend above zero adds no recovery delay.
+The ASC applies [GE_ResourceRegeneration](../combat/effects/ge_resource_regeneration.effect.json) at startup. Its execution reads live rates and restores `rate × period`, capped by missing capacity. It is inhibited while dead. `State.Stamina.RecoveryBlocked` pauses Stamina recovery. The Sprint ability owns that tag throughout activation, and the exhaustion effect grants it for its authored duration after Stamina crosses from positive to zero. Health and Mana recover independently. An ordinary spend above zero adds no recovery delay.
 
 `AbilitySystem.advance()` advances the effect clock and is also used for deterministic tests. Recovery survives a transient-effect clear and resumes after revival. The AttributeSet owns clamping and reports the resulting pool changes.
 
@@ -155,13 +157,15 @@ The ASC applies [GE_ResourceRegeneration](../combat/effects/ge_resource_regenera
 
 Movement Speed starts at **0% bonus**. The standard pipeline combines all modifiers and clamps the final value to **−100% to +25%**. Add Flat 20 gives +20%. Applying Increased Percent 20 to that bonus gives +24%, while an increased modifier alone leaves zero at zero. A raw +100% F3 override displays an effective +25%. The cap applies before gait multipliers, so the default 4 m/s baseline and 1.5× Sprint ratio yield 5 m/s Run and 7.5 m/s Sprint at the cap.
 
+A retained effect can select **Final Movement Percent** to multiply the entire speed after clamping the ordinary bonus. Enter `-50` to halve speed. An actor with +20% ordinary bonus and a 4 m/s baseline runs at 4.8 m/s before the slow and 2.4 m/s while it lasts. Independent slows and stacked copies multiply their factors. The operation uses a fixed value from −100 to 0 and applies only to Movement Speed.
+
 F3 displays the bonus percentage. The bonus starts at zero. The JSON keys `movement_speed_min_percent` and `movement_speed_max_percent` supply its bounds. Older rule data that omits the maximum uses the +25% default. **Movement → Settings → Movement Baseline → Normal Run Speed** owns the physical baseline. Movement computes `settings.normal_run_speed × max(0, 1 + final_bonus/100) × gait_ratio × encumbrance_factor`. At a 6 m/s baseline and no overload, 0% and +20% give 6 and 7.2 m/s normal running. Active identity 54 represents the bonus. Identity 27 remains retired.
 
 The saved player owns one ActorAttributes node, inherited by the caster example. Movement references it explicitly and reads the live attribute each step. AbilitySystem also uses that component; if its explicit reference is empty, startup resolves the sibling `Attributes` node, preserving the single actor source after an inherited-scene resave. Explicit valid references take precedence. It never stores another base-speed setting. Gait settings supply Walk ×0.5, Sprint ×1.5 and Crouch ×0.6; crouch-walk combines Walk and Crouch. At the default attribute the speeds remain 4/2/6/2.4/1.2 m/s for run/walk/sprint/crouch/crouch-walk. Jump/gravity/acceleration/braking/terrain remain independent settings.
 
-**Sprint → Execution → Upkeep Effect** opens [GE_StaminaUpkeep](../player/ge_stamina_upkeep.tres). **Period** and **Executions → Stamina per Interval** default to 0.1 seconds and 2 points. Grounded horizontal travel adds time only when Sprint is effective and there is movement input. Movement retains unpaid travel across activation boundaries. Idle, walking, crouching, blocked wall travel and falling add no chargeable time.
+**Sprint → Execution → Upkeep Effect** opens [GE_StaminaUpkeep](../player/ge_stamina_upkeep.effect.json). **Period** and **Executions → Stamina per Interval** default to 0.1 seconds and 2 points. Grounded horizontal travel adds time only when Sprint is effective and there is movement input. Movement retains unpaid travel across activation boundaries. Idle, walking, crouching, blocked wall travel and falling add no chargeable time.
 
-The base player grants Sprint, Jump, Crouch, Encumbered and Stamina Exhaustion. The caster adds Fireball. Hold Shift to request Sprint and release it to end Sprint. Sprint requires enough Stamina for the next full charge. If a paid grounded charge would leave a positive remainder smaller than the next full charge, that same debit spends the remainder and reaches zero. For example, a 2-point charge spends all 3 when the pool holds 3. A voluntary release with Stamina left or an affordability failure from a separate spend above zero ends Sprint and allows normal recovery. Exhaustion or encumbrance interruption requires a fresh press. Jump is blocked while Sprint owns `State.Movement.Sprinting`. Running off an edge preserves horizontal momentum, with airborne steering bounded by the normal air speed.
+The Player scene grants Sprint, Jump, Crouch, Encumbered, Stamina Exhaustion, Fireball and Test Ability. Hold Shift to request Sprint and release it to end Sprint. Sprint requires enough Stamina for the next full charge. If a paid grounded charge would leave a positive remainder smaller than the next full charge, that same debit spends the remainder and reaches zero. For example, a 2-point charge spends all 3 when the pool holds 3. A voluntary release with Stamina left or an affordability failure from a separate spend above zero ends Sprint and allows normal recovery. Exhaustion or encumbrance interruption requires a fresh press. Jump is blocked while Sprint owns `State.Movement.Sprinting`. Running off an edge preserves horizontal momentum, with airborne steering bounded by the normal air speed.
 
 Movement reports actual travel with the due tag. It enables the retained upkeep effect, which executes a charge and returns to its inhibited state. Active Sprint pauses Stamina regeneration even when stationary or in the air. The default 100 Stamina funds about five seconds of grounded sprint travel. A positive-to-zero transition sends `Event.Stamina.Depleted`. The granted exhaustion action applies its timed effect, which owns the recovery blocker until expiry.
 
@@ -177,7 +181,7 @@ The actor's carry rule publishes an enter event above capacity and an exit event
 
 ## Effects and delivery
 
-Player and AI share ASC activation. Ability definitions select GDScript execution behavior, cost and cooldown effects, and tag rules. The prototype grants Fireball directly. It owns `State.CombatAction` while the cast runs, and its animation release event goes to the activation that started playback. Locomotion can overlap the cast. The projectile carries the outgoing effect spec prepared at release.
+Player and AI share ASC activation. Ability definitions author phases, actions, resource payments, charge pools and tag rules. The prototype grants Fireball directly. It owns `State.CombatAction` while the cast runs, and its animation release event goes to the activation that started playback. Locomotion can overlap the cast. The projectile delivers the payload prepared at release. [Ability composition](ability_composition.md)
 
 Gameplay Effects support instant, finite and infinite lifetimes, optional periodic executions, tag requirements and configurable stacking. An effect can grant tags without stat modifiers. Retained definitions can opt into HUD presentation with an icon and a Buff or Debuff category. Fireball's impact is instant.
 
@@ -187,9 +191,9 @@ Dodge, Block, Absorption, cooldown recovery and consumable behavior remain desig
 
 Open [playground.tscn](../levels/playground/playground.tscn). The saved [combat HUD scene](../levels/playground/testing/combat_hud.tscn) shows Health, Mana and Stamina at the bottom center. Buffs grow from the left and debuffs from the right. Fireball's cast bar shows its live windup and hides on release or cancellation.
 
-F3 opens the Player or Dummy tab. The left pane offers an ability selector, level and searchable sliders for all thirty-one attributes. The right sheet shows effective stats, including Attack Speed and Cast Speed as percentages. The Player → Dummy card uses the selected ability's hit chance and normal-hit damage against the dummy's current defenses. Hover the derived readouts for inputs such as Accuracy Rating, applicable Power, Armor and Critical Damage bonus.
+F3 opens the Player or Dummy tab. The left pane offers an ability selector, level and searchable attribute sliders. The right sheet shows effective stats, including Attack Speed and Cast Speed as percentages. The Player → Dummy card uses the selected ability's hit chance and normal-hit damage against the dummy's current defenses. Hover the derived readouts for inputs such as Accuracy Rating, applicable Power, Armor and Critical Damage bonus.
 
-Enable a row override to edit its base. Current pools edit directly within their current capacity. Level, Strength, Dexterity, Intellect and Vitality use whole steps. Other attribute sliders use 0.01 steps. Focus a slider and use the arrow keys for a single step. The saved editor scene defines practical test ranges. Tracks include existing values outside those ranges. The character sheet uses the effective values after gameplay limits apply. Damage previews use the selected action's authored hit payload. The ellipsis menu holds reset edits and clear effects, plus resource restoration for Player. R restores the dummy during gameplay. Esc or F3 closes the attribute view. LMB or F activates the selected action.
+Enable a row override to edit its base. Current pools edit directly within their current capacity. Level, Strength, Dexterity, Intellect and Vitality use whole steps. Other attribute sliders use 0.01 steps. Focus a slider and use the arrow keys for a single step. The saved editor scene defines practical test ranges. Tracks include existing values outside those ranges. The character sheet uses the effective values after gameplay limits apply. Damage previews use the selected action's authored hit payload. The ellipsis menu holds reset edits and clear effects, plus resource restoration for Player. R restores the dummy during gameplay. Esc or F3 closes the attribute view. The F3 ability selector temporarily assigns Ability Slot 1, bound to LMB and F by default.
 
 F1 opens Statistics across the full panel. F2 toggles the combat log. The saved [panel theme](../levels/playground/testing/combat_panel_theme.tres) styles the panel and its controls. Both attribute panes scroll independently, and the computed values reserve a gutter beside the scrollbar.
 

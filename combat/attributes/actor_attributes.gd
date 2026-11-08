@@ -83,7 +83,10 @@ func get_value(id: int, context_tags: PackedStringArray = PackedStringArray()) -
 	_evaluating.erase(id)
 	var value: float = (float(totals.base) + float(totals.additive)) \
 			* maxf(0.0, 1.0 + float(totals.percentage)) * float(totals.more)
-	return CombatAttributes.clamp_value(id, value)
+	var clamped := CombatAttributes.clamp_value(id, value)
+	if id == CombatAttributes.Id.MOVEMENT_SPEED and totals.final_movement < 1.0:
+		return (100.0 + clamped) * float(totals.final_movement) - 100.0
+	return clamped
 
 
 func get_base_value(id: int, context_tags: PackedStringArray = PackedStringArray()) -> float:
@@ -148,6 +151,33 @@ func modify_current(id: int, amount: float) -> float:
 	return value - previous
 
 
+## Spends nonnegative amounts as one transaction, recording actual deltas in the caller's dictionary.
+func commit_resource_spend(costs: Dictionary[int, float], spent: Dictionary[int, float]) -> bool:
+	initialize()
+	for id: int in costs:
+		if not CombatAttributes.is_current_resource(id) or not is_finite(costs[id]) \
+				or costs[id] < 0.0 or costs[id] > _currents[id]:
+			return false
+	var previous: Dictionary[int, float] = {}
+	var committed: Dictionary[int, float] = {}
+	var actual: Dictionary[int, float] = {}
+	for id: int in CombatAttributes.current_ids():
+		var cost := costs.get(id, 0.0) as float
+		if cost <= 0.0:
+			continue
+		previous[id] = _currents[id]
+		committed[id] = previous[id] - cost
+		actual[id] = previous[id] - committed[id]
+		if actual[id] <= 0.0:
+			return false
+	spent.assign(actual)
+	for id: int in committed:
+		_currents[id] = committed[id]
+	for id: int in committed:
+		attribute_changed.emit(id, previous[id], committed[id])
+	return true
+
+
 ## Removes Health directly, returning actual Health loss separately from requested damage.
 ## Invalid damage and damage delivered to an already dead actor have no effect.
 func apply_damage(amount: float) -> Dictionary:
@@ -158,6 +188,32 @@ func apply_damage(amount: float) -> Dictionary:
 	result.health_damage = -modify_current(CombatAttributes.Id.HEALTH, -amount)
 	result.resolved_amount = amount
 	return result
+
+
+## Commits all validated routed losses before any recipient's attribute observers run.
+## The resolver supplies a dictionary keyed by ActorAttributes. Referencing this script as a
+## local loop type in its own static method retains the script at Godot shutdown.
+static func commit_damage_batch(requests: Dictionary) -> Dictionary:
+	var outcomes := {}
+	for recipient: Node in requests:
+		var requested: float = requests[recipient]
+		if not is_instance_valid(recipient) or recipient.is_queued_for_deletion() \
+				or not is_finite(requested) or requested < 0.0:
+			return {}
+		var previous: float = recipient.get_value(CombatAttributes.Id.HEALTH)
+		if previous <= 0.0:
+			return {}
+		var remaining := maxf(0.0, previous - requested)
+		outcomes[recipient] = {"previous": previous, "current": remaining,
+				"health_damage": previous - remaining}
+	for recipient in outcomes:
+		recipient._currents[CombatAttributes.Id.HEALTH] = outcomes[recipient]["current"]
+	for recipient: Node in outcomes:
+		var outcome: Dictionary = outcomes[recipient]
+		if is_instance_valid(recipient) and outcome["health_damage"] > 0.0:
+			recipient.attribute_changed.emit(CombatAttributes.Id.HEALTH,
+					outcome["previous"], outcome["current"])
+	return outcomes
 
 
 func set_modifiers(owner: StringName, modifiers: Array[AttributeModifier]) -> void:
@@ -220,6 +276,7 @@ func _modifier_totals(id: int, context_tags: PackedStringArray) -> Dictionary:
 	var additive := 0.0
 	var percentage := 0.0
 	var more := 1.0
+	var final_movement := 1.0
 	for modifier: AttributeModifier in _authored_modifiers:
 		if modifier.attribute != id or not modifier.matches_context(context_tags):
 			continue
@@ -230,6 +287,8 @@ func _modifier_totals(id: int, context_tags: PackedStringArray) -> Dictionary:
 				percentage += modifier.get_magnitude(self, context_tags) / 100.0
 			AttributeModifier.Operation.MORE_PERCENT:
 				more *= maxf(0.0, 1.0 + modifier.get_magnitude(self, context_tags) / 100.0)
+			AttributeModifier.Operation.FINAL_MOVEMENT_PERCENT:
+				final_movement *= 1.0 + modifier.get_magnitude(self, context_tags) / 100.0
 	for owner: StringName in _runtime_modifiers:
 		for modifier: AttributeModifier in _runtime_modifiers[owner]:
 			if modifier.attribute != id or not modifier.matches_context(context_tags):
@@ -243,7 +302,15 @@ func _modifier_totals(id: int, context_tags: PackedStringArray) -> Dictionary:
 					percentage += modifier.get_magnitude(self, context_tags) / 100.0
 				AttributeModifier.Operation.MORE_PERCENT:
 					more *= maxf(0.0, 1.0 + modifier.get_magnitude(self, context_tags) / 100.0)
-	return {"base": base, "additive": additive, "percentage": percentage, "more": more}
+				AttributeModifier.Operation.FINAL_MOVEMENT_PERCENT:
+					final_movement *= 1.0 + modifier.get_magnitude(self, context_tags) / 100.0
+	return {
+		"base": base,
+		"additive": additive,
+		"percentage": percentage,
+		"more": more,
+		"final_movement": final_movement,
+	}
 
 
 func _base_value(id: int, context_tags: PackedStringArray) -> float:
@@ -291,7 +358,11 @@ func _copy_modifiers(modifiers: Array[AttributeModifier]) -> Array[AttributeModi
 		if CombatAttributes.is_current_resource(modifier.attribute):
 			push_warning("Persistent modifiers cannot target current pools; use explicit resource changes.")
 			continue
-		if not is_finite(modifier.value) or not is_finite(modifier.capture_coefficient):
+		if not is_finite(modifier.value) or (
+				modifier.uses_capture() and not is_finite(modifier.capture_coefficient)):
+			continue
+		if modifier.operation == AttributeModifier.Operation.FINAL_MOVEMENT_PERCENT \
+				and not modifier.is_valid_final_movement_percent():
 			continue
 		result.append(modifier.copy())
 	return result

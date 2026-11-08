@@ -1,3 +1,4 @@
+@tool
 class_name FloatingDamageNumber
 extends Label3D
 ## Saved normal/critical damage and MISS/RESIST feedback, with a short rise and fade.
@@ -13,7 +14,10 @@ extends Label3D
 ## Persistent size multiplier for a critical number relative to the scene's authored scale.
 @export_range(1.0, 3.0, 0.05, "or_greater") var critical_size_multiplier: float = 1.35
 ## Seconds for a critical number to grow, overshoot, and settle; zero disables the pop.
-@export_range(0.0, 1.0, 0.01) var critical_pop_duration: float = 0.18
+@export_range(0.0, 1.0, 0.01) var critical_pop_duration: float = 0.18:
+	set(value):
+		critical_pop_duration = value
+		notify_property_list_changed()
 ## Peak pop size relative to the settled critical size, reached during the short opening motion.
 @export_range(1.0, 3.0, 0.05, "or_greater") var critical_pop_peak: float = 1.3
 
@@ -25,7 +29,15 @@ var _authored_scale: Vector3 = Vector3.ONE
 var _display_color: Color = Color.WHITE
 
 
+func _validate_property(property: Dictionary) -> void:
+	if property.name == &"critical_pop_peak" and critical_pop_duration <= 0.0:
+		property.usage &= ~PROPERTY_USAGE_EDITOR
+
+
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		set_process(false)
+		return
 	_authored_scale = scale
 
 
