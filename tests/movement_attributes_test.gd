@@ -5,7 +5,9 @@ const CONTROLLER = preload("res://player/first_person_controller.tscn")
 const CASTER = preload("res://examples/fireball/caster.tscn")
 const EDITOR = preload("res://levels/playground/testing/attribute_editor.tscn")
 const SPRINT_FIXTURE = preload("res://tests/sprint_fixture.gd")
-const UPKEEP_ID: StringName = &"Effect.Sprint.StaminaUpkeep"
+const SPRINT: int = SPRINT_FIXTURE.SPRINT
+const UPKEEP_ID: int = 8
+const EXHAUSTED_EFFECT_ID: int = 10
 const REGENERATION_PERIOD: float = 0.1
 
 var _world: Node3D
@@ -114,11 +116,11 @@ func _test_saved_wiring_and_live_modifiers() -> void:
 			"A missing serialized reference resolves the same inherited actor attributes")
 	_check(caster_system.effects != null,
 			"The missing-reference recovery completes ability initialization for the saved caster")
-	for ability_id: StringName in [&"sprint", &"jump", &"crouch", &"encumbered", &"stamina_exhaustion", &"fireball"]:
+	for ability_id: int in [SPRINT, 2, 3, 4, SPRINT_FIXTURE.EXHAUSTION, 6]:
 		var definition := caster_system.get_ability_definition(ability_id)
 		_check(definition != null and caster_system.granted_abilities.has(definition),
 				"The saved caster registers %s from Granted Abilities" % ability_id)
-	var saved_execution := caster_system.get_ability_definition(&"sprint").execution as PhasedAbilityExecution
+	var saved_execution := caster_system.get_ability_definition(SPRINT).execution as PhasedAbilityExecution
 	var saved_sprint := saved_execution.phases[0].actions[0] as PlayerSprintAction
 	var upkeep := saved_sprint.upkeep_effect
 	_check(upkeep != null and upkeep.effect_id == UPKEEP_ID
@@ -255,7 +257,7 @@ func _test_sprint_upkeep() -> void:
 	await _step(Vector2.RIGHT, true)
 	_check(system.effects.remove_effect(_upkeep_handle(system)), "The active upkeep is removable by its handle")
 	await _step(Vector2.RIGHT, true)
-	_check(system.get_active_cast(&"sprint") == null
+	_check(system.get_active_cast(SPRINT) == null
 			and _movement.effective_gait == FirstPersonGait.Gait.RUN,
 			"Losing upkeep cancels Sprint before more grounded travel")
 	await _end_fixture()
@@ -372,14 +374,14 @@ func _test_encumbrance_blocks_sprint() -> void:
 			"Encumbered movement spends no sprint Stamina")
 	_upkeep_calculation.stamina_per_interval = 0.0
 	var system := _player.get_node("AbilitySystem") as AbilitySystem
-	_check(system.get_activation_failure(&"sprint") == &"blocked_by_tags",
+	_check(system.get_activation_failure(SPRINT) == &"blocked_by_tags",
 			"Even a free sprint is blocked by the authored tag over capacity")
 	await physics_frame
 	_movement.move(_delta, Vector2.RIGHT, FirstPersonGait.Gait.SPRINT)
 	_check(_movement.effective_gait == FirstPersonGait.Gait.RUN,
 			"Direct sprint requests cannot bypass the encumbrance restriction")
 	_attributes.set_base_value(CombatAttributes.Id.CARRY_CAPACITY, 101.0)
-	_check(system.get_activation_failure(&"sprint").is_empty(),
+	_check(system.get_activation_failure(SPRINT).is_empty(),
 			"Increasing capacity restores sprint eligibility")
 	await _step(Vector2.RIGHT)
 	await _step(Vector2.RIGHT, true)
@@ -396,9 +398,9 @@ func _test_exhaustion_and_retry() -> void:
 	for tick in 6:
 		await _step(Vector2.RIGHT, true, false, true)
 	_near(_attributes.get_value(CombatAttributes.Id.STAMINA), 0.0, "The final affordable charge empties Stamina")
-	_check(system.get_active_cast(&"sprint") == null and system.tags.has_tag(&"State.Stamina.Exhausted"),
+	_check(system.get_active_cast(SPRINT) == null and system.tags.has_tag(&"State.Stamina.Exhausted"),
 			"Depletion cancels Sprint and starts the granted Exhaustion response")
-	_check(system.effects.active_count(&"Effect.Stamina.Exhausted") == 1,
+	_check(system.effects.active_count(EXHAUSTED_EFFECT_ID) == 1,
 			"Depletion applies one timed authored effect")
 	system.advance(SPRINT_FIXTURE.EXHAUSTION_DURATION - 0.2)
 	_near(_attributes.get_value(CombatAttributes.Id.STAMINA), 0.0, "Exhaustion suppresses Stamina until its duration expires")
@@ -412,7 +414,7 @@ func _test_exhaustion_and_retry() -> void:
 	_check(_movement.effective_gait == FirstPersonGait.Gait.SPRINT, "A fresh funded Shift press restarts Sprint")
 	_attributes.set_base_value(CombatAttributes.Id.STAMINA, 1.0)
 	await _step(Vector2.RIGHT, true)
-	_check(system.get_active_cast(&"sprint") == null and not system.tags.has_tag(&"State.Stamina.Exhausted"),
+	_check(system.get_active_cast(SPRINT) == null and not system.tags.has_tag(&"State.Stamina.Exhausted"),
 			"An external reduction below the next charge cancels Sprint without triggering Exhaustion")
 	system.advance(REGENERATION_PERIOD)
 	_near(_attributes.get_value(CombatAttributes.Id.STAMINA), 2.0,
@@ -451,8 +453,8 @@ func _test_final_charge_uses_remainder() -> void:
 				"The final charge consumes a positive underfunded remainder")
 		_check(debits.size() == charges and debits.back().is_equal_approx(Vector2(final_payment, 0.0)),
 				"The last charge spends all remaining Stamina in one debit")
-		_check(system.get_active_cast(&"sprint") == null
-				and system.effects.active_count(&"Effect.Stamina.Exhausted") == 1,
+		_check(system.get_active_cast(SPRINT) == null
+				and system.effects.active_count(EXHAUSTED_EFFECT_ID) == 1,
 				"The zero crossing ends Sprint and grants one exhaustion effect")
 		system.advance(SPRINT_FIXTURE.EXHAUSTION_DURATION / 2.0)
 		_near(_attributes.get_value(CombatAttributes.Id.STAMINA), 0.0,
@@ -498,7 +500,7 @@ func _test_zero_cost_and_invalid_inputs() -> void:
 	var system := _player.get_node("AbilitySystem") as AbilitySystem
 	for invalid_cost: float in [-1.0, INF, NAN]:
 		_upkeep_calculation.stamina_per_interval = invalid_cost
-		_check(not system.get_activation_failure(&"sprint").is_empty(),
+		_check(not system.get_activation_failure(SPRINT).is_empty(),
 				"Invalid authored drain cannot start a new Sprint")
 	_upkeep_calculation.stamina_per_interval = SPRINT_FIXTURE.STAMINA_PER_CHARGE
 	_attributes.set_base_value(CombatAttributes.Id.STAMINA, 100.0)
@@ -640,7 +642,7 @@ func _start_fixture(position: Vector3 = Vector3(0.0, 0.03, 0.0), settle: bool = 
 	_attributes = _player.get_node("Attributes") as ActorAttributes
 	_attributes.initial_modifiers = []
 	_world.add_child(_player)
-	var execution := system.get_ability_definition(&"sprint").execution as PhasedAbilityExecution
+	var execution := system.get_ability_definition(SPRINT).execution as PhasedAbilityExecution
 	var sprint := execution.phases[0].actions[0] as PlayerSprintAction
 	_upkeep_calculation = sprint.upkeep_effect.executions[0] as SprintStaminaUpkeepCalculation
 	_disable_processing(_player)

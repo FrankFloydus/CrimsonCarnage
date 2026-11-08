@@ -32,7 +32,7 @@ func _run() -> void:
 
 func _test_grant_and_inhibition() -> void:
 	var system := _new_actor()
-	var ability := _new_ability(&"temporary_ability")
+	var ability := _new_ability(259)
 	var permanent := system.grant_ability_spec(ability)
 	var grant := GrantAbilityEffectComponent.new()
 	grant.ability = ability
@@ -80,7 +80,7 @@ func _test_grant_and_inhibition() -> void:
 func _test_removal_policies() -> void:
 	var system := _new_actor()
 	var grant := GrantAbilityEffectComponent.new()
-	grant.ability = _new_ability(&"finish_then_remove")
+	grant.ability = _new_ability(260)
 	grant.removal_policy = GrantAbilityEffectComponent.RemovalPolicy.REMOVE_ON_END
 	var effect := _new_effect([grant])
 	var handle := system.effects.apply_effect(effect, system.create_effect_context())
@@ -119,7 +119,7 @@ func _test_reentrant_removal_during_grant() -> void:
 	system.attributes.gameplay_event_rules = [rule]
 	system.attributes.set_base_value(CombatAttributes.Id.CARRIED_WEIGHT,
 			system.attributes.get_value(CombatAttributes.Id.CARRY_CAPACITY) + 1.0)
-	var ability := _new_ability(&"remove_own_grant")
+	var ability := _new_ability(261)
 	ability.activation_event_tag = rule.entered_event
 	ability.execution = RemoveGrantOnActivation.new()
 	var grant := GrantAbilityEffectComponent.new()
@@ -133,7 +133,7 @@ func _test_reentrant_removal_during_grant() -> void:
 
 func _test_ability_tag_blocks() -> void:
 	var system := _new_actor()
-	var attack := _new_ability(&"attack")
+	var attack := _new_ability(262)
 	attack.ability_tags = PackedStringArray(["Ability.Test.Attack.Light"])
 	var grant := system.grant_ability_spec(attack)
 	var block := BlockAbilitiesEffectComponent.new()
@@ -191,7 +191,7 @@ func _new_actor() -> AbilitySystem:
 	return system
 
 
-func _new_ability(id: StringName) -> AbilityDefinition:
+func _new_ability(id: int) -> AbilityDefinition:
 	var ability := AbilityDefinition.new()
 	ability.ability_id = id
 	ability.execution = HeldExecution.new()

@@ -12,7 +12,7 @@ enum PaymentMilestone {
 
 
 class CommandRequest extends RefCounted:
-	var ability_id: StringName
+	var ability_id: int
 	var target_id: StringName
 	var world_id: StringName
 	var payer_id: StringName
@@ -54,7 +54,7 @@ func _init(ownership: PetOwnershipService, validate: Callable, pay_at_acceptance
 
 func accept(definition: CommandRequest) -> int:
 	if _ownership == null or definition == null or not _validate.is_valid() or not _dispatch.is_valid() \
-			or definition.ability_id.is_empty() or definition.target_id.is_empty() \
+			or definition.ability_id <= 0 or definition.target_id.is_empty() \
 			or definition.payer_id.is_empty() or definition.world_id.is_empty() \
 			or definition.credited_owner_id.is_empty() \
 			or not PaymentMilestone.values().has(definition.payment_milestone):

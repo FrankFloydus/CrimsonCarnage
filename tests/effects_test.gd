@@ -3,6 +3,7 @@ extends SceneTree
 ## Run: godot --headless --path . --script res://tests/effects_test.gd
 
 const ATTRIBUTE_FIXTURE = preload("res://tests/attribute_fixture.gd")
+const EMPOWERED_ID := 257
 
 var _checks: int = 0
 var _failures: int = 0
@@ -69,7 +70,7 @@ func _context(source: ActorAttributes) -> GameplayEffectContext:
 
 func _damage(amount: float) -> GameplayEffectDefinition:
 	var definition := GameplayEffectDefinition.new()
-	definition.effect_id = &"Effect.TestDamage"
+	definition.effect_id = 256
 	definition.display_name = "Test damage"
 	var execution := GameplayEffectDamageExecution.new()
 	execution.amount = AmountDefinition.fixed(amount)
@@ -89,7 +90,7 @@ func _modifier(attribute: CombatAttributes.Id, value: float,
 
 func _buff(duration: float = 2.0) -> GameplayEffectDefinition:
 	var definition := GameplayEffectDefinition.new()
-	definition.effect_id = &"Effect.Empowered"
+	definition.effect_id = EMPOWERED_ID
 	definition.display_name = "Empowered"
 	definition.timing = GameplayEffectDefinition.Timing.DURATION
 	definition.duration = duration
@@ -197,10 +198,10 @@ func _test_immutable_application_data() -> void:
 	definition.duration = 1000.0
 	definition.modifiers[0].value = 999.0
 	definition.granted_tags = PackedStringArray(["Buff.Changed"])
-	definition.effect_id = &"Effect.Changed"
+	definition.effect_id = 258
 	_near(actor.get_value(CombatAttributes.Id.MAGIC_POWER), base + original,
 			"Application copies its modifier values")
-	_check(runtime.active_count(&"Effect.Empowered") == 1,
+	_check(runtime.active_count(EMPOWERED_ID) == 1,
 			"An active instance retains its application identity")
 	runtime.advance(2.0)
 	_check(runtime.active_count() == 0 and not tags.has_tag(&"Buff"),

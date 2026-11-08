@@ -1,0 +1,285 @@
+{
+  "schema_version": 1,
+  "next_id": 100,
+  "attributes": [
+    {
+      "id": 0,
+      "key": "HEALTH",
+      "name": "Health",
+      "description": "Current Health points, from zero to maximum Health. Zero Health means death. Damage removes Health directly. Persistent modifiers change capacity or regeneration.",
+      "category": "Resources",
+      "unit": "Points",
+      "builtin": true
+    },
+    {
+      "id": 1,
+      "key": "MAX_HEALTH",
+      "name": "Max Health",
+      "description": "Health capacity. The startup base, Vitality derivation and flat bonuses are scaled by Increased and More modifiers. Increasing capacity does not restore current Health.",
+      "category": "Resources",
+      "unit": "Points",
+      "builtin": true
+    },
+    {
+      "id": 2,
+      "key": "STAMINA",
+      "name": "Stamina",
+      "description": "Current Stamina points, from zero to maximum Stamina. Abilities spend their authored costs. Sprint and Stamina Exhaustion pause Stamina recovery.",
+      "category": "Resources",
+      "unit": "Points",
+      "builtin": true
+    },
+    {
+      "id": 3,
+      "key": "MAX_STAMINA",
+      "name": "Max Stamina",
+      "description": "Stamina capacity. The startup base, Vitality derivation and flat bonuses are scaled by Increased and More modifiers. Increasing capacity does not refill Stamina.",
+      "category": "Resources",
+      "unit": "Points",
+      "builtin": true
+    },
+    {
+      "id": 4,
+      "key": "MANA",
+      "name": "Mana",
+      "description": "Current Mana points, from zero to maximum Mana. Abilities spend their authored costs. Regeneration restores Mana while alive, including during casting.",
+      "category": "Resources",
+      "unit": "Points",
+      "builtin": true
+    },
+    {
+      "id": 5,
+      "key": "MAX_MANA",
+      "name": "Max Mana",
+      "description": "Mana capacity. The startup base, Intellect derivation and flat bonuses are scaled by Increased and More modifiers. Increasing capacity does not refill Mana.",
+      "category": "Resources",
+      "unit": "Points",
+      "builtin": true
+    },
+    {
+      "id": 6,
+      "key": "STRENGTH",
+      "name": "Strength",
+      "description": "Primary for Brutality attacks. Grants Physical Power and Accuracy Rating to those attacks and contributes to Carry Capacity. Uses the full primary value, including gear bonuses.",
+      "category": "Primaries",
+      "unit": "Points",
+      "builtin": true
+    },
+    {
+      "id": 7,
+      "key": "DEXTERITY",
+      "name": "Dexterity",
+      "description": "Primary for Finesse attacks, including bow shots. Grants Physical Power and Accuracy Rating to those attacks. Uses the full primary value, including gear bonuses.",
+      "category": "Primaries",
+      "unit": "Points",
+      "builtin": true
+    },
+    {
+      "id": 8,
+      "key": "INTELLECT",
+      "name": "Intellect",
+      "description": "Primary for spells. Grants spell Accuracy Rating and contributes to Magic Power and maximum Mana through Attribute Derivations.",
+      "category": "Primaries",
+      "unit": "Points",
+      "builtin": true
+    },
+    {
+      "id": 9,
+      "key": "VITALITY",
+      "name": "Vitality",
+      "description": "Survival primary. Grants flat maximum Health and maximum Stamina through Attribute Derivations.",
+      "category": "Primaries",
+      "unit": "Points",
+      "builtin": true
+    },
+    {
+      "id": 10,
+      "key": "HEALTH_REGEN",
+      "name": "Health Regen",
+      "description": "Health points restored per second while alive. Scales with authored modifiers. Primary attributes and capacity do not increase the rate. Stops at maximum Health.",
+      "category": "Resources",
+      "unit": "Points/sec",
+      "builtin": true
+    },
+    {
+      "id": 11,
+      "key": "STAMINA_REGEN",
+      "name": "Stamina Regen",
+      "description": "Stamina points restored per second while alive. Scales with authored modifiers and stops at maximum Stamina. Sprint and Stamina Exhaustion pause this recovery.",
+      "category": "Resources",
+      "unit": "Points/sec",
+      "builtin": true
+    },
+    {
+      "id": 12,
+      "key": "MANA_REGEN",
+      "name": "Mana Regen",
+      "description": "Mana points restored per second while alive, including while casting. Scales with authored modifiers. Primary attributes and capacity do not increase the rate.",
+      "category": "Resources",
+      "unit": "Points/sec",
+      "builtin": true
+    },
+    {
+      "id": 14,
+      "key": "CRITICAL_CHANCE",
+      "name": "Critical Chance",
+      "description": "Chance for a successful direct damage hit to critically strike. Flat bonuses are percentage points. Increased and More modifiers scale the total before its configured bounds.",
+      "category": "Offense",
+      "unit": "%",
+      "builtin": true
+    },
+    {
+      "id": 15,
+      "key": "CRITICAL_DAMAGE",
+      "name": "Critical Damage",
+      "description": "Bonus percentage points added to the base critical damage multiplier. Flat bonuses add points. Increased and More scale the bonus. Applies to attack and spell critical damage.",
+      "category": "Offense",
+      "unit": "%",
+      "builtin": true
+    },
+    {
+      "id": 18,
+      "key": "ARMOR",
+      "name": "Armor",
+      "description": "Nonnegative rating that reduces incoming Physical damage with diminishing returns. Extra rating remains available beyond the mitigation ceiling. Armor Penetration can reduce its effective rating.",
+      "category": "Defense",
+      "unit": "Rating",
+      "builtin": true
+    },
+    {
+      "id": 19,
+      "key": "FIRE_RESISTANCE",
+      "name": "Fire Resistance",
+      "description": "Percentage reduction to incoming Fire magic damage. Negative values amplify damage. Flat modifiers use percentage points. Increased and More modifiers apply before the configured bounds.",
+      "category": "Defense",
+      "unit": "%",
+      "builtin": true
+    },
+    {
+      "id": 20,
+      "key": "COLD_RESISTANCE",
+      "name": "Cold Resistance",
+      "description": "Percentage reduction to incoming Cold magic damage. Negative values amplify damage. Flat modifiers use percentage points. Increased and More modifiers apply before the configured bounds.",
+      "category": "Defense",
+      "unit": "%",
+      "builtin": true
+    },
+    {
+      "id": 21,
+      "key": "LIGHTNING_RESISTANCE",
+      "name": "Lightning Resistance",
+      "description": "Percentage reduction to incoming Lightning magic damage. Negative values amplify damage. Flat modifiers use percentage points. Increased and More modifiers apply before the configured bounds.",
+      "category": "Defense",
+      "unit": "%",
+      "builtin": true
+    },
+    {
+      "id": 22,
+      "key": "NECROTIC_RESISTANCE",
+      "name": "Necrotic Resistance",
+      "description": "Percentage reduction to incoming Necrotic magic damage. Negative values amplify damage. Flat modifiers use percentage points. Increased and More modifiers apply before the configured bounds.",
+      "category": "Defense",
+      "unit": "%",
+      "builtin": true
+    },
+    {
+      "id": 34,
+      "key": "ARMOR_PENETRATION",
+      "name": "Armor Penetration",
+      "description": "Percentage of target Armor ignored by outgoing Physical damage before the mitigation curve. Flat bonuses add percentage points. Penetration changes effective Armor for that damage component.",
+      "category": "Offense",
+      "unit": "%",
+      "builtin": true
+    },
+    {
+      "id": 38,
+      "key": "CARRY_CAPACITY",
+      "name": "Carry Capacity",
+      "description": "Threshold for encumbrance. The startup base, Strength derivation and flat bonuses are scaled by Increased and More modifiers. Movement slows when Carried Weight exceeds this value.",
+      "category": "Resources",
+      "unit": "Weight",
+      "builtin": true
+    },
+    {
+      "id": 39,
+      "key": "CARRIED_WEIGHT",
+      "name": "Carried Weight",
+      "description": "Actual carried weight. Flat adjustments apply before Increased and More modifiers. The final weight is nonnegative. Movement slows above Carry Capacity.",
+      "category": "Resources",
+      "unit": "Weight",
+      "builtin": true
+    },
+    {
+      "id": 40,
+      "key": "ACCURACY_RATING",
+      "name": "Accuracy Rating",
+      "description": "Action-specific rating used by the shared attack and spell hit check. Strength governs Brutality, Dexterity governs Finesse, and Intellect governs spells. Target level determines the base chance and ceiling.",
+      "category": "Offense",
+      "unit": "Rating",
+      "builtin": true
+    },
+    {
+      "id": 42,
+      "key": "MAGIC_POWER",
+      "name": "Magic Power",
+      "description": "Flat offensive power for spells. The Intellect derivation contributes before flat bonuses, Increased and More modifiers. Authored effect coefficients convert power into damage.",
+      "category": "Offense",
+      "unit": "Points",
+      "builtin": true
+    },
+    {
+      "id": 44,
+      "key": "VOID_RESISTANCE",
+      "name": "Void Resistance",
+      "description": "Percentage reduction to incoming Void magic damage. Negative values amplify damage. Flat modifiers use percentage points. Increased and More modifiers apply before the configured bounds.",
+      "category": "Defense",
+      "unit": "%",
+      "builtin": true
+    },
+    {
+      "id": 53,
+      "key": "PHYSICAL_POWER",
+      "name": "Physical Power",
+      "description": "Flat offensive power for Physical attacks. Brutality uses Strength and Finesse uses Dexterity. Authored attack coefficients convert power into damage.",
+      "category": "Offense",
+      "unit": "Points",
+      "builtin": true
+    },
+    {
+      "id": 54,
+      "key": "MOVEMENT_SPEED",
+      "name": "Movement Speed",
+      "description": "Bonus percentage points to normal movement speed. Zero is normal speed. Increased and More modifiers scale the bonus before its configured bounds. Other gaits keep their authored proportions.",
+      "category": "Movement",
+      "unit": "%",
+      "builtin": true
+    },
+    {
+      "id": 55,
+      "key": "ATTACK_SPEED",
+      "name": "Attack Speed",
+      "description": "Additive percentage-point bonus to attack animation playback. Zero is normal speed. The final capped bonus is sampled when the ability starts.",
+      "category": "Offense",
+      "unit": "%",
+      "builtin": true
+    },
+    {
+      "id": 56,
+      "key": "CAST_SPEED",
+      "name": "Cast Speed",
+      "description": "Additive percentage-point bonus to spell animation playback. Zero is normal speed. The final capped bonus is sampled when the ability starts.",
+      "category": "Offense",
+      "unit": "%",
+      "builtin": true
+    },
+    {
+      "id": 57,
+      "key": "SPELL_PENETRATION",
+      "name": "Spell Penetration",
+      "description": "Percentage points subtracted from the matching resistance for each Magic component of a spell hit. Flat bonuses add percentage points. Effective resistance uses its configured lower bound.",
+      "category": "Offense",
+      "unit": "%",
+      "builtin": true
+    }
+  ]
+}

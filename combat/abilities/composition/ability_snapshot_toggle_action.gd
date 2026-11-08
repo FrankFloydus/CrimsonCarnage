@@ -8,7 +8,7 @@ extends AbilityActionDefinition
 
 
 func get_validation_error() -> StringName:
-	if snapshot_effect == null or snapshot_effect.effect_id.is_empty():
+	if snapshot_effect == null or snapshot_effect.effect_id <= 0:
 		return &"missing_snapshot_effect"
 	for component in snapshot_effect.components:
 		if component is SelectiveResourceSnapshotEffectComponent and component.restore_on_manual_removal:

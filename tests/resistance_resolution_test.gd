@@ -51,7 +51,7 @@ func _actor() -> ActorAttributes:
 func _effect(school: int = GameplayEffectDefinition.MagicSchool.FIRE, amount: float = 100.0) -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
 	effect.executions = [GameplayEffectDamageExecution.new()]
-	effect.effect_id = &"Effect.ResistanceTest"
+	effect.effect_id = 269
 	effect.damage_type = GameplayEffectDefinition.DamageType.MAGIC
 	effect.magic_school = school
 	effect.get_damage_execution().amount = AmountDefinition.fixed(amount)

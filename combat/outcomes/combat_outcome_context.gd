@@ -196,7 +196,7 @@ func get_execution_reactions() -> Array[ReactionDefinition]:
 	return _execution.reactions.duplicate()
 
 
-func set_execution_identity(ability_id: StringName, ability_name: String) -> void:
+func set_execution_identity(ability_id: int, ability_name: String) -> void:
 	_execution.ability_id = ability_id
 	_execution.ability_name = ability_name
 
@@ -294,5 +294,5 @@ class ExecutionScope extends RefCounted:
 	var amount_snapshot: AmountEvaluationContext
 	var rank: int = 1
 	var scope_tags: PackedStringArray = PackedStringArray()
-	var ability_id: StringName
+	var ability_id: int = 0
 	var ability_name: String

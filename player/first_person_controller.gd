@@ -2,9 +2,9 @@ class_name FirstPersonController
 extends CharacterBody3D
 ## Sends action input to the AbilitySystem and advances physical locomotion once.
 
-const SPRINT: StringName = &"sprint"
-const JUMP: StringName = &"jump"
-const CROUCH: StringName = &"crouch"
+const SPRINT_ABILITY = preload("res://player/abilities/sprint.tres")
+const JUMP_ABILITY = preload("res://player/abilities/jump.tres")
+const CROUCH_ABILITY = preload("res://player/abilities/crouch.tres")
 
 var _gait := FirstPersonGait.new()
 var _sprint_input_held: bool = false
@@ -27,9 +27,9 @@ func _physics_process(delta: float) -> void:
 		return
 	var movement_input := Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_backward")
 	advance_locomotion(delta, movement_input,
-			Input.is_action_just_pressed(JUMP),
-			Input.is_action_just_pressed(CROUCH), Input.is_action_pressed(CROUCH),
-			Input.is_action_pressed(SPRINT), Input.is_action_pressed(&"walk")
+			Input.is_action_just_pressed(&"jump"),
+			Input.is_action_just_pressed(&"crouch"), Input.is_action_pressed(&"crouch"),
+			Input.is_action_pressed(&"sprint"), Input.is_action_pressed(&"walk")
 	)
 
 
@@ -43,8 +43,9 @@ func advance_locomotion(
 		sprint_held: bool = false,
 		walk_held: bool = false
 ) -> void:
+	var jump_id: int = JUMP_ABILITY.ability_id
 	_update_crouch_input(crouch_pressed, crouch_held,
-			not jump_pressed and _abilities.get_active_cast(JUMP) == null)
+			not jump_pressed and _abilities.get_active_cast(jump_id) == null)
 	_crouch.retry_standing()
 	_update_sprint_input(delta, sprint_held, walk_held)
 	var movement_locked := _abilities.tags.has_tag(&"State.Control.Rooted") \
@@ -53,45 +54,47 @@ func advance_locomotion(
 			not movement_locked and (jump_pressed or not movement_input.is_zero_approx())
 	)
 	movement_locked = movement_locked or cast_locks_movement
-	if jump_pressed and not movement_locked and _abilities.get_active_cast(JUMP) == null:
-		_abilities.try_activate(JUMP)
+	if jump_pressed and not movement_locked and _abilities.get_active_cast(jump_id) == null:
+		_abilities.try_activate(jump_id)
 	_movement.move(delta, movement_input, _gait.current_gait, movement_locked)
 
 
 func _update_crouch_input(pressed: bool, held: bool, can_enter: bool) -> void:
-	var active := _abilities.get_active_cast(CROUCH)
+	var ability_id: int = CROUCH_ABILITY.ability_id
+	var active := _abilities.get_active_cast(ability_id)
 	if _crouch.settings.mode == FirstPersonCrouchSettings.Mode.TOGGLE:
 		if pressed:
 			if active != null:
-				_abilities.release_ability(CROUCH)
+				_abilities.release_ability(ability_id)
 			elif can_enter:
-				_abilities.try_activate(CROUCH)
+				_abilities.try_activate(ability_id)
 	elif held:
-		if active == null and can_enter and _abilities.get_activation_failure(CROUCH).is_empty():
-			_abilities.try_activate(CROUCH)
+		if active == null and can_enter and _abilities.get_activation_failure(ability_id).is_empty():
+			_abilities.try_activate(ability_id)
 	elif _crouch_input_held:
-		_abilities.release_ability(CROUCH)
+		_abilities.release_ability(ability_id)
 	_crouch_input_held = held
 
 
 func _update_sprint_input(delta: float, held: bool, walking: bool) -> void:
+	var ability_id: int = SPRINT_ABILITY.ability_id
 	if not held:
 		if _sprint_input_held:
-			_abilities.release_ability(SPRINT)
+			_abilities.release_ability(ability_id)
 		_gait.clear_sprint_release()
 	_sprint_input_held = held
-	var active := _abilities.get_active_cast(SPRINT)
+	var active := _abilities.get_active_cast(ability_id)
 	var can_continue := active == null or _movement.can_continue_sprint(delta)
 	_gait.advance(held or active != null, walking, _crouch.is_crouching, true, can_continue)
 	if active != null and _gait.sprint_requires_release:
 		active.cancel()
 	elif active == null and _gait.current_gait == FirstPersonGait.Gait.SPRINT:
-		if not _abilities.try_activate(SPRINT) or _abilities.get_active_cast(SPRINT) == null:
+		if not _abilities.try_activate(ability_id) or _abilities.get_active_cast(ability_id) == null:
 			_gait.advance(held, walking, _crouch.is_crouching, true, false)
 
 
-func _on_ability_ended(ability_id: StringName, cancelled: bool) -> void:
-	if ability_id == SPRINT and cancelled and _sprint_input_held:
+func _on_ability_ended(ability_id: int, cancelled: bool) -> void:
+	if ability_id == SPRINT_ABILITY.ability_id and cancelled and _sprint_input_held:
 		_gait.require_sprint_release()
 
 

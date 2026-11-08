@@ -2,8 +2,8 @@ class_name AbilityDispelAction
 extends AbilityActionDefinition
 ## Removes matching retained effects using their effect handles and the caster as instigator.
 
-## Optional exact effect ID to remove. When both selectors are set, both must match.
-@export var effect_id: StringName = &""
+## Exact effect ID to remove. Zero matches by tags alone. When both selectors are set, both must match.
+@export var effect_id: int = 0
 ## Eligible asset tags. Any listed tag or its descendants match.
 @export var asset_tags: PackedStringArray = PackedStringArray()
 ## Largest number of matching effects to remove from one actor. Zero removes every match.
@@ -11,7 +11,8 @@ extends AbilityActionDefinition
 
 
 func get_validation_error() -> StringName:
-	if (effect_id.is_empty() and asset_tags.is_empty()) or asset_tags.has("") or maximum_per_target < 0:
+	if effect_id < 0 or (effect_id == 0 and asset_tags.is_empty()) \
+			or asset_tags.has("") or maximum_per_target < 0:
 		return &"invalid_dispel_selector"
 	return &""
 
@@ -39,7 +40,7 @@ func execute(context: AbilityPhaseContext, targets: AbilityTargetSet) -> int:
 
 
 func _matches(effect: GameplayEffectDefinition) -> bool:
-	if not effect_id.is_empty() and effect_id != effect.effect_id:
+	if effect_id != 0 and effect_id != effect.effect_id:
 		return false
 	if asset_tags.is_empty():
 		return true

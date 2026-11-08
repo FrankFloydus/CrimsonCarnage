@@ -276,7 +276,7 @@ func _test_combat_hud() -> void:
 	_near(float(success_value.text.trim_suffix("%")), 80.0, "The spell preview shows actual success chance")
 	_near(float(failure_value.text.trim_suffix("%")), 20.0, "The spell preview shows actual resistance chance")
 	target.level = 11
-	tools.select_ability(&"fireball")
+	tools.select_ability(FIREBALL.ability_id)
 	tools.show_attributes(1)
 	var actor_level := sheet.get_node("%ActorLevel") as Label
 	_check(actor_level.text == "Lv. 11", "The sheet reports the edited dummy level")

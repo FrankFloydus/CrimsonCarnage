@@ -2,7 +2,7 @@ extends SceneTree
 ## Runs a designer-authored transfer phase through targeted activation and actual damage commitment.
 
 const HEALTH := CombatAttributes.Id.HEALTH
-const SHIELD_ID := &"Effect.Test.TransferShield"
+const SHIELD_ID := 204
 const ELIGIBLE := &"State.Test.Eligible"
 const TRANSFER_ACTION := preload("res://combat/abilities/composition/ability_transfer_effect_action.gd")
 
@@ -22,7 +22,7 @@ func _run() -> void:
 	var donor := _actor(arena)
 	donor.tags.add_tag(ELIGIBLE)
 	var wrong := _shield()
-	wrong.effect_id = &"Effect.Test.NonMagicalShield"
+	wrong.effect_id = 205
 	wrong.asset_tags = PackedStringArray(["Effect.Beneficial"])
 	wrong.components = []
 	wrong.granted_tags = PackedStringArray(["State.Test.NonMagicalShield"])
@@ -106,7 +106,7 @@ func _recipe(action: AbilityActionDefinition) -> AbilityDefinition:
 	execution.delivery = AbilityDeliveryDefinition.new()
 	execution.phases = [phase]
 	var ability := AbilityDefinition.new()
-	ability.ability_id = &"fixture_transfer"
+	ability.ability_id = 206
 	ability.execution = execution
 	return ability
 

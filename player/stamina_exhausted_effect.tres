@@ -5,11 +5,13 @@
 [ext_resource type="Script" uid="uid://bmu4hnn0quf7l" path="res://combat/attributes/attribute_modifier.gd" id="1_vtrh0"]
 [ext_resource type="Script" uid="uid://divtubtmdgcq4" path="res://combat/effects/gameplay_effect_execution.gd" id="2_7sxv8"]
 [ext_resource type="Script" uid="uid://0pha8yyuqu58" path="res://combat/outcomes/reaction_definition.gd" id="4_3tc64"]
+[ext_resource type="Texture2D" uid="uid://0pbuyscv57w2" path="res://player/abilities/icons/stamina_exhaustion.svg" id="5_icon"]
 
 [resource]
 script = ExtResource("1_effect")
-effect_id = &"Effect.Stamina.Exhausted"
+effect_id = 10
 display_name = "Stamina Exhausted"
+icon = ExtResource("5_icon")
 timing = 1
 asset_tags = PackedStringArray()
 gameplay_cue_tags = PackedStringArray()

@@ -14,6 +14,8 @@ class CueProbe extends Node:
 const SYSTEM = preload("res://combat/abilities/ability_system.gd")
 const CUE_TAG: StringName = &"GameplayCue.Test.Impact"
 const PARENT_TAG: StringName = &"GameplayCue.Test"
+const CUE_EFFECT_ID := 266
+const CUE_ABILITY_ID := 267
 
 var _checks: int = 0
 var _failures: int = 0
@@ -43,10 +45,10 @@ func _run() -> void:
 
 func _make_spec(source: ActorAttributes) -> GameplayEffectSpec:
 	var effect := GameplayEffectDefinition.new()
-	effect.effect_id = &"Effect.Test.Cue"
+	effect.effect_id = CUE_EFFECT_ID
 	effect.gameplay_cue_tags = PackedStringArray([String(CUE_TAG), String(CUE_TAG)])
 	var context := GameplayEffectContext.capture(source, null)
-	context.ability_id = &"ability_test"
+	context.ability_id = CUE_ABILITY_ID
 	var spec := GameplayEffectSpec.new(effect, context)
 	spec.level = 3.0
 	return spec
@@ -59,7 +61,7 @@ func _test_handlers(spec: GameplayEffectSpec, attributes: ActorAttributes) -> vo
 	var parent_handler := func(_target: Node, tag: StringName, _event: int, _data: Dictionary) -> void:
 		parent_calls.append(tag)
 	var mutating_handler := func(_target: Node, _tag: StringName, _event: int, data: Dictionary) -> void:
-		data["effect_id"] = &"Effect.Unrelated"
+		data["effect_id"] = 268
 	var exact_handler := func(target: Node, _tag: StringName, event: int, data: Dictionary) -> void:
 		_check(target == attributes.get_parent() and event == GameplayCueRouter.Event.EXECUTED,
 				"The callback receives the affected actor and event")
@@ -76,7 +78,7 @@ func _test_handlers(spec: GameplayEffectSpec, attributes: ActorAttributes) -> vo
 	_check(seen_parameters.size() == 1, "Each exact callback sees one dispatched event")
 	if not seen_parameters.is_empty():
 		var payload := seen_parameters[0]
-		_check(payload["effect_id"] == &"Effect.Test.Cue" and payload["ability_id"] == &"ability_test"
+		_check(payload["effect_id"] == CUE_EFFECT_ID and payload["ability_id"] == CUE_ABILITY_ID
 				and payload["effect_level"] == 3.0 and payload["health_damage"] == 15.0,
 				"Cue metadata comes from the spec and resolved details, isolated from other handlers")
 	cues.unregister_handler(CUE_TAG, mutating_handler)

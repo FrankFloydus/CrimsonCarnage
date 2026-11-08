@@ -29,7 +29,7 @@ func _validate_property(property: Dictionary) -> void:
 func get_validation_error(definition: GameplayEffectDefinition) -> StringName:
 	if definition.timing == GameplayEffectDefinition.Timing.INSTANT:
 		return &"Effect.AbilityGrantRequiresLifetime"
-	if ability == null or ability.ability_id.is_empty() or ability.execution == null or grant_level < 0:
+	if ability == null or ability.ability_id <= 0 or ability.execution == null or grant_level < 0:
 		return &"Effect.InvalidAbilityGrant"
 	if removal_policy not in RemovalPolicy.values():
 		return &"Effect.InvalidAbilityRemovalPolicy"

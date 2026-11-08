@@ -6,7 +6,8 @@ var source_id: int = 0
 var source_name: String = ""
 ## Optional source of the ability or effect, such as the Resource that supplied its grant.
 var source_object: Object
-var ability_id: StringName = &""
+## Authored ability identity, or zero for a payload without an ability.
+var ability_id: int = 0
 var ability_name: String = ""
 var ability_tags := PackedStringArray()
 ## Per-execution identity shared with detached descendants.
@@ -75,7 +76,7 @@ func create_combat_event(
 		"ability_id": ability_id,
 		"ability_name": ability_name,
 		"ability_tags": ability_tags.duplicate(),
-		"effect_id": &"",
+		"effect_id": 0,
 		"effect_name": "",
 		"amount": 0.0,
 		"resolved_amount": 0.0,

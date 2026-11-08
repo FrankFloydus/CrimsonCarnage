@@ -47,7 +47,7 @@ func _context(source: ActorAttributes, spell: bool = true) -> GameplayEffectCont
 func _damage(amount: float = 100.0, magic: bool = false) -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
 	effect.executions = [GameplayEffectDamageExecution.new()]
-	effect.effect_id = &"Effect.CriticalTest"
+	effect.effect_id = 255
 	effect.get_damage_execution().amount = AmountDefinition.fixed(amount)
 	if magic:
 		effect.damage_type = GameplayEffectDefinition.DamageType.MAGIC
@@ -163,7 +163,7 @@ func _test_shared_hybrid_critical_and_action_scopes() -> void:
 		else:
 			_check(not event.is_critical or event.damage_type >= 0,
 					"Non-damage lifecycle events do not invent a separate critical")
-		if event.effect_id == &"":
+		if event.effect_id == 0:
 			_check(not event.is_critical, "Attached modifier lifecycle events remain noncritical")
 	_check(damage_events == 3, "A hybrid critical reports three component damage events, not three critical rolls")
 	_near(target.get_value(CombatAttributes.Id.STRENGTH), 20.0, "A critical does not multiply attached modifier potency")

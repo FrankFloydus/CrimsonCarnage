@@ -171,7 +171,7 @@ func _test_linked_damage_echo() -> void:
 	var observation := _linked_observation(ReactionDefinition.Trigger.ON_DAMAGE_RESOLVED, action)
 	_install_observer(caster, secondary, observation)
 	var effect := GameplayEffectDefinition.new()
-	effect.effect_id = &"Test.Echo"
+	effect.effect_id = 249
 	effect.damage_type = GameplayEffectDefinition.DamageType.MAGIC
 	var execution := GameplayEffectDamageExecution.new()
 	execution.amount = AmountDefinition.fixed(20.0)
@@ -202,7 +202,7 @@ func _test_linked_healing_copy() -> void:
 	var incoming := HealingReceivedEffectComponent.new()
 	incoming.multiplier = 0.5
 	var reduction := GameplayEffectDefinition.new()
-	reduction.effect_id = &"Test.HealingReduction"
+	reduction.effect_id = 250
 	reduction.timing = GameplayEffectDefinition.Timing.INFINITE
 	reduction.components = [incoming]
 	secondary.apply_effect_spec_to_self(secondary.make_outgoing_spec(reduction))
@@ -247,14 +247,14 @@ func _test_one_empowerment_use_per_attack() -> void:
 	behavior.reactions = [reaction]
 	behavior.attack_uses = 1
 	var buff := GameplayEffectDefinition.new()
-	buff.effect_id = &"Test.Empower"
+	buff.effect_id = 251
 	buff.timing = GameplayEffectDefinition.Timing.DURATION
 	buff.duration = 5.0
 	buff.components = [behavior]
 	var handle := caster.apply_effect_spec_to_self(caster.make_outgoing_spec(buff))
 	_check(handle > 0, "Temporary per-attack empowerment retains one owned effect handle")
 	var damage := GameplayEffectDefinition.new()
-	damage.effect_id = &"Test.EmpoweredHit"
+	damage.effect_id = 252
 	var execution := GameplayEffectDamageExecution.new()
 	execution.amount = AmountDefinition.fixed(10.0)
 	damage.executions = [execution]
@@ -381,7 +381,7 @@ func _linked_observation(trigger: ReactionDefinition.Trigger, action: CombatReac
 
 func _install_observer(caster: AbilitySystem, secondary: AbilitySystem, reaction: ReactionDefinition) -> void:
 	var mark := GameplayEffectDefinition.new()
-	mark.effect_id = &"Test.CopyTarget"
+	mark.effect_id = 253
 	mark.timing = GameplayEffectDefinition.Timing.INFINITE
 	mark.exclusive_owner_slot = reaction.link_slot
 	var marked := secondary.apply_effect_spec_to_self(caster.make_outgoing_spec(mark))
@@ -389,7 +389,7 @@ func _install_observer(caster: AbilitySystem, secondary: AbilitySystem, reaction
 	var behavior := ObserveOutcomeEffectComponent.new()
 	behavior.reactions = [reaction]
 	var observation := GameplayEffectDefinition.new()
-	observation.effect_id = &"Test.CopyObserver"
+	observation.effect_id = 254
 	observation.timing = GameplayEffectDefinition.Timing.INFINITE
 	observation.components = [behavior]
 	var observed := caster.apply_effect_spec_to_self(caster.make_outgoing_spec(observation))

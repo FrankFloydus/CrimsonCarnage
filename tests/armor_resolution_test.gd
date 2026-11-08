@@ -43,7 +43,7 @@ func _context(source: ActorAttributes, spell: bool = false) -> GameplayEffectCon
 func _physical(amount: float = 100.0) -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
 	effect.executions = [GameplayEffectDamageExecution.new()]
-	effect.effect_id = &"Effect.ArmorPhysicalTest"
+	effect.effect_id = 248
 	effect.get_damage_execution().amount = AmountDefinition.fixed(amount)
 	return effect
 

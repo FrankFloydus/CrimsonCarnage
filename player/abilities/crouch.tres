@@ -9,6 +9,7 @@
 [ext_resource type="Script" uid="uid://cikanmca8pahh" path="res://player/abilities/player_crouch_action.gd" id="6_crouch"]
 [ext_resource type="Script" uid="uid://0pha8yyuqu58" path="res://combat/outcomes/reaction_definition.gd" id="7_vvh3a"]
 [ext_resource type="Script" uid="uid://lj1m7cwhno0o" path="res://combat/abilities/ability_resource_cost.gd" id="8_bmnpd"]
+[ext_resource type="Texture2D" uid="uid://doern5vycwm7y" path="res://player/abilities/icons/crouch.svg" id="9_icon"]
 
 [sub_resource type="Resource" id="Delivery_none"]
 script = ExtResource("3_delivery")
@@ -40,8 +41,9 @@ phases = Array[ExtResource("4_phase")]([SubResource("Phase_start"), SubResource(
 
 [resource]
 script = ExtResource("1_ability")
-ability_id = &"crouch"
+ability_id = 3
 display_name = "Crouch"
+icon = ExtResource("9_icon")
 ability_tags = PackedStringArray("Ability.Movement.Crouch")
 required_tags = PackedStringArray()
 activation_tags = PackedStringArray()

@@ -134,8 +134,9 @@ func _refresh_effect_icons() -> void:
 		var icon := EFFECT_ICON.instantiate() as PanelContainer
 		var texture := icon.get_node("Texture") as TextureRect
 		texture.texture = definition.icon
-		icon.tooltip_text = definition.display_name if not definition.display_name.is_empty() \
-				else String(definition.effect_id)
+		icon.tooltip_text = definition.display_name
+		if icon.tooltip_text.is_empty():
+			icon.tooltip_text = "Effect %d" % definition.effect_id if definition.effect_id > 0 else "Effect"
 		_effect_icons[handle] = icon
 		strip.add_child(icon)
 	_effect_strips.visible = not _effect_icons.is_empty()

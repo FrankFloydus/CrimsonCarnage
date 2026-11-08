@@ -44,7 +44,7 @@ func _run() -> void:
 
 
 func _test_timing_and_events() -> void:
-	var cast := _activate(&"timing")
+	var cast := _activate(200)
 	var events: Array[StringName] = []
 	var wait := AbilityTaskWaitGameplayEvent.new(&"Event.Task", true, false)
 	wait.event_received.connect(func(tag: StringName, payload: Dictionary) -> void:
@@ -72,8 +72,8 @@ func _test_timing_and_events() -> void:
 
 
 func _test_input_release() -> void:
-	var cast := _activate(&"held")
-	var other := _activate(&"other")
+	var cast := _activate(201)
+	var other := _activate(202)
 	var releases: Array[StringName] = []
 	var wait := AbilityTaskWaitInputRelease.new()
 	wait.released.connect(func() -> void: releases.append(&"held"))
@@ -91,7 +91,7 @@ func _test_input_release() -> void:
 
 
 func _test_animation_lifetime() -> void:
-	var cast := _activate(&"animation")
+	var cast := _activate(203)
 	var results: Array[StringName] = []
 	var animation := AbilityTaskPlayAnimationAndWait.new(&"test_clip")
 	animation.completed.connect(func() -> void:
@@ -117,7 +117,7 @@ func _test_animation_lifetime() -> void:
 			"Cancelling the owning cast stops playback and emits cancellation only")
 
 
-func _activate(ability_id: StringName) -> AbilityCast:
+func _activate(ability_id: int) -> AbilityCast:
 	var definition := AbilityDefinition.new()
 	definition.ability_id = ability_id
 	definition.execution = HeldExecution.new()

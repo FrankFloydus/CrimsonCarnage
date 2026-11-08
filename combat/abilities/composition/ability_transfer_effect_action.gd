@@ -2,8 +2,8 @@ class_name AbilityTransferEffectAction
 extends AbilityActionDefinition
 ## Moves one eligible retained effect per selected actor to the executing actor.
 
-## Optional exact effect ID. When both selectors are set, both must match.
-@export var effect_id: StringName = &""
+## Exact effect ID to transfer. Zero matches by tags alone. When both selectors are set, both must match.
+@export var effect_id: int = 0
 ## Every tag or a descendant must identify the effect asset, such as Effect.Beneficial and Effect.Magical.
 @export var required_asset_tags: PackedStringArray = PackedStringArray()
 ## Upper limit on the remaining lifetime carried over, in seconds. Zero preserves remaining time.
@@ -13,7 +13,7 @@ extends AbilityActionDefinition
 
 
 func get_validation_error() -> StringName:
-	if (effect_id.is_empty() and required_asset_tags.is_empty()) or required_asset_tags.has(""):
+	if effect_id < 0 or (effect_id == 0 and required_asset_tags.is_empty()) or required_asset_tags.has(""):
 		return &"invalid_transfer_selector"
 	if not is_finite(duration_cap) or duration_cap < 0.0 or stack_cap < 0:
 		return &"invalid_transfer_limits"
@@ -56,7 +56,7 @@ func _transfer_one(source: GameplayEffectRuntime, recipient: GameplayEffectRunti
 
 
 func _matches(definition: GameplayEffectDefinition) -> bool:
-	if not definition.is_transferable() or (not effect_id.is_empty() and effect_id != definition.effect_id):
+	if not definition.is_transferable() or (effect_id != 0 and effect_id != definition.effect_id):
 		return false
 	for query: String in required_asset_tags:
 		if not AttributeModifier._has_match(definition.asset_tags, query):

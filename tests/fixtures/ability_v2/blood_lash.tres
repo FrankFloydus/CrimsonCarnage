@@ -38,7 +38,7 @@ amount = SubResource("Amount_damage")
 
 [sub_resource type="Resource" id="Effect_damage"]
 script = ExtResource("8_effect")
-effect_id = &"Effect.Fixture.BloodLash.Impact"
+effect_id = 16
 display_name = "Blood Lash impact"
 damage_type = 1
 magic_school = 4
@@ -57,7 +57,7 @@ immunity_tags = PackedStringArray("State.Immune.Slow")
 
 [sub_resource type="Resource" id="Effect_slow"]
 script = ExtResource("8_effect")
-effect_id = &"Effect.Fixture.BloodLash.Slow"
+effect_id = 17
 display_name = "Blood Lash slow"
 timing = 1
 duration = 2.0
@@ -99,7 +99,7 @@ phases = Array[ExtResource("5_phase")]([SubResource("Phase_impact")])
 
 [resource]
 script = ExtResource("1_ability")
-ability_id = &"fixture_blood_lash"
+ability_id = 14
 display_name = "Blood Lash"
 ability_tags = PackedStringArray("Ability.Spell", "Ability.Fixture.BloodLash")
 execution = SubResource("Execution_composition")

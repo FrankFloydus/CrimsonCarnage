@@ -9,7 +9,7 @@
 
 [resource]
 script = ExtResource("1_effect")
-effect_id = &"Effect.Encumbered"
+effect_id = 9
 display_name = "Encumbered"
 icon = ExtResource("2_icon")
 hud_category = 2

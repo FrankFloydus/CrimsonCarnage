@@ -7,6 +7,7 @@ const CRIMSON_PROJECTILE_PATH := "res://tests/fixtures/ability_v2/crimson_bolt_p
 const HEALTH := CombatAttributes.Id.HEALTH
 const MANA := CombatAttributes.Id.MANA
 const MOVEMENT_SPEED := CombatAttributes.Id.MOVEMENT_SPEED
+const CRIMSON_PERIODIC_ID := 242
 
 var _arena: Node3D
 var _checks: int = 0
@@ -72,6 +73,11 @@ func _test_validator_diagnostics() -> void:
 	var issues := CombatResourceValidator.validate_definitions([first, second])
 	_check(_has_issue(issues, "Duplicate ability ID") and _has_issue(issues, "ability_tags[0]"),
 			"Collection validation identifies duplicate IDs and malformed tag fields")
+	var conflicting_effect := GameplayEffectDefinition.new()
+	conflicting_effect.effect_id = first.ability_id
+	issues = CombatResourceValidator.validate_definitions([first, conflicting_effect])
+	_check(_has_issue(issues, "Duplicate effect ID"),
+			"An ability and an effect cannot share a definition ID")
 	_check(_has_issue(CombatResourceValidator.validate_paths(
 			PackedStringArray(["res://tests/no_such_ability.tres"])), "Resource file is missing"),
 			"Missing definition paths receive a build-time diagnostic")
@@ -81,7 +87,7 @@ func _test_validator_diagnostics() -> void:
 	_check(_has_issue(CombatResourceValidator.validate_definitions([projectile_ability]),
 			"missing_projectile"), "Projectile authoring reports a missing scene")
 	var recursive := GameplayEffectDefinition.new()
-	recursive.effect_id = &"Effect.Test.Recursive"
+	recursive.effect_id = 237
 	var additional := AdditionalEffectsComponent.new()
 	additional.on_application_effects = [recursive]
 	recursive.components = [additional]
@@ -218,7 +224,7 @@ func _test_crimson_bolt_schedule() -> void:
 		enemy.advance(1.0)
 		_near(enemy.attributes.get_value(HEALTH), 150.0 - 15.0 * (tick - 2),
 				"Tick %d continues after source death and uses new Resistance" % tick)
-	_check(enemy.effects.active_count(&"Effect.Test.CrimsonBolt.Periodic") == 0,
+	_check(enemy.effects.active_count(CRIMSON_PERIODIC_ID) == 0,
 			"The fifth tick executes before the effect expires")
 	enemy.advance(1.0)
 	_check(damage_events.size() == 6, "One direct event plus five periodic events are committed")
@@ -259,7 +265,7 @@ func _test_crimson_bolt_refresh() -> void:
 	enemy.advance(0.5)
 	await _activate(caster, ability)
 	await _wait_for_impact()
-	_check(enemy.effects.active_count(&"Effect.Test.CrimsonBolt.Periodic") == 1,
+	_check(enemy.effects.active_count(CRIMSON_PERIODIC_ID) == 1,
 			"Reapplication keeps one stack per source")
 	enemy.advance(0.5)
 	_near(enemy.attributes.get_value(HEALTH), 200.0, "Refresh resets the first periodic deadline")
@@ -272,9 +278,9 @@ func _test_crimson_bolt_refresh() -> void:
 
 
 func _blood_lash(trigger: ReactionDefinition.Trigger = ReactionDefinition.Trigger.ON_HIT) -> AbilityDefinition:
-	var impact := _damage(&"Effect.Test.BloodLash.Impact", 20.0)
+	var impact := _damage(238, 20.0)
 	var slow := GameplayEffectDefinition.new()
-	slow.effect_id = &"Effect.Test.BloodLash.Slow"
+	slow.effect_id = 239
 	slow.timing = GameplayEffectDefinition.Timing.DURATION
 	slow.duration = 2.0
 	slow.granted_tags = PackedStringArray(["State.Slowed"])
@@ -288,7 +294,7 @@ func _blood_lash(trigger: ReactionDefinition.Trigger = ReactionDefinition.Trigge
 	slow.modifiers = [modifier]
 	slow.stacking_type = GameplayEffectDefinition.StackingType.AGGREGATE_BY_TARGET
 	slow.stack_limit_count = 1
-	var ability := _payload_ability(&"fixture_blood_lash", [impact, slow])
+	var ability := _payload_ability(240, [impact, slow])
 	var execution := ability.execution as PhasedAbilityExecution
 	execution.targeting.shape = AbilityTargetingDefinition.Shape.DISK
 	execution.targeting.radius = 20.0
@@ -308,7 +314,7 @@ func _blood_lash(trigger: ReactionDefinition.Trigger = ReactionDefinition.Trigge
 
 
 func _crimson_bolt(direct_damage: float) -> AbilityDefinition:
-	var impact := _damage(&"Effect.Test.CrimsonBolt.Impact", direct_damage)
+	var impact := _damage(241, direct_damage)
 	var heal := HealReactionAction.new()
 	heal.amount = AmountDefinition.new()
 	heal.amount.source = AmountDefinition.Source.OUTCOME_PERCENT
@@ -319,7 +325,7 @@ func _crimson_bolt(direct_damage: float) -> AbilityDefinition:
 	reaction.timing_filter = ReactionDefinition.TimingFilter.DIRECT
 	reaction.actions = [heal]
 	impact.reactions = [reaction]
-	var periodic := _damage(&"Effect.Test.CrimsonBolt.Periodic", 20.0)
+	var periodic := _damage(CRIMSON_PERIODIC_ID, 20.0)
 	periodic.timing = GameplayEffectDefinition.Timing.DURATION
 	periodic.duration = 5.0
 	periodic.period = 1.0
@@ -328,7 +334,7 @@ func _crimson_bolt(direct_damage: float) -> AbilityDefinition:
 	periodic.snapshot_source = true
 	periodic.stacking_type = GameplayEffectDefinition.StackingType.AGGREGATE_BY_SOURCE
 	periodic.stack_limit_count = 1
-	var ability := _payload_ability(&"fixture_crimson_bolt", [impact, periodic])
+	var ability := _payload_ability(243, [impact, periodic])
 	var execution := ability.execution as PhasedAbilityExecution
 	execution.targeting.shape = AbilityTargetingDefinition.Shape.POINT
 	execution.targeting.origin = AbilityTargetingDefinition.Origin.AIM
@@ -338,7 +344,7 @@ func _crimson_bolt(direct_damage: float) -> AbilityDefinition:
 	return ability
 
 
-func _payload_ability(id: StringName, effects: Array[GameplayEffectDefinition]) -> AbilityDefinition:
+func _payload_ability(id: int, effects: Array[GameplayEffectDefinition]) -> AbilityDefinition:
 	var apply := AbilityApplyEffectsAction.new()
 	apply.effects = effects
 	var phase := AbilityPhaseDefinition.new()
@@ -356,7 +362,7 @@ func _payload_ability(id: StringName, effects: Array[GameplayEffectDefinition]) 
 	return ability
 
 
-func _damage(id: StringName, points: float) -> GameplayEffectDefinition:
+func _damage(id: int, points: float) -> GameplayEffectDefinition:
 	var effect := GameplayEffectDefinition.new()
 	effect.effect_id = id
 	effect.damage_type = GameplayEffectDefinition.DamageType.MAGIC

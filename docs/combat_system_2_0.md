@@ -38,7 +38,7 @@ Starting values and contribution rates below are the current editable tuning def
 
 ## Attributes
 
-There are **thirty-one active attributes**, including four primaries, three current resource pools, Carried Weight, and Attack Speed and Cast Speed bonuses. The proposed caster weapon timing factor is a separate equipment property.
+The combat foundation defines **thirty-one built-in attributes**, including four primaries, three current resource pools, Carried Weight, and Attack Speed and Cast Speed bonuses. Additional generic attributes are registered through the [Ability Editor](../tools/ability_editor/README.md#manage-attributes). The proposed caster weapon timing factor is a separate equipment property.
 
 ### Attribute value meanings
 

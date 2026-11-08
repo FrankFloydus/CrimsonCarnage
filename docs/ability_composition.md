@@ -6,7 +6,7 @@ The [fixture guide](ability_v2_fixtures.md) walks through saved Blood Lash and C
 
 ## Author and grant an ability
 
-1. Create an `AbilityDefinition` with a stable ability ID and display name. Use **Phased Ability Execution**. Save the resource and put it in **AbilitySystem → Granted Abilities** or give it to the actor through `grant_ability_spec()`.
+1. Create an `AbilityDefinition` with a unique positive integer **Ability ID**, a display name and an optional **Icon** texture. Use **Phased Ability Execution**. Save the resource and put it in **AbilitySystem → Granted Abilities** or give it to the actor through `grant_ability_spec()`.
 2. Choose the cast mode and initial targeting. Choose Immediate, Delay, Animation, Hold Release, Channel, or Sustained. For Animation, author the method-track event that releases the ability. For Channel, specify both a duration and a pulse period. For Sustained, author the event or domain action that ends the cast. An explicit Single target comes from `try_activate_target(ability_id, target)`. An ordinary direct request uses `try_activate(ability_id)`.
 3. Choose a delivery and add ordered phases. Phases listen to a named lifecycle, delivery, animation, or gameplay event. Add target selection and conditions where needed, then add reusable actions. **Apply Effects** can deliver a shared hostile hit or apply a standalone effect. For a hostile hit, put its damage and attached statuses into the same action to share one Accuracy and one direct critical result.
 4. Set **Commitment** and **Interruption**. Choose a resource pool and amount for each cost. Use one charge and set its recharge time for a standard cooldown. Add a reaction on the ability for an execution-wide rule, or on a payload effect for a response to that payload's outcomes.
@@ -14,9 +14,15 @@ The [fixture guide](ability_v2_fixtures.md) walks through saved Blood Lash and C
 
 The Inspector shows the fields that apply to the selected mode. Switching modes keeps the hidden values in the resource. They take effect again when you return to a mode that uses them.
 
+Saved abilities and effects share one namespace for their positive integer IDs. Zero leaves an ID unassigned. Choose unused IDs for new definitions and keep assigned IDs stable. The resource validator checks both types and their nested definitions together. Asset tags and granted tags have their own fields.
+
+The [standalone Ability Editor](../tools/ability_editor/README.md#create-and-edit-abilities) can create and edit standalone native abilities in the linked project. Its composer projects Activation, Delivery & Targets and a timing-based block timeline onto the existing execution, phases and reactions. Blocks in Delivered Hit share one contact resolution. After Confirmed Hit and After Damage Dealt are follow-up outcomes, with the latter requiring positive Health loss. The Effects tab catalogs linked effects by their authored Asset Tags.
+
+Register new gameplay names in the Ability Editor's **Tags** tab. The Godot Inspector picker and headless authoring checks read [the shared tag registry](../combat/tags/gameplay_tags.json). Choose an explicitly registered tag for assignments and event producers. A matching field may also use an implied parent to query a whole branch. Phase lifecycle keys and animation events use their own authoring rules.
+
 | Resource | Inspector responsibility |
 | --- | --- |
-| `AbilityDefinition` | Stable identity, activation tags and event trigger, execution, costs, cooldown, interruption, reactions |
+| `AbilityDefinition` | Stable identity, display name, icon, activation tags and event trigger, execution, costs, cooldown, interruption, reactions |
 | `PhasedAbilityExecution` | Cast mode, duration, animation release event, initial targeting, activation conditions, delivery and ordered phases |
 | `AbilityTargetingDefinition` | Origin, geometry, range, faction, life-state filters, line of sight, and explicit target limit |
 | `AbilityDeliveryDefinition` | Direct, hitscan, projectile, area burst, field, aura, trap, beam or chain delivery, with authored timing and ownership |
@@ -26,6 +32,8 @@ The Inspector shows the fields that apply to the selected mode. Switching modes 
 | `ReactionDefinition` | Trigger, recipient, timing, delivery and provenance filters, scope, fire limit and reusable reaction actions |
 
 Ability conditions can check actor tags, life state, and current or fractional resource pools. Live faction filters use the target's **Faction ID** and the source's **Hostile Factions**. Actors with different factions outside that list are neutral. Area targeting considers registered AbilitySystems in the same world, so it counts an actor once even if it owns multiple collision shapes. A disk uses a horizontal radius plus explicit vertical tolerance. A ray uses physics geometry. A deliberate **Max Targets** limit is a separate balance decision.
+
+The Playground enables **Editable Children** on Player and Dummy. Faction changes made on those actors' **AbilitySystem** nodes in the Playground's Local scene tree save as Playground overrides. Editing the Caster or Dummy scene directly updates that actor's defaults. Fireball's inline **Targeting** settings belong to the shared `fireball.tres` resource.
 
 Use **Activation Conditions** to test the caster or an explicit Single target before reservation and again at release. For a trap or field, use **Point** targeting with a terrain collision mask and author **Maximum Surface Slope**. Placement validation runs before release commitment. An aura follows its caster and tracks occupant entry and exit. For **Chain**, choose a Single or Ray initial target, then author a Contact-centered Sphere for the hops. The chain visits the nearest eligible actor it has yet to reach, up to **Chain Hops**. The contacts share one attack identity.
 

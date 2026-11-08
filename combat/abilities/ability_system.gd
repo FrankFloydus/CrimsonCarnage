@@ -2,9 +2,9 @@ class_name AbilitySystem
 extends Node
 ## Coordinates unlocked abilities, authored execution, resource costs and delivered payloads.
 
-signal ability_started(ability_id: StringName)
-signal ability_ended(ability_id: StringName, cancelled: bool)
-signal activation_failed(ability_id: StringName, reason: StringName)
+signal ability_started(ability_id: int)
+signal ability_ended(ability_id: int, cancelled: bool)
+signal activation_failed(ability_id: int, reason: StringName)
 signal hit_resolved(result: Dictionary)
 ## Detached per-cast, delivery, and effect telemetry; target events are emitted only here.
 signal combat_event(event: Dictionary)
@@ -41,7 +41,7 @@ var effects: GameplayEffectRuntime
 var _startup_effect_handles: Array[int] = []
 var _ability_specs: Dictionary[int, GameplayAbilitySpec] = {}
 var _active_casts: Dictionary[int, AbilityCast] = {}
-var _charge_pools: Dictionary[StringName, AbilityChargePool] = {}
+var _charge_pools: Dictionary[Variant, AbilityChargePool] = {}
 var _school_lockouts: Dictionary[int, Dictionary] = {}
 var _next_lockout: int = 1
 var _blocked_ability_tags := GameplayTagSet.new()
@@ -251,12 +251,16 @@ func grant_ability(definition: AbilityDefinition, weapon_source: WeaponDefinitio
 	return grant_ability_spec(definition, 1, weapon_source) > 0
 
 
-## Grants a distinct instance with a level and optional source. Zero means the grant was invalid.
+## Grants a distinct instance with a level and optional source.
+## Returns zero if the grant is invalid or a different definition already owns its ID.
 func grant_ability_spec(
 		definition: AbilityDefinition, grant_level: int = 1, source_object: Object = null,
 		granting_effect_handle: int = 0, set_by_caller: Dictionary[StringName, float] = {}
 ) -> int:
-	if definition == null or definition.ability_id.is_empty() or definition.execution == null or grant_level < 1:
+	if definition == null or definition.ability_id <= 0 or definition.execution == null or grant_level < 1:
+		return 0
+	var existing := _get_ability_spec_for_id(definition.ability_id)
+	if existing != null and existing.definition != definition:
 		return 0
 	var spec := GameplayAbilitySpec.new(definition, grant_level, source_object, granting_effect_handle, set_by_caller)
 	_ability_specs[spec.handle] = spec
@@ -268,7 +272,7 @@ func get_ability_spec(handle: int) -> GameplayAbilitySpec:
 	return _ability_specs.get(handle)
 
 
-func revoke_ability(ability_id: StringName) -> void:
+func revoke_ability(ability_id: int) -> void:
 	var spec := _get_ability_spec_for_id(ability_id)
 	if spec != null:
 		revoke_ability_spec(spec.handle)
@@ -292,18 +296,20 @@ func remove_ability_spec_on_end(handle: int) -> void:
 
 
 ## Reads the current runtime grant so previews and AI use the actual ability selected.
-func get_ability_definition(ability_id: StringName) -> AbilityDefinition:
+func get_ability_definition(ability_id: int) -> AbilityDefinition:
 	var spec := _get_ability_spec_for_id(ability_id)
 	return spec.definition if spec != null else null
 
 
 ## Reads the current grant's optional runtime weapon profile.
-func get_ability_weapon_source(ability_id: StringName) -> WeaponDefinition:
+func get_ability_weapon_source(ability_id: int) -> WeaponDefinition:
 	var spec := _get_ability_spec_for_id(ability_id)
 	return spec.get_weapon_source() if spec != null else null
 
 
-func _get_ability_spec_for_id(ability_id: StringName) -> GameplayAbilitySpec:
+func _get_ability_spec_for_id(ability_id: int) -> GameplayAbilitySpec:
+	if ability_id <= 0:
+		return null
 	for spec: GameplayAbilitySpec in _ability_specs.values():
 		if spec.definition.ability_id == ability_id:
 			return spec
@@ -311,7 +317,7 @@ func _get_ability_spec_for_id(ability_id: StringName) -> GameplayAbilitySpec:
 
 
 ## Captures a compatible granted action without spending resources, rolling, or activating it.
-func create_ability_context(ability_id: StringName) -> GameplayEffectContext:
+func create_ability_context(ability_id: int) -> GameplayEffectContext:
 	var spec := _get_ability_spec_for_id(ability_id)
 	if spec == null or not spec.definition.get_validation_error().is_empty() \
 			or not get_weapon_source_error(spec.definition, spec.get_weapon_source()).is_empty():
@@ -319,7 +325,7 @@ func create_ability_context(ability_id: StringName) -> GameplayEffectContext:
 	return AbilityCast.capture_context(self, spec.definition, spec.get_weapon_source())
 
 
-func get_activation_failure(ability_id: StringName, event_tag: StringName = &"") -> StringName:
+func get_activation_failure(ability_id: int, event_tag: StringName = &"") -> StringName:
 	return _get_activation_failure(_get_ability_spec_for_id(ability_id), event_tag)
 
 
@@ -385,7 +391,7 @@ func _get_activation_failure(
 	return &""
 
 
-func try_activate(ability_id: StringName) -> bool:
+func try_activate(ability_id: int) -> bool:
 	return _try_activate_spec(_get_ability_spec_for_id(ability_id), &"", {}, ability_id)
 
 
@@ -394,18 +400,18 @@ func try_activate_spec(handle: int) -> bool:
 
 
 ## Requests a granted ability using an explicitly selected actor.
-func try_activate_target(ability_id: StringName, target: AbilitySystem) -> bool:
+func try_activate_target(ability_id: int, target: AbilitySystem) -> bool:
 	return _try_activate_spec(_get_ability_spec_for_id(ability_id), &"", {}, ability_id, target)
 
 
 ## Inspects a targeted request without reserving a charge, spending, or rolling.
-func get_target_activation_failure(ability_id: StringName, target: AbilitySystem) -> StringName:
+func get_target_activation_failure(ability_id: int, target: AbilitySystem) -> StringName:
 	return _get_activation_failure(_get_ability_spec_for_id(ability_id), &"", target)
 
 
 func _try_activate_spec(
 		spec: GameplayAbilitySpec, event_tag: StringName = &"", payload: Dictionary = {},
-		requested_id: StringName = &"", target: AbilitySystem = null
+		requested_id: int = 0, target: AbilitySystem = null
 ) -> bool:
 	var definition := spec.definition if spec != null else null
 	var ability_id := definition.ability_id if definition != null else requested_id
@@ -598,8 +604,7 @@ func _get_charge_pool(definition: AbilityDefinition, create: bool = false) -> Ab
 	var profile := definition.charge_pool
 	if profile == null:
 		return null
-	var key := StringName("ability:" + String(definition.ability_id)) if profile.shared_group.is_empty() \
-			else StringName("group:" + String(profile.shared_group))
+	var key: Variant = definition.ability_id if profile.shared_group.is_empty() else profile.shared_group
 	if create and not _charge_pools.has(key):
 		_charge_pools[key] = AbilityChargePool.new(profile)
 	return _charge_pools.get(key)
@@ -660,7 +665,7 @@ func try_spend_current(attribute: int, amount: float) -> bool:
 	return true
 
 
-func get_cooldown_remaining(ability_id: StringName) -> float:
+func get_cooldown_remaining(ability_id: int) -> float:
 	var spec := _get_ability_spec_for_id(ability_id)
 	return get_cooldown_remaining_for_spec(spec.handle) if spec != null else 0.0
 
@@ -672,7 +677,7 @@ func get_cooldown_remaining_for_spec(handle: int) -> float:
 
 
 ## Returns the charges available for another reservation, excluding in-flight casts.
-func get_available_charges(ability_id: StringName) -> int:
+func get_available_charges(ability_id: int) -> int:
 	var definition := get_ability_definition(ability_id)
 	if definition == null or definition.charge_pool == null:
 		return 0
@@ -681,14 +686,14 @@ func get_available_charges(ability_id: StringName) -> int:
 
 
 ## Captures recharge clocks for a granted ability's pool, excluding reservations.
-func capture_charge_recharge(ability_id: StringName) -> Array[float]:
+func capture_charge_recharge(ability_id: int) -> Array[float]:
 	var definition := get_ability_definition(ability_id)
 	var pool := _get_charge_pool(definition) if definition != null else null
 	return pool.capture_recharge() if pool != null else []
 
 
 ## Restores clocks on an idle actor. Shared groups refer to the same saved pool.
-func restore_charge_recharge(ability_id: StringName, clocks: Array[float]) -> bool:
+func restore_charge_recharge(ability_id: int, clocks: Array[float]) -> bool:
 	var definition := get_ability_definition(ability_id)
 	if definition == null or definition.charge_pool == null or not _active_casts.is_empty() \
 			or not definition.charge_pool.get_validation_error().is_empty():
@@ -699,7 +704,7 @@ func restore_charge_recharge(ability_id: StringName, clocks: Array[float]) -> bo
 
 ## Lists the first grant of each ID, in grant order, for ID-based input and UI.
 func get_granted_ability_definitions() -> Array[AbilityDefinition]:
-	var definitions: Dictionary[StringName, AbilityDefinition] = {}
+	var definitions: Dictionary[int, AbilityDefinition] = {}
 	for spec: GameplayAbilitySpec in _ability_specs.values():
 		if not definitions.has(spec.definition.ability_id):
 			definitions[spec.definition.ability_id] = spec.definition
@@ -711,7 +716,7 @@ func get_granted_ability_specs() -> Array[GameplayAbilitySpec]:
 
 
 ## Resolves the active instance of the first grant for this ID.
-func get_active_cast(ability_id: StringName) -> AbilityCast:
+func get_active_cast(ability_id: int) -> AbilityCast:
 	var spec := _get_ability_spec_for_id(ability_id)
 	return get_active_cast_for_spec(spec.handle) if spec != null else null
 
@@ -797,7 +802,7 @@ func cancel_animation() -> void:
 
 
 ## Forwards an input release or equivalent AI request to the named activation only.
-func release_ability(ability_id: StringName) -> void:
+func release_ability(ability_id: int) -> void:
 	var spec := _get_ability_spec_for_id(ability_id)
 	if spec != null:
 		release_ability_spec(spec.handle)
@@ -812,7 +817,7 @@ func release_ability_spec(handle: int) -> void:
 
 
 ## Cancels a named activation without disturbing unrelated casts.
-func cancel_ability(ability_id: StringName) -> void:
+func cancel_ability(ability_id: int) -> void:
 	var spec := _get_ability_spec_for_id(ability_id)
 	if spec != null:
 		cancel_ability_spec(spec.handle)

@@ -8,7 +8,7 @@ The [shared Accuracy and level curve](combat_system_2_0.md#accuracy-and-levels) 
 
 ## Active attributes
 
-The code-defined catalogue contains thirty-one active attributes.
+The [attribute catalog](../combat/attributes/attributes.json) contains thirty-one protected built-ins and any custom attributes registered in the [Ability Editor](../tools/ability_editor/README.md#manage-attributes). Custom attributes use permanent numeric IDs starting at 100 and can participate in generic modifiers, stat captures and attribute events.
 
 | Group | Attributes |
 | --- | --- |
@@ -139,7 +139,7 @@ Use Add Flat for percentage points and scope modifiers with ability or damage ta
 
 ## Accuracy and outcomes
 
-`CombatMath.get_hit_chance(attacker_level, target_level, accuracy)` is a pure calculation returning a fraction from 0 to 1. `get_hit_chance_details()` also exposes base/maximum probabilities and the required rating. The curve arrays, rating conversion and continuation constants are editable in `combat_rules.json`; the design table and examples are in [Accuracy and levels](combat_system_2_0.md#accuracy-and-levels).
+`CombatMath.get_hit_chance(attacker_level, target_level, accuracy)` is a pure calculation returning a fraction from 0 to 1. `get_hit_chance_details()` also exposes base/maximum probabilities and the required rating. The curve arrays, rating conversion and continuation constants live in `combat_rules.json`. The Ability Editor's Accuracy Rating view edits the base and ceiling arrays and previews draft points with `CombatMath`. Each whole level gap from +0 through +10 has its own anchor. See [Accuracy and levels](combat_system_2_0.md#accuracy-and-levels) for the design table and examples.
 
 `AbilitySystem.receive_hit()` duplicates the delivery context, samples one Accuracy outcome and applies eligible effects only on success. All damage components and attached hostile modifier effects share the result. A modifier-only hostile spell still checks Accuracy. Modifier-only self deliveries and explicitly `Ability.Beneficial` ally deliveries bypass the hostile check; any eligible damage keeps the check mandatory. Direct `effects.apply_effect()` remains the explicit buff/effect operation rather than another hit roll.
 
@@ -191,7 +191,7 @@ Dodge, Block, Absorption, cooldown recovery and consumable behavior remain desig
 
 Open [playground.tscn](../levels/playground/playground.tscn). The saved [combat HUD scene](../levels/playground/testing/combat_hud.tscn) shows Health, Mana and Stamina at the bottom center. Buffs grow from the left and debuffs from the right. Fireball's cast bar shows its live windup and hides on release or cancellation.
 
-F3 opens the Player or Dummy tab. The left pane offers an ability selector, level and searchable sliders for all thirty-one attributes. The right sheet shows effective stats, including Attack Speed and Cast Speed as percentages. The Player → Dummy card uses the selected ability's hit chance and normal-hit damage against the dummy's current defenses. Hover the derived readouts for inputs such as Accuracy Rating, applicable Power, Armor and Critical Damage bonus.
+F3 opens the Player or Dummy tab. The left pane offers an ability selector, level and searchable attribute sliders. The right sheet shows effective stats, including Attack Speed and Cast Speed as percentages. The Player → Dummy card uses the selected ability's hit chance and normal-hit damage against the dummy's current defenses. Hover the derived readouts for inputs such as Accuracy Rating, applicable Power, Armor and Critical Damage bonus.
 
 Enable a row override to edit its base. Current pools edit directly within their current capacity. Level, Strength, Dexterity, Intellect and Vitality use whole steps. Other attribute sliders use 0.01 steps. Focus a slider and use the arrow keys for a single step. The saved editor scene defines practical test ranges. Tracks include existing values outside those ranges. The character sheet uses the effective values after gameplay limits apply. Damage previews use the selected action's authored hit payload. The ellipsis menu holds reset edits and clear effects, plus resource restoration for Player. R restores the dummy during gameplay. Esc or F3 closes the attribute view. LMB or F activates the selected action.
 

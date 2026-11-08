@@ -3,6 +3,7 @@ extends SceneTree
 ## Run: godot --headless --path . --fixed-fps 60 --script res://tests/gait_test.gd
 
 const CONTROLLER = preload("res://player/first_person_controller.tscn")
+const SPRINT = preload("res://player/abilities/sprint.tres")
 const SPRINT_FIXTURE = preload("res://tests/sprint_fixture.gd")
 const ATTRIBUTE_FIXTURE = preload("res://tests/attribute_fixture.gd")
 
@@ -124,7 +125,7 @@ func _test_exhaustion_and_release() -> void:
 			"Draining Sprint switches to running and requires Shift release")
 	system.advance(SPRINT_FIXTURE.EXHAUSTION_DURATION + 1.0)
 	await _step(Vector2.RIGHT, true)
-	_check(system.get_activation_failure(&"sprint").is_empty() and _gait.sprint_requires_release
+	_check(system.get_activation_failure(SPRINT.ability_id).is_empty() and _gait.sprint_requires_release
 			and _movement.effective_gait == FirstPersonGait.Gait.RUN,
 			"Recovered Stamina cannot automatically restart a held exhausted sprint")
 	await _step(Vector2.RIGHT)

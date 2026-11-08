@@ -8,7 +8,7 @@ A first-person RPG inspired by the spirit of *The Elder Scrolls V: Skyrim*, with
 
 ## Combat design status
 
-[Combat 2.0 game design](combat_system_2_0.md) is the current design reference. The [implemented foundation](combat_system.md) contains thirty-one active attributes and describes damage, action speed, resources and locomotion. Starting progression values are editable working defaults.
+[Combat 2.0 game design](combat_system_2_0.md) is the current design reference. The [implemented foundation](combat_system.md) describes the attribute catalog, damage, action speed, resources and locomotion. Starting progression values are editable working defaults.
 
 The current [weapon design](combat_system_2_0.md#weapons) proposes unique-equipped types and one shared character talent tree per type. Shield is an off-hand defensive weapon with its own proposed tree. The proposed caster families are Orb of Power (elemental), Talisman (Void), Relic (necromancy/Necrotic) and the future Fetish (minions). Relic has ten described visual alternatives. The prototype uses fixed character Magic Power, authored animations and the live Cast Speed attribute. Caster weapon Power ranges, weapon-specific timing, the new families and equipment rules are proposals.
 
@@ -36,7 +36,7 @@ The first playable scene is a prototype playground with a composed first-person 
 | 3D physics | Jolt Physics |
 | Entry point | `levels/playground/playground.tscn` |
 | Authored gameplay | First-person player scene with movement/look/crouch components and a runtime gait helper, editable tuning resources, prototype grid materials, and collision parkour course with crouch tunnels |
-| Combat foundation | Thirty code-defined attributes, action and movement speed, sprint upkeep, encumbrance, regeneration, shared attack/spell Accuracy, owned/scoped modifiers, weapon profiles, explicit abilities/effects, counted tags, and a saved damage-dummy arena. [Combat system](combat_system.md) · [Ability authoring](ability_system.md) |
+| Combat foundation | Project attribute catalog, action and movement speed, sprint upkeep, encumbrance, regeneration, shared attack/spell Accuracy, owned/scoped modifiers, weapon profiles, explicit abilities/effects, counted tags, and a saved damage-dummy arena. [Combat system](combat_system.md) · [Ability authoring](ability_system.md) |
 | Shared runtime services | No autoloads configured |
 | Native code | No C++ plugin or GDExtension integration |
 | Automated tests | Focused headless controller, combat formula, attribute authoring, delivery, and effect/animation checks in `tests/`; Python simulator regression checks; no external Godot test framework |
@@ -73,6 +73,7 @@ See [Godot conventions](godot_conventions.md) for authoring, naming, folder orga
 | `combat/` | Attribute/tag/ability/effect/hit-delivery code and shared numeric rules JSON; [scoped instructions](../combat/AGENTS.md) |
 | `examples/fireball/` | Reusable direct-damage Fireball/projectile, dummy, and damage presentation used by the main playground |
 | `tools/combat_simulator/` | Seeded CLI balance experiments, provisional scenarios, frozen reports, and the offline Tk/NumPy Combat Lab under `lab/`; [scoped instructions](../tools/combat_simulator/AGENTS.md) |
+| `tools/ability_editor/` | Standalone Qt editor for a linked Godot checkout. It composes saved abilities, catalogs effects, checks deletion references, and authors gameplay tags, attributes and Accuracy curve points. [Launch and linking instructions](../tools/ability_editor/README.md) |
 | `icon.svg` | Initial project icon |
 | `.gitignore` | Excludes generated caches, credentials, temporary files, and export outputs |
 | `.gitattributes` | Normalizes text files to LF line endings |
@@ -256,11 +257,15 @@ The Combat 2.0 implementation lives in `combat/`. It follows [its scoped instruc
 
 `ActorAttributes` and `AbilitySystem` are authored components. AbilitySystem honors its explicit attributes reference. When empty, `_ready()` resolves the actor's sibling `Attributes` node. Attributes own base/current values, allocations, aggregation and clamping. The ASC owns grants, casts, counted tags, outgoing effect specs and active effects. Its Startup Effects apply defaults, live derivations and periodic regeneration. The ASC preserves standing startup handles during combat reset and death. Player and AI use the same grant and activation APIs.
 
-`CombatAttributes` generates Inspector choices and tooltip descriptions for thirty-one active attributes. Health/Stamina/Mana Regen use IDs 10/11/12, Armor 18, Armor Penetration 34, Spell Penetration 57, Critical Chance/Damage 14/15 and Fire/Cold/Lightning/Necrotic/Void Resistance 19/20/21/22/44. Movement Speed, Attack Speed and Cast Speed are percentage bonuses with IDs 54/55/56. Legacy slots 25/26/27 stay retired. `CombatRules` loads progression and formula tuning from schema 3 `combat_rules.json`. See the [combat implementation](combat_system.md) for live formulas.
+`CombatAttributes` reads [the shared attribute catalog](../combat/attributes/attributes.json) for active IDs, names, descriptions and generic Inspector choices. The thirty-one built-in IDs retain their game bindings. Custom entries start at 100 and can be used by the generic modifier, stat capture and attribute event systems. `CombatRules` loads progression and formula tuning from schema 3 `combat_rules.json`. The Ability Editor saves Accuracy curve anchors to that file and evaluates drafts through `CombatMath` in headless Godot. See the [combat implementation](combat_system.md) for live formulas.
 
 The Playground grants Fireball for combat. Physical damage formulas still support `WeaponDefinition` family, damage range, base cycle and captured source context. Weapon-backed Finesse uses Dexterity and Brutality uses Strength.
 
-Saved ability definitions use `PhasedAbilityExecution` for lifecycle phases, target queries, delivery and actions. Domain actions delegate movement and stance requests to the controller components. The actor owns resource reservations, charge pools, timed school lockouts and cancellation. Per-execution receipts and phases belong to `AbilityCast`. Effects own retained budgets, counters and contribution handles. Typed outcomes are queued after commitment and carry shared execution identity into detached delivery, periodic ticks and reactions.
+Saved ability and effect definitions share one namespace of stable, positive integer IDs. The catalog and resource validator check for duplicate authored IDs. Saved ability definitions use `PhasedAbilityExecution` for lifecycle phases, target queries, delivery and actions. Domain actions delegate movement and stance requests to the controller components. The actor owns resource reservations, charge pools, timed school lockouts and cancellation. Per-execution receipts and phases belong to `AbilityCast`. Effects own retained budgets, counters and contribution handles. Typed outcomes are queued after commitment and carry shared execution identity into detached delivery, periodic ticks and reactions.
+
+The Qt composer edits a draft projection of the native ability. Headless Godot validates and stages the Resource with its UID and links. Qt compares the saved file revision before publishing the staged bytes atomically. The native Resource is the saved authority for gameplay and for reopening the composer.
+
+The standalone editor owns registration in [gameplay_tags.json](../combat/tags/gameplay_tags.json). The Godot Inspector picker and headless authoring validator read that registry. Saved resources store the canonical tag names, which gameplay uses through counted tags and hierarchical matching.
 
 The [world service contracts](ability_world_services.md) define optional adapter interfaces for links, threat, pets and resurrection. The [fixture guide](ability_v2_fixtures.md) and [coverage report](ability_v2_coverage.md) distinguish runnable resources and tested capabilities from reference cases that require additional world integration.
 

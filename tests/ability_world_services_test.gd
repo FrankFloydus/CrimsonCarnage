@@ -157,7 +157,7 @@ func _test_pet_acquisition_and_commands() -> void:
 		return true
 	var commands := PetCommandAdapter.new(pets, validate, pay, dispatch)
 	var request := PetCommandAdapter.CommandRequest.new()
-	request.ability_id = &"pet_attack"
+	request.ability_id = 270
 	request.credited_owner_id = OWNER
 	request.payer_id = RIVAL
 	request.target_id = &"enemy"

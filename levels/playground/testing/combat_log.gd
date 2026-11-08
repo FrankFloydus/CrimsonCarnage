@@ -71,10 +71,12 @@ static func format_event(event: Dictionary) -> String:
 	var target := str(event.get("target_name", "Unknown"))
 	var ability := str(event.get("ability_name", ""))
 	if ability.is_empty():
-		ability = str(event.get("ability_id", "Ability"))
+		var ability_id := int(event.get("ability_id", 0))
+		ability = "Ability %d" % ability_id if ability_id > 0 else "Ability"
 	var effect := str(event.get("effect_name", ""))
 	if effect.is_empty():
-		effect = str(event.get("effect_id", "Effect"))
+		var effect_id := int(event.get("effect_id", 0))
+		effect = "Effect %d" % effect_id if effect_id > 0 else "Effect"
 	var message := ""
 	match StringName(event.get("type", &"")):
 		&"cast":

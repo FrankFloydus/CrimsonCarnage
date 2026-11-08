@@ -1,7 +1,7 @@
 extends RefCounted
 ## Validates saved wiring before replacing runtime Fireball tuning in one isolated fixture.
 
-const FIREBALL: StringName = &"fireball"
+const FIREBALL: int = 6
 const TEST_CLIP: StringName = &"fixture/fireball"
 const CLIP_LENGTH: float = 0.8
 const RELEASE_TIME: float = 0.33
@@ -29,6 +29,7 @@ static func install(system: AbilitySystem) -> bool:
 	execution.animation_name = TEST_CLIP
 	execution.delivery.spawn_offset = Vector3.ZERO
 	execution.targeting.max_range = 100.0
+	execution.targeting.allegiance = AbilityTargetingDefinition.Allegiance.ANY
 	var effect := GameplayEffectDefinition.new()
 	effect.executions = [GameplayEffectDamageExecution.new()]
 	effect.get_damage_execution().amount = AmountDefinition.fixed(20.0)

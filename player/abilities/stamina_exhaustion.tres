@@ -12,6 +12,7 @@
 [ext_resource type="Script" uid="uid://dfnckjgya4d0v" path="res://combat/abilities/composition/ability_finish_action.gd" id="9_finish"]
 [ext_resource type="Script" uid="uid://0pha8yyuqu58" path="res://combat/outcomes/reaction_definition.gd" id="10_lu6cv"]
 [ext_resource type="Script" uid="uid://lj1m7cwhno0o" path="res://combat/abilities/ability_resource_cost.gd" id="11_8qxxf"]
+[ext_resource type="Texture2D" uid="uid://0pbuyscv57w2" path="res://player/abilities/icons/stamina_exhaustion.svg" id="12_icon"]
 
 [sub_resource type="Resource" id="Delivery_none"]
 script = ExtResource("4_delivery")
@@ -39,8 +40,9 @@ phases = Array[ExtResource("5_phase")]([SubResource("Phase_start")])
 
 [resource]
 script = ExtResource("1_ability")
-ability_id = &"stamina_exhaustion"
+ability_id = 5
 display_name = "Stamina Exhaustion"
+icon = ExtResource("12_icon")
 ability_tags = PackedStringArray("Ability.Status.StaminaExhaustion")
 required_tags = PackedStringArray()
 activation_tags = PackedStringArray()

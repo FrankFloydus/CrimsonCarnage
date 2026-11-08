@@ -536,9 +536,9 @@ func is_clearing() -> bool:
 	return _clearing
 
 
-## Counts active instances, optionally restricted to an authored effect identifier.
-func active_count(effect_id: StringName = &"") -> int:
-	if effect_id.is_empty():
+## Counts active instances. Zero counts all effects, including anonymous runtime effects.
+func active_count(effect_id: int = 0) -> int:
+	if effect_id == 0:
 		return _entries.size()
 	var count := 0
 	for entry: Dictionary in _entries.values():
@@ -571,8 +571,8 @@ func dispel_effect(handle: int, dispeller: AbilitySystem) -> bool:
 
 
 ## Restores one matching manually restorable snapshot. Zero means no matching handle; -1 is invalid.
-func restore_snapshot(effect_id: StringName) -> int:
-	if effect_id.is_empty() or _clearing or not is_instance_valid(_attributes) \
+func restore_snapshot(effect_id: int) -> int:
+	if effect_id <= 0 or _clearing or not is_instance_valid(_attributes) \
 			or _attributes.get_value(CombatAttributes.Id.HEALTH) <= 0.0:
 		return -1
 	for entry: Dictionary in _entries.values():

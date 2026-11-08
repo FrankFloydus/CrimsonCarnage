@@ -54,7 +54,7 @@ actions = Array[ExtResource("13_reaction_action")]([SubResource("ReactionAction_
 
 [sub_resource type="Resource" id="Effect_impact"]
 script = ExtResource("8_effect")
-effect_id = &"Effect.Fixture.CrimsonBolt.Impact"
+effect_id = 18
 display_name = "Crimson Bolt impact"
 damage_type = 1
 magic_school = 4
@@ -71,7 +71,7 @@ amount = SubResource("Amount_tick")
 
 [sub_resource type="Resource" id="Effect_periodic"]
 script = ExtResource("8_effect")
-effect_id = &"Effect.Fixture.CrimsonBolt.Periodic"
+effect_id = 19
 display_name = "Crimson Bolt periodic"
 damage_type = 1
 magic_school = 4
@@ -102,7 +102,7 @@ phases = Array[ExtResource("5_phase")]([SubResource("Phase_impact")])
 
 [resource]
 script = ExtResource("1_ability")
-ability_id = &"fixture_crimson_bolt"
+ability_id = 15
 display_name = "Crimson Bolt"
 ability_tags = PackedStringArray("Ability.Spell", "Ability.Fixture.CrimsonBolt")
 execution = SubResource("Execution_composition")

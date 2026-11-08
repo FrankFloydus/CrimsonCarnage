@@ -22,16 +22,16 @@ const ENCUMBERED = preload("res://player/encumbered_effect.tres")
 const SPRINT_FIXTURE = preload("res://tests/sprint_fixture.gd")
 const FIREBALL_FIXTURE = preload("res://tests/fireball_fixture.gd")
 const ENCUMBERED_TAG: StringName = &"State.Encumbered"
-const ENCUMBERED_ACTION: StringName = &"encumbered"
-const FIREBALL: StringName = &"fireball"
-const SPRINT: StringName = &"sprint"
-const CROUCH: StringName = &"crouch"
-const JUMP: StringName = &"jump"
+const ENCUMBERED_ACTION: int = 4
+const FIREBALL: int = FIREBALL_FIXTURE.FIREBALL
+const SPRINT: int = SPRINT_FIXTURE.SPRINT
+const CROUCH: int = 3
+const JUMP: int = 2
 const FORWARD := Vector2(0.0, -1.0)
 const STEP: float = 1.0 / 60.0
 const REGEN_PERIOD: float = 0.1
-const DERIVATIONS: StringName = &"Effect.AttributeDerivations"
-const REGENERATION: StringName = &"Effect.ResourceRegeneration"
+const DERIVATIONS: int = 12
+const REGENERATION: int = 13
 
 var _arena: Node3D
 var _player: FirstPersonController
@@ -184,11 +184,11 @@ func _test_saved_startup_effects() -> void:
 			"The caster has no per-scene Stamina recovery blocker property to override on save")
 	for path in ["Player/AbilitySystem", "Dummy/AbilitySystem"]:
 		var system := arena.get_node(path) as AbilitySystem
-		var ids: Array[StringName] = []
+		var ids: Array[int] = []
 		for effect in system.startup_effects:
 			if effect != null and effect.get_validation_error().is_empty():
 				ids.append(effect.effect_id)
-		_check(ids == [&"Effect.DefaultAttributes", DERIVATIONS, REGENERATION],
+		_check(ids == [11, DERIVATIONS, REGENERATION],
 				"The saved %s has valid startup effect wiring" % path)
 	arena.free()
 
@@ -397,13 +397,13 @@ func _test_interrupt_encumbrance_application() -> void:
 
 
 func _test_reusable_gameplay_events() -> void:
-	var test_action := &"test_event_action"
+	var test_action := 219
 	var test_tag := &"State.TestEventAction"
 	var activation_event := &"Event.TestAction.Entered"
 	var child_activation_event := &"Event.TestAction.Entered.Child"
 	var finish_event := &"Event.TestAction.Exited"
 	var effect := GameplayEffectDefinition.new()
-	effect.effect_id = &"Effect.TestEventAction"
+	effect.effect_id = 220
 	effect.timing = GameplayEffectDefinition.Timing.INFINITE
 	effect.granted_tags = PackedStringArray([String(test_tag)])
 	var maintain := AbilityMaintainEffectAction.new()

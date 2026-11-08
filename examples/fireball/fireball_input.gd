@@ -3,8 +3,8 @@ extends Node
 
 ## Ability component receiving player requests; AI can call the same API directly.
 @export var ability_system: AbilitySystem
-## Granted ability identifier to request when the input action is pressed.
-@export var ability_id: StringName = &"fireball"
+## Numeric ID of the granted ability requested when the input action is pressed.
+@export var ability_id: int = preload("res://examples/fireball/fireball.tres").ability_id
 ## Input Map action used to activate the example ability while the mouse is captured.
 @export var input_action: StringName = &"use_ability"
 ## Saved cast cue shown only while the example actor owns the casting tag.

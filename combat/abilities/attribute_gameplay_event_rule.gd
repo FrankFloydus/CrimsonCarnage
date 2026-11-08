@@ -4,9 +4,9 @@ extends Resource
 ## Authored gameplay events for crossing a threshold between two actor attributes.
 
 ## The final, unscoped attribute value checked against the threshold attribute.
-@export var attribute: CombatAttributes.Id = CombatAttributes.Id.NONE
+@export var attribute: int = CombatAttributes.Id.NONE
 ## The final, unscoped threshold value. Equality is outside the condition.
-@export var threshold_attribute: CombatAttributes.Id = CombatAttributes.Id.NONE
+@export var threshold_attribute: int = CombatAttributes.Id.NONE
 ## Gameplay event sent when the attribute first exceeds the threshold.
 @export var entered_event: StringName = &""
 ## Gameplay event sent when the attribute returns to or below the threshold.

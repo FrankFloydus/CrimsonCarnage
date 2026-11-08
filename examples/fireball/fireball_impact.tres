@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://bmu4hnn0quf7l" path="res://combat/attributes/attribute_modifier.gd" id="4_81nvp"]
 [ext_resource type="Script" uid="uid://de126mrndguiy" path="res://combat/amounts/amount_definition.gd" id="4_amount"]
 [ext_resource type="Script" uid="uid://0pha8yyuqu58" path="res://combat/outcomes/reaction_definition.gd" id="6_46cu6"]
+[ext_resource type="Texture2D" uid="uid://dj6saa4qbkydw" path="res://examples/fireball/fireball_icon.svg" id="7_icon"]
 
 [sub_resource type="Resource" id="Amount_fireball"]
 script = ExtResource("4_amount")
@@ -19,7 +20,9 @@ power_coefficient = 1.0
 
 [resource]
 script = ExtResource("1_effect")
-effect_id = &"Effect.Fireball.Impact"
+effect_id = 7
+display_name = "Fireball Impact"
+icon = ExtResource("7_icon")
 asset_tags = PackedStringArray()
 gameplay_cue_tags = PackedStringArray()
 damage_type = 1

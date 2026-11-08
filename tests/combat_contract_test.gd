@@ -18,6 +18,8 @@ class WaitingExecution extends AbilityExecution:
 
 
 class PlaybackExecution extends AbilityExecution:
+	const REPLACEMENT_ID: int = 217
+
 	func get_animation_name() -> StringName:
 		return &"shared_playback"
 
@@ -28,7 +30,7 @@ class PlaybackExecution extends AbilityExecution:
 		if event_name == &"cancel_playback":
 			var system := cast.get_system()
 			cast.cancel()
-			cast.data[&"replacement_failure"] = system.get_activation_failure(&"replacement_playback")
+			cast.data[&"replacement_failure"] = system.get_activation_failure(REPLACEMENT_ID)
 		else:
 			cast.data[&"unexpected_event"] = event_name
 
@@ -78,7 +80,7 @@ func _fixture(with_startup_effects: bool = false) -> AbilitySystem:
 	return system
 
 
-func _waiting_ability(id: StringName) -> AbilityDefinition:
+func _waiting_ability(id: int) -> AbilityDefinition:
 	var ability := AbilityDefinition.new()
 	ability.ability_id = id
 	ability.execution = WaitingExecution.new()
@@ -93,7 +95,7 @@ func _waiting_ability(id: StringName) -> AbilityDefinition:
 
 func _test_activation_cost_cooldown_and_tags() -> void:
 	var system := _fixture(true)
-	var ability := _waiting_ability(&"contract_action")
+	var ability := _waiting_ability(200)
 	ability.required_tags = PackedStringArray(["Training.Contract"])
 	_check(system.grant_ability(ability), "An unlocked ability is registered through the shared interface")
 	_check(not system.try_activate(ability.ability_id), "Required tags gate activation before resources are spent")
@@ -129,7 +131,7 @@ func _test_activation_cost_cooldown_and_tags() -> void:
 
 func _test_spec_cost_magnitudes() -> void:
 	var system := _fixture()
-	var ability := _waiting_ability(&"dynamic_cost")
+	var ability := _waiting_ability(201)
 	var amount := ability.resource_costs[0].amount
 	amount.source = AmountDefinition.Source.STAT_PERCENT
 	amount.stat = CombatAttributes.Id.INTELLECT
@@ -147,8 +149,8 @@ func _test_spec_cost_magnitudes() -> void:
 
 func _test_shared_cooldown_and_deferred_commit() -> void:
 	var system := _fixture()
-	var deferred := _waiting_ability(&"deferred")
-	var followup := _waiting_ability(&"followup")
+	var deferred := _waiting_ability(202)
+	var followup := _waiting_ability(203)
 	deferred.interruption_policy.cost_timing = AbilityInterruptionPolicy.CommitTiming.ON_RELEASE
 	deferred.interruption_policy.cooldown_timing = AbilityInterruptionPolicy.CommitTiming.ON_RELEASE
 	deferred.charge_pool = COMMITMENT.make_cooldown(2.0, &"fixture_shared")
@@ -178,7 +180,7 @@ func _test_shared_cooldown_and_deferred_commit() -> void:
 	system.advance(2.01)
 	_check(system.get_activation_failure(followup.ability_id).is_empty(), "Recharge restores the shared charge")
 	var reentrant := _fixture()
-	var interrupted := _waiting_ability(&"cost_changed_at_commit")
+	var interrupted := _waiting_ability(204)
 	reentrant.tags.changed.connect(func(tag: StringName, present: bool) -> void:
 		if tag == &"State.CombatAction" and present:
 			reentrant.attributes.set_base_value(CombatAttributes.Id.MANA, 1.0))
@@ -194,7 +196,7 @@ func _test_shared_cooldown_and_deferred_commit() -> void:
 func _test_independent_grant_specs() -> void:
 	var system := _fixture()
 	var definition := AbilityDefinition.new()
-	definition.ability_id = &"two_grants"
+	definition.ability_id = 205
 	definition.execution = WaitingExecution.new()
 	var first_source := Resource.new()
 	var second_source := Resource.new()
@@ -230,11 +232,11 @@ func _test_independent_grant_specs() -> void:
 func _test_ability_asset_tag_conflicts() -> void:
 	var system := _fixture()
 	var attacker := AbilityDefinition.new()
-	attacker.ability_id = &"tagged_attack"
+	attacker.ability_id = 206
 	attacker.ability_tags = PackedStringArray(["Ability.Test.Attack.Light"])
 	attacker.execution = WaitingExecution.new()
 	var interrupt := AbilityDefinition.new()
-	interrupt.ability_id = &"attack_interruption"
+	interrupt.ability_id = 207
 	interrupt.execution = WaitingExecution.new()
 	interrupt.cancel_ability_tags = PackedStringArray(["Ability.Test.Attack"])
 	interrupt.block_ability_tags = interrupt.cancel_ability_tags.duplicate()
@@ -258,9 +260,9 @@ func _test_ability_asset_tag_conflicts() -> void:
 
 func _test_independent_activation_lifetimes() -> void:
 	var system := _fixture()
-	var attack := _waiting_ability(&"attack")
-	var other_attack := _waiting_ability(&"other_attack")
-	var sprint := _waiting_ability(&"sprint")
+	var attack := _waiting_ability(208)
+	var other_attack := _waiting_ability(209)
+	var sprint := _waiting_ability(210)
 	sprint.interruption_policy.activation_blockers = PackedStringArray(["State.Encumbered"])
 	sprint.interruption_policy.cancel_on_tags = PackedStringArray(["State.Encumbered"])
 	sprint.activation_tags = PackedStringArray(["State.Sprinting"])
@@ -304,7 +306,7 @@ func _test_independent_activation_lifetimes() -> void:
 	system.cancel_ability(attack.ability_id)
 	_check(system.get_active_cast(sprint.ability_id) != null and system.get_active_cast(attack.ability_id) == null,
 			"Targeted cancellation leaves the unrelated action active")
-	var check_cleanup := func(id: StringName, _cancelled: bool) -> void:
+	var check_cleanup := func(id: int, _cancelled: bool) -> void:
 		_check(system.get_activation_failure(id) == &"activation_unavailable",
 				"End callbacks cannot restart abilities during bulk cleanup")
 	system.ability_ended.connect(check_cleanup)
@@ -320,8 +322,8 @@ func _test_independent_activation_lifetimes() -> void:
 
 func _test_activation_conflicts_precede_callbacks() -> void:
 	var system := _fixture()
-	var first := _waiting_ability(&"first")
-	var second := _waiting_ability(&"second")
+	var first := _waiting_ability(211)
+	var second := _waiting_ability(212)
 	system.grant_ability(first)
 	system.grant_ability(second)
 	var failures: Array[StringName] = []
@@ -354,10 +356,10 @@ func _test_cancelled_animation_frame_cannot_transfer_ownership() -> void:
 	library.add_animation(&"shared_playback", animation)
 	player.add_animation_library(&"", library)
 	var original := AbilityDefinition.new()
-	original.ability_id = &"original_playback"
+	original.ability_id = 216
 	original.execution = PlaybackExecution.new()
 	var replacement := AbilityDefinition.new()
-	replacement.ability_id = &"replacement_playback"
+	replacement.ability_id = PlaybackExecution.REPLACEMENT_ID
 	replacement.execution = original.execution
 	system.grant_ability(original)
 	system.grant_ability(replacement)
@@ -377,10 +379,10 @@ func _test_cancelled_animation_frame_cannot_transfer_ownership() -> void:
 
 func _test_reentrant_interruption() -> void:
 	var system := _fixture()
-	var ability := _waiting_ability(&"interrupted_at_start")
+	var ability := _waiting_ability(213)
 	ability.charge_pool = null
 	var observed: Array[AbilityCast] = []
-	system.ability_started.connect(func(id: StringName) -> void:
+	system.ability_started.connect(func(id: int) -> void:
 		observed.append(system.get_active_cast(id))
 		system.cancel_ability(id))
 	system.grant_ability(ability)
@@ -390,7 +392,7 @@ func _test_reentrant_interruption() -> void:
 	_check(system.get_active_cast(ability.ability_id) == null and not system.tags.has_tag(&"State.CombatAction"),
 			"Synchronous cancellation leaves no active cast or leaked action tag")
 	var dying := _fixture()
-	var sacrifice := _waiting_ability(&"health_cost")
+	var sacrifice := _waiting_ability(214)
 	sacrifice.resource_costs = [COMMITMENT.make_cost(
 			AmountDefinition.Pool.HEALTH, dying.attributes.get_value(CombatAttributes.Id.HEALTH))]
 	dying.grant_ability(sacrifice)
@@ -402,7 +404,7 @@ func _test_reentrant_interruption() -> void:
 	_check(dying.get_activation_failure(sacrifice.ability_id) == &"actor_dead",
 			"A dead actor cannot bypass the lifecycle guard by removing optional blocked tags")
 	var invalid := _fixture()
-	var malformed := _waiting_ability(&"invalid_numbers")
+	var malformed := _waiting_ability(215)
 	invalid.grant_ability(malformed)
 	malformed.resource_costs[0].amount.fixed_amount = NAN
 	_check(invalid.get_activation_failure(malformed.ability_id) == &"invalid_resource_cost",
@@ -533,7 +535,7 @@ func _test_invalid_projectile_and_payload_reject_before_commit() -> void:
 	_check(execution.delivery.projectile_scene.pack(valid_root) == OK, "A projectile root is a valid fixture")
 	valid_root.free()
 	var ability := AbilityDefinition.new()
-	ability.ability_id = &"validated_projectile"
+	ability.ability_id = 218
 	ability.ability_tags = PackedStringArray(["Ability.Spell"])
 	ability.resource_costs = [COMMITMENT.make_cost(AmountDefinition.Pool.MANA, 17.0)]
 	ability.charge_pool = COMMITMENT.make_cooldown(5.0)

@@ -121,8 +121,8 @@ enum CurveInput {
 @export_range(0.0, 100.0, 0.01, "or_greater", "suffix:%") var percentage: float = 100.0
 ## Actor whose attribute, level or resource provides the selected basis.
 @export var actor: ActorRole = ActorRole.SOURCE
-## Native attribute for Stat Percent, using the active Combat 2.0 catalogue.
-@export var stat: CombatAttributes.Id = CombatAttributes.Id.MAGIC_POWER
+## Native attribute for Stat Percent, using the project attribute catalogue.
+@export var stat: int = CombatAttributes.Id.MAGIC_POWER
 ## Pool for Resource Percent or Spend Percent.
 @export var resource: Pool = Pool.MANA
 ## Selects current, maximum, or missing points for Resource Percent.

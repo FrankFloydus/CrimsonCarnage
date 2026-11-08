@@ -16,6 +16,7 @@
 [ext_resource type="Script" uid="uid://4nl5gjf3hrln" path="res://combat/abilities/ability_interruption_policy.gd" id="12_interrupt"]
 [ext_resource type="Script" uid="uid://de126mrndguiy" path="res://combat/amounts/amount_definition.gd" id="13_amount"]
 [ext_resource type="Script" uid="uid://0pha8yyuqu58" path="res://combat/outcomes/reaction_definition.gd" id="13_ro8ge"]
+[ext_resource type="Texture2D" uid="uid://dj6saa4qbkydw" path="res://examples/fireball/fireball_icon.svg" id="14_icon"]
 
 [sub_resource type="Resource" id="Cooldown_fire"]
 script = ExtResource("6_cooldown")
@@ -38,8 +39,9 @@ actions = Array[ExtResource("10_action")]([SubResource("Action_impact")])
 script = ExtResource("7_targeting")
 shape = 3
 origin = 1
-required_target_tags = null
-blocked_target_tags = null
+allegiance = 1
+required_target_tags = PackedStringArray()
+blocked_target_tags = PackedStringArray()
 
 [sub_resource type="Resource" id="Execution_projectile"]
 script = ExtResource("2_execution")
@@ -53,8 +55,10 @@ phases = Array[ExtResource("9_phase")]([SubResource("Phase_impact")])
 script = ExtResource("12_interrupt")
 school = &"School.Fire"
 activation_blockers = PackedStringArray("State.CombatAction", "State.Control.Silenced", "State.Control.Stunned")
+activation_exceptions = PackedStringArray()
 cancel_on_tags = PackedStringArray("State.Control.Silenced", "State.Control.Stunned")
 occupied_channels = PackedStringArray("offense")
+compatible_channels = PackedStringArray()
 
 [sub_resource type="Resource" id="Amount_mana"]
 script = ExtResource("13_amount")
@@ -66,8 +70,9 @@ amount = SubResource("Amount_mana")
 
 [resource]
 script = ExtResource("1_ability")
-ability_id = &"fireball"
+ability_id = 6
 display_name = "Fireball"
+icon = ExtResource("14_icon")
 ability_tags = PackedStringArray("Ability.Spell", "Ability.Fireball")
 required_tags = PackedStringArray()
 activation_tags = PackedStringArray("State.Casting", "State.CombatAction")

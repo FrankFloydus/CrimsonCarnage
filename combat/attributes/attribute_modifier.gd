@@ -1,7 +1,7 @@
 @tool
 class_name AttributeModifier
 extends Resource
-## An immutable-at-runtime adjustment to one code-defined Combat 2.0 attribute.
+## An immutable-at-runtime adjustment to one registered combat attribute.
 
 ## Controls where the modifier participates in an attribute's value calculation.
 enum Operation {
@@ -20,8 +20,8 @@ enum Operation {
 }
 
 ## Attribute changed by this adjustment. Instant and periodic effects can change current pools.
-## Inspector choices contain only active Combat 2.0 attributes.
-@export var attribute: CombatAttributes.Id = CombatAttributes.Id.MAGIC_POWER
+## Inspector choices contain only registered attributes.
+@export var attribute: int = CombatAttributes.Id.MAGIC_POWER
 
 ## Flat additions precede combined increased bonuses, then each More factor multiplies.
 ## Set Base replaces the full derived foundation, including its primary contribution.
@@ -38,7 +38,7 @@ enum Operation {
 @export var value: float = 0.0
 
 ## Optional live target attribute captured for this modifier's magnitude. None uses only Value.
-@export var capture_attribute: CombatAttributes.Id = CombatAttributes.Id.NONE:
+@export var capture_attribute: int = CombatAttributes.Id.NONE:
 	set(new_attribute):
 		capture_attribute = new_attribute
 		notify_property_list_changed()

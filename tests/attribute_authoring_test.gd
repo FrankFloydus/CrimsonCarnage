@@ -38,36 +38,26 @@ func _test_inspector_catalogue() -> void:
 	var metadata := _property(modifier, &"attribute")
 	_check(metadata.get("hint") == PROPERTY_HINT_ENUM, "Attribute selection has explicit enum choices")
 	var choices := _choices(metadata.get("hint_string", ""))
-	_check(choices.size() == EXPECTED_IDS.size(), "The modifier offers only the active attributes")
-	_check(CombatAttributes.all_ids() == EXPECTED_IDS, "The catalogue has the agreed saved identities")
+	var registered_ids := CombatAttributes.all_ids()
+	var builtin_ids := registered_ids.filter(
+			func(id: int) -> bool: return id < CombatAttributes.FIRST_CUSTOM_ID)
+	_check(CombatAttributes.registry_error().is_empty(), "The saved attribute catalogue is valid")
+	_check(choices.size() == registered_ids.size(), "The modifier offers only the registered attributes")
+	_check(builtin_ids == EXPECTED_IDS, "The catalogue preserves every built-in identity")
+	for id: int in registered_ids:
+		_check(choices.get(id) == CombatAttributes.display_name(id), "The selector displays the registered name: %d" % id)
 	for id: int in EXPECTED_IDS:
-		_check(choices.has(id), "Every current attribute is available: %d" % id)
-		_check(not CombatAttributes.description(id).is_empty(), "Every current attribute has a description: %d" % id)
-	_check(choices.get(39) == "Carried Weight", "Carried Weight restores its original saved identity")
-	_check(choices.get(40) == "Accuracy Rating", "Accuracy Rating retains stable ID40")
-	_check(choices.get(53) == "Physical Power", "Physical Power uses the appended ID53")
-	_check(choices.get(54) == "Movement Speed" and not choices.has(27),
-			"Movement Speed keeps identity fifty-four for the live bonus and hides retired slot twenty-seven")
+		_check(not CombatAttributes.description(id).is_empty(), "Every built-in attribute has a description: %d" % id)
 	_check(CombatAttributes.Id.MOVEMENT_SPEED == 54 and CombatAttributes.Id.LEGACY_MOVEMENT_SPEED_PERCENT == 27,
 			"The live Movement Speed bonus does not reuse a retired saved identity")
-	_check(choices.get(55) == "Attack Speed" and choices.get(56) == "Cast Speed"
-			and not choices.has(25) and not choices.has(26),
-			"Speed bonuses use new saved IDs while old ratings remain retired")
 	_check(CombatAttributes.uses_percentage_units(55) and CombatAttributes.uses_percentage_units(56),
 			"Both speed attributes use percentage-point authoring units")
-	_check(choices.get(18) == "Armor", "Armor restores its original saved identity")
-	_check(choices.get(34) == "Armor Penetration", "Armor Penetration restores its original saved identity")
-	_check(choices.get(57) == "Spell Penetration" and CombatAttributes.uses_percentage_units(57),
+	_check(choices.has(57) and CombatAttributes.uses_percentage_units(57),
 			"Spell Penetration has its own saved identity and uses percentage-point units")
-	_check(choices.get(14) == "Critical Chance" and choices.get(15) == "Critical Damage",
-			"Critical selectors retain their original identities and canonical designer names")
 	_check(CombatAttributes.Id.CRITICAL_MULTIPLIER == 15,
 			"The legacy critical multiplier spelling aliases the bonus-stat identity")
 	_check(CombatAttributes.uses_percentage_units(14) and CombatAttributes.uses_percentage_units(15),
 			"Both critical attributes use percentage-point authoring units")
-	_check(choices.get(19) == "Fire Resistance" and choices.get(20) == "Cold Resistance"
-			and choices.get(21) == "Lightning Resistance" and choices.get(22) == "Necrotic Resistance"
-			and choices.get(44) == "Void Resistance", "Resistance selectors use the five canonical school names")
 	_check(CombatAttributes.Id.FROST_RESISTANCE == 20 and CombatAttributes.Id.POISON_RESISTANCE == 22,
 			"Legacy Frost and Poison spellings preserve their saved identities")
 	_check(not choices.has(32), "Retired Attack Power is not reused as Physical Power")
@@ -75,7 +65,7 @@ func _test_inspector_catalogue() -> void:
 	for id: int in CombatAttributes.RETIRED_IDS:
 		_check(not choices.has(id), "Old combat attributes are absent from new authoring: %d" % id)
 	var optional := _choices(CombatAttributes.inspector_hint(true))
-	_check(optional.size() == EXPECTED_IDS.size() + 1 and optional.get(-1) == "None",
+	_check(optional.size() == registered_ids.size() + 1 and optional.get(-1) == "None",
 			"Optional selectors add only the None sentinel")
 
 
@@ -159,10 +149,8 @@ func _test_stale_metadata_refresh() -> void:
 			"hint_string": "Old Burn Chance:47,Old Movement Percent:27,Old Critical Multiplier:15"}
 	AttributeModifier.new()._validate_property(metadata)
 	var choices := _choices(metadata.hint_string)
-	_check(choices.size() == EXPECTED_IDS.size() and choices.has(53) and choices.has(54)
+	_check(choices.size() == CombatAttributes.all_ids().size() and choices.has(53) and choices.has(54)
 			and choices.has(44) and choices.has(18) and choices.has(34) and choices.has(57)
-			and choices.get(39) == "Carried Weight"
-			and choices.get(14) == "Critical Chance" and choices.get(15) == "Critical Damage"
 			and not choices.has(13) and not choices.has(27) and not choices.has(47),
 			"Tool metadata refresh removes stale Combat 1.0 choices")
 	var operations := _choices(_property(AttributeModifier.new(), &"operation").hint_string)

@@ -4,9 +4,14 @@ extends SceneTree
 
 const PLAYGROUND = preload("res://levels/playground/playground.tscn")
 const FIREBALL_FIXTURE = preload("res://tests/fireball_fixture.gd")
-const MOVEMENT_EXAMPLES: Array[StringName] = [&"sprint", &"jump", &"crouch"]
-const ENCUMBERED_ACTION: StringName = &"encumbered"
-const EXHAUSTION_ACTION: StringName = &"stamina_exhaustion"
+const SPRINT: int = 1
+const FIREBALL: int = FIREBALL_FIXTURE.FIREBALL
+const MOVEMENT_EXAMPLES: Array[int] = [SPRINT, 2, 3]
+const ENCUMBERED_ACTION: int = 4
+const EXHAUSTION_ACTION: int = 5
+const ENCUMBERED_EFFECT_ID: int = 9
+const DERIVATIONS_EFFECT_ID: int = 12
+const REGENERATION_EFFECT_ID: int = 13
 
 var _checks: int = 0
 var _failures: int = 0
@@ -48,7 +53,7 @@ func _run() -> void:
 		_check(false, "The saved Fireball is wired to a valid animation and impact")
 		quit(1)
 		return
-	var fireball := _tools.player_system.get_ability_definition(&"fireball")
+	var fireball := _tools.player_system.get_ability_definition(FIREBALL)
 	var impact := fireball.execution.get_effect_payload()[0]
 	impact.get_damage_execution().amount = AmountDefinition.fixed(5.0)
 	impact.get_damage_execution().power_coefficient = 1.0
@@ -490,10 +495,10 @@ func _test_live_carry_load_edits() -> void:
 	utilities.get_popup().id_pressed.emit(LiveAttributeEditor.UtilityAction.CLEAR_EFFECTS)
 	await process_frame
 	var effects := system.effects.get_retained_effects()
-	_check(system.effects.active_count(&"Effect.Encumbered") == 1
+	_check(system.effects.active_count(ENCUMBERED_EFFECT_ID) == 1
 			and effects.keys() != previous_effects.keys()
-			and system.effects.active_count(&"Effect.AttributeDerivations") == 1
-			and system.effects.active_count(&"Effect.ResourceRegeneration") == 1
+			and system.effects.active_count(DERIVATIONS_EFFECT_ID) == 1
+			and system.effects.active_count(REGENERATION_EFFECT_ID) == 1
 			and system.get_active_cast(ENCUMBERED_ACTION) != null
 			and system.tags.get_count(&"State.Encumbered") == 1 and debuffs.get_child_count() == 1,
 			"Clearing effects restores the action-owned effect and preserves both startup effects")
@@ -515,7 +520,7 @@ func _test_live_carry_load_edits() -> void:
 			"Raising capacity clears both displayed penalties at the same weight")
 	_check(system.get_active_cast(ENCUMBERED_ACTION) == null
 			and system.tags.get_count(&"State.Encumbered") == 0
-			and system.effects.active_count(&"Effect.Encumbered") == 0 and debuffs.get_child_count() == 0,
+			and system.effects.active_count(ENCUMBERED_EFFECT_ID) == 0 and debuffs.get_child_count() == 0,
 			"Raising capacity ends the action and removes its gameplay effect, tag and HUD icon")
 	_tools.show_attributes(1)
 	_check(not speed_penalty.is_visible_in_tree() and not jump_penalty.is_visible_in_tree(),
@@ -533,7 +538,7 @@ func _test_clearing_capacity_effect_restores_encumbrance() -> void:
 	modifier.attribute = CombatAttributes.Id.CARRY_CAPACITY
 	modifier.value = 100.0
 	var effect := GameplayEffectDefinition.new()
-	effect.effect_id = &"Effect.TestExtraCarryCapacity"
+	effect.effect_id = 221
 	effect.timing = GameplayEffectDefinition.Timing.DURATION
 	effect.modifiers = [modifier]
 	var handle := system.effects.apply_effect(effect, system.create_effect_context())
@@ -547,7 +552,7 @@ func _test_clearing_capacity_effect_restores_encumbrance() -> void:
 	_check(not system.effects.has_retained_effect(handle) and badge.is_visible_in_tree()
 			and _sheet_value(weight_id).text == "150 / 100"
 			and system.tags.get_count(&"State.Encumbered") == 1
-			and system.effects.active_count(&"Effect.Encumbered") == 1
+			and system.effects.active_count(ENCUMBERED_EFFECT_ID) == 1
 			and system.get_active_cast(ENCUMBERED_ACTION) != null,
 			"Clearing a capacity bonus activates Encumbered and updates the sheet at the same weight")
 	editor.clear_overrides()
@@ -555,7 +560,7 @@ func _test_clearing_capacity_effect_restores_encumbrance() -> void:
 
 func _check_saved_grants() -> void:
 	var system := _tools.player_system
-	var ability_ids := MOVEMENT_EXAMPLES + [&"fireball", ENCUMBERED_ACTION, EXHAUSTION_ACTION]
+	var ability_ids := MOVEMENT_EXAMPLES + [FIREBALL, ENCUMBERED_ACTION, EXHAUSTION_ACTION]
 	_check(system.granted_abilities.size() == ability_ids.size(),
 			"The saved playground grants Fireball and its movement and status actions")
 	for ability_id in ability_ids:
@@ -581,7 +586,7 @@ func _test_damage_preview() -> void:
 	var mana := _source.get_value(CombatAttributes.Id.MANA)
 	var stamina := _source.get_value(CombatAttributes.Id.STAMINA)
 	var damage := _tools.character_sheet.get_node("%HitDamageValue") as Label
-	_check(_tools.select_ability(&"fireball"), "The player can select Fireball")
+	_check(_tools.select_ability(FIREBALL), "The player can select Fireball")
 	_check(damage.text.is_valid_float() and is_equal_approx(float(damage.text), 20.0),
 			"Fireball shows one normal-hit value after matching Fire Resistance")
 	target_editor.set_attribute_override(CombatAttributes.Id.FIRE_RESISTANCE, 75.0)
@@ -609,20 +614,20 @@ func _test_damage_preview() -> void:
 
 
 func _test_menu_and_input_ownership() -> void:
-	_check(not _tools.select_ability(&"missing_ability")
-			and _tools.selected_ability_id == &"fireball",
+	_check(not _tools.select_ability(222)
+			and _tools.selected_ability_id == FIREBALL,
 			"An unknown selection cannot replace a valid ability")
 	var selector := _tools.get_node(
 			"Screen/Menu/Margin/Content/Workspace/Inputs/Margin/Content/Ability/Select"
 	) as OptionButton
-	var ability_ids: Array[StringName] = []
+	var ability_ids: Array[int] = []
 	for index in selector.item_count:
-		ability_ids.append(StringName(selector.get_item_metadata(index)))
-	_check(ability_ids == [&"fireball"], "The combat selector offers Fireball")
+		ability_ids.append(selector.get_item_metadata(index))
+	_check(ability_ids == [FIREBALL], "The combat selector offers Fireball")
 	for locomotion_id in MOVEMENT_EXAMPLES:
 		_check(not ability_ids.has(locomotion_id) and not _tools.select_ability(locomotion_id),
 				"The combat selector excludes the %s movement ability" % locomotion_id)
-	for status_id: StringName in [ENCUMBERED_ACTION, EXHAUSTION_ACTION]:
+	for status_id: int in [ENCUMBERED_ACTION, EXHAUSTION_ACTION]:
 		_check(not ability_ids.has(status_id) and not _tools.select_ability(status_id),
 				"The combat selector excludes the granted %s status action" % status_id)
 	var look_enabled := _tools.player_look.is_processing_unhandled_input()
@@ -732,8 +737,8 @@ func _test_real_damage_statistics() -> void:
 	_target.set_base_value(CombatAttributes.Id.MAX_HEALTH, 500.0)
 	_target.restore_resources()
 	var system := _tools.player_system
-	var definition := system.get_ability_definition(&"fireball")
-	var context := system.create_ability_context(&"fireball")
+	var definition := system.get_ability_definition(FIREBALL)
+	var context := system.create_ability_context(FIREBALL)
 	_check(definition != null and context != null, "The saved Fireball grant provides a spell context")
 	if definition == null or context == null:
 		return
@@ -753,18 +758,18 @@ func _test_real_damage_statistics() -> void:
 		_check(row.attempts == 1 and row.hits == 1 and row.damage_events == 1,
 				"One contact records one delivery, hit and damage application")
 		_near(row.damage, 50.0, "Statistics use actual Health removed")
-	_check(system.try_activate(&"fireball"), "A real ability request is accepted")
-	_check(not system.try_activate(&"fireball"),
+	_check(system.try_activate(FIREBALL), "A real ability request is accepted")
+	_check(not system.try_activate(FIREBALL),
 			"An overlapping request is rejected")
-	_check(system.try_activate(&"sprint") and not system.try_activate(&"sprint"),
+	_check(system.try_activate(SPRINT) and not system.try_activate(SPRINT),
 			"Sprint can start during Fireball and rejects a duplicate request")
 	_source.set_base_value(CombatAttributes.Id.CARRIED_WEIGHT,
 			_source.get_value(CombatAttributes.Id.CARRY_CAPACITY) + 1.0)
 	_check(system.get_active_cast(ENCUMBERED_ACTION) != null,
 			"The granted status action starts during the combat telemetry fixture")
 	_source.set_base_value(CombatAttributes.Id.CARRIED_WEIGHT, 0.0)
-	system.release_ability(&"sprint")
-	system.cancel_ability(&"fireball")
+	system.release_ability(SPRINT)
+	system.cancel_ability(FIREBALL)
 	var totals := _tools.recorder.get_totals()
 	_check(totals.casts == 1 and totals.failed_casts == 1,
 			"F1 counts accepted and rejected Fireball requests while excluding Sprint and Encumbered")
@@ -781,9 +786,9 @@ func _test_failed_outcome_statistics() -> void:
 	_tools.recorder.clear_log()
 	_target.restore_resources()
 	var system := _tools.player_system
-	var definition := system.get_ability_definition(&"fireball")
+	var definition := system.get_ability_definition(FIREBALL)
 	var payload: Array[GameplayEffectDefinition] = definition.execution.get_effect_payload()
-	var context := system.create_ability_context(&"fireball")
+	var context := system.create_ability_context(FIREBALL)
 	var before := _target.get_value(CombatAttributes.Id.HEALTH)
 	var result := _tools.dummy.ability_system.receive_hit(context, payload, 1.0)
 	_check(result.outcome == &"resist", "A failed spell delivery reports a Resist outcome")
@@ -824,8 +829,8 @@ func _test_critical_statistics() -> void:
 	_source.set_base_value(CombatAttributes.Id.CRITICAL_CHANCE, 100.0)
 	_source.set_base_value(CombatAttributes.Id.CRITICAL_DAMAGE, 0.0)
 	var system := _tools.player_system
-	var definition := system.get_ability_definition(&"fireball")
-	var context := system.create_ability_context(&"fireball")
+	var definition := system.get_ability_definition(FIREBALL)
+	var context := system.create_ability_context(FIREBALL)
 	var payload: Array[GameplayEffectDefinition] = definition.execution.get_effect_payload()
 	var numeric_effect := payload[0].duplicate_deep(Resource.DEEP_DUPLICATE_ALL) as GameplayEffectDefinition
 	numeric_effect.get_damage_execution().amount = null
@@ -873,7 +878,7 @@ func _test_recorder_reset_and_log_bound() -> void:
 	_check(recorder.get_log().size() == old_count, "Statistics reset preserves log history")
 	recorder.max_log_entries = 3
 	for index in 10:
-		recorder.record_event({"type": &"damage", "source_id": 5, "ability_id": &"bounded",
+		recorder.record_event({"type": &"damage", "source_id": 5, "ability_id": 223,
 				"source_name": "Test", "ability_name": "Bounded", "amount": 1.0,
 				"resolved_amount": 100.0, "sequence": index})
 	var log := recorder.get_log()
@@ -892,13 +897,13 @@ func _test_fireball_cast_bar() -> void:
 	var bar := _tools.combat_hud.get_node("CastBarSlot/CastBar") as ProgressBar
 	_check(not bar.is_visible_in_tree(), "The saved cast bar is hidden before Fireball starts")
 	system.set_physics_process(false)
-	system.advance(system.get_cooldown_remaining(&"fireball") + 0.001)
+	system.advance(system.get_cooldown_remaining(FIREBALL) + 0.001)
 	_source.restore_resources()
 	_tools.player_editor.set_attribute_override(CombatAttributes.Id.CAST_SPEED, 50.0)
-	if not system.try_activate(&"fireball"):
+	if not system.try_activate(FIREBALL):
 		_check(false, "Fireball begins for the cast bar test")
 		return
-	var cast := system.get_active_cast(&"fireball")
+	var cast := system.get_active_cast(FIREBALL)
 	var release_time: float = FIREBALL_FIXTURE.RELEASE_TIME
 	system.advance_animation(release_time / 3.0)
 	await process_frame
@@ -910,16 +915,16 @@ func _test_fireball_cast_bar() -> void:
 	await process_frame
 	_check(cast.released and not cast.finished and not bar.is_visible_in_tree(),
 			"The cast bar hides at the release key during recovery")
-	system.cancel_ability(&"fireball")
-	system.advance(system.get_cooldown_remaining(&"fireball") + 0.001)
-	if not system.try_activate(&"fireball"):
+	system.cancel_ability(FIREBALL)
+	system.advance(system.get_cooldown_remaining(FIREBALL) + 0.001)
+	if not system.try_activate(FIREBALL):
 		_check(false, "Fireball begins for the cancellation test")
 		return
 	system.advance_animation(release_time / 3.0)
 	await process_frame
 	await process_frame
 	_check(bar.is_visible_in_tree(), "A new cast shows the cast bar")
-	system.cancel_ability(&"fireball")
+	system.cancel_ability(FIREBALL)
 	await process_frame
 	await process_frame
 	_check(not bar.is_visible_in_tree(), "Cancelling before release hides the cast bar")

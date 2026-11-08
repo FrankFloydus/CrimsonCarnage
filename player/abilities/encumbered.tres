@@ -11,6 +11,7 @@
 [ext_resource type="Script" uid="uid://dfnckjgya4d0v" path="res://combat/abilities/composition/ability_finish_action.gd" id="8_finish"]
 [ext_resource type="Script" uid="uid://0pha8yyuqu58" path="res://combat/outcomes/reaction_definition.gd" id="9_f6wvv"]
 [ext_resource type="Script" uid="uid://lj1m7cwhno0o" path="res://combat/abilities/ability_resource_cost.gd" id="10_0e04y"]
+[ext_resource type="Texture2D" uid="uid://dhxgnmu2mtott" path="res://player/encumbered_icon.svg" id="11_icon"]
 
 [sub_resource type="Resource" id="Delivery_none"]
 script = ExtResource("4_delivery")
@@ -42,8 +43,9 @@ phases = Array[ExtResource("5_phase")]([SubResource("Phase_start"), SubResource(
 
 [resource]
 script = ExtResource("1_ability")
-ability_id = &"encumbered"
+ability_id = 4
 display_name = "Encumbered"
+icon = ExtResource("11_icon")
 ability_tags = PackedStringArray("Ability.Status.Encumbered")
 required_tags = PackedStringArray()
 activation_tags = PackedStringArray()

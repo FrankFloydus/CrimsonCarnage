@@ -3,10 +3,13 @@ class_name AbilityDefinition
 extends Resource
 ## Authored ability configuration, shared by player input and AI activation requests.
 
-## Stable identifier used to grant and activate this ability.
-@export var ability_id: StringName = &""
+## Stable positive integer used to grant and activate this ability. Keep it unique across abilities and effects.
+## Zero leaves the ID unassigned.
+@export var ability_id: int = 0
 ## Human-readable name shown by interfaces and debugging tools.
 @export var display_name: String = "Ability"
+## Optional texture that represents this ability in the Ability Editor and other interfaces.
+@export var icon: Texture2D
 ## Hierarchical action categories supplied to effect and attribute-modifier queries.
 ## Weapon tags come from the grant's source profile.
 @export var ability_tags: PackedStringArray = PackedStringArray()

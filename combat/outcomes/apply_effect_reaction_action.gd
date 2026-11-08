@@ -42,7 +42,7 @@ func execute(outcome: CombatOutcome, context: CombatOutcomeContext, recipient: A
 	effect_context.outcome_context = context.with_provenance(CombatOutcomeContext.Provenance.RETALIATION) \
 			if retaliation else context
 	effect_context.source_id = context.actor_id(CombatOutcomeContext.Role.ORIGINAL_SOURCE)
-	effect_context.ability_id = StringName(parent_event.get("ability_id", &""))
+	effect_context.ability_id = int(parent_event.get("ability_id", 0))
 	effect_context.ability_name = str(parent_event.get("ability_name", ""))
 	var spec := system.make_outgoing_spec(effect, effect_context)
 	if spec == null:

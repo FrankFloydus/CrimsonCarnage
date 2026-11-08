@@ -11,14 +11,21 @@ static func get_hit_chance(attacker_level: int, target_level: int, accuracy: flo
 
 ## Returns fractional base/maximum/final chances and the total rating reaching the ceiling.
 ## Accuracy is action-scoped; the same curve is used for attacks and spells.
+## An authoring preview can supply validated fractional base and ceiling arrays.
 static func get_hit_chance_details(
-		attacker_level: int, target_level: int, accuracy: float
+		attacker_level: int, target_level: int, accuracy: float, draft_curve: Dictionary = {}
 ) -> Dictionary:
 	var gap := maxi(1, target_level) - maxi(1, attacker_level)
 	var curve_end := maxi(0, int(CombatRules.get_number("accuracy_curve_max_gap")))
 	var curve_index := clampi(gap, 0, curve_end)
-	var base := CombatRules.get_number_at("accuracy_base_chance_by_gap", curve_index)
-	var maximum := CombatRules.get_number_at("accuracy_max_chance_by_gap", curve_index)
+	var base: float
+	var maximum: float
+	if draft_curve.is_empty():
+		base = CombatRules.get_number_at("accuracy_base_chance_by_gap", curve_index)
+		maximum = CombatRules.get_number_at("accuracy_max_chance_by_gap", curve_index)
+	else:
+		base = draft_curve["base"][curve_index]
+		maximum = draft_curve["ceiling"][curve_index]
 	if gap < 0:
 		base = minf(1.0, base - CombatRules.get_number("accuracy_lower_level_bonus") * gap)
 		maximum = 1.0

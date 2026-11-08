@@ -2,7 +2,7 @@
 
 The two saved abilities under [tests/fixtures/ability_v2](../tests/fixtures/ability_v2) are editable recipe examples. Grant a copy through an actor's **AbilitySystem → Granted Abilities** to try it in a scene. Assign a faction to each actor and add the intended enemy factions to the source's **Hostile Factions**. For projectile delivery, the source needs a casting origin and an aim origin, and target hitboxes must be on a layer selected by the projectile. The saved fixture projectile is a collision carrier; attach presentation to a copy of its scene when making a gameplay asset.
 
-To bind a fixture in a copy of the example caster scene, grant the ability and set **AbilityInput → Ability Id** to its saved ID, `fixture_blood_lash` or `fixture_crimson_bolt`. The caster input activates that grant on F or the left mouse button.
+To bind a fixture in a copy of the example caster scene, grant the ability and set **AbilityInput → Ability Id** to `14` for Blood Lash or `15` for Crimson Bolt. The caster input activates that grant on F or the left mouse button.
 
 These recipes use Necrotic damage and omit payment and cooldown for testing. Blood Lash uses a ±2 m vertical tolerance and a two-second slow. Crimson Bolt uses 40 direct damage. Set those values for your gameplay ability before granting it.
 

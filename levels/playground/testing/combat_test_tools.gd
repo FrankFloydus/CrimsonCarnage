@@ -2,6 +2,8 @@ class_name CombatTestTools
 extends CanvasLayer
 ## Scene-local controls for inspecting and tuning the two playground actors at runtime.
 
+const SPRINT_ABILITY = preload("res://player/abilities/sprint.tres")
+
 ## Player whose attributes, granted abilities, and combat events are inspected.
 @export var player_system: AbilitySystem
 ## Saved target restored by the reset action and edited in the Dummy tab.
@@ -12,7 +14,7 @@ extends CanvasLayer
 @export var ability_input: Node
 
 var recorder := CombatTestRecorder.new()
-var selected_ability_id: StringName = &""
+var selected_ability_id: int = 0
 var _previous_mouse_mode: Input.MouseMode = Input.MOUSE_MODE_VISIBLE
 var _look_input_was_enabled: bool = false
 var _ability_process_was_enabled: bool = false
@@ -49,9 +51,9 @@ func _ready() -> void:
 			continue
 		_ability_selector.add_item(definition.display_name)
 		_ability_selector.set_item_metadata(_ability_selector.item_count - 1, definition.ability_id)
-	if not select_ability(StringName(ability_input.get("ability_id"))) \
+	if not select_ability(int(ability_input.get("ability_id"))) \
 			and _ability_selector.item_count > 0:
-		select_ability(StringName(_ability_selector.get_item_metadata(0)))
+		select_ability(int(_ability_selector.get_item_metadata(0)))
 	_menu.hide()
 	_backdrop.hide()
 	_on_tab_changed(_tabs.current_tab)
@@ -90,12 +92,12 @@ func _exit_tree() -> void:
 		close_menu()
 
 
-func select_ability(ability_id: StringName) -> bool:
+func select_ability(ability_id: int) -> bool:
 	var definition := player_system.get_ability_definition(ability_id)
 	if definition == null:
 		return false
 	for index in _ability_selector.item_count:
-		if StringName(_ability_selector.get_item_metadata(index)) == ability_id:
+		if int(_ability_selector.get_item_metadata(index)) == ability_id:
 			selected_ability_id = ability_id
 			_ability_selector.select(index)
 			ability_input.set("ability_id", ability_id)
@@ -218,7 +220,7 @@ func _open_menu(tab: int) -> void:
 			_ability_process_was_enabled = ability_input.is_processing()
 			ability_input.set_process(false)
 		player_system.cancel_animation()
-		player_system.release_ability(&"sprint")
+		player_system.release_ability(SPRINT_ABILITY.ability_id)
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		_backdrop.show()
 		_menu.show()
@@ -240,4 +242,4 @@ func _on_tab_changed(tab: int) -> void:
 
 
 func _on_ability_selected(index: int) -> void:
-	select_ability(StringName(_ability_selector.get_item_metadata(index)))
+	select_ability(int(_ability_selector.get_item_metadata(index)))

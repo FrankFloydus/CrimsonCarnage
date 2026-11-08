@@ -205,14 +205,14 @@ func _test_beam_pulse_cost() -> void:
 	var cost := _phase(PULSE, spend)
 	cost.failure_policy = AbilityPhaseDefinition.FailurePolicy.CANCEL_CAST
 	execution.phases = [cost, _phase(&"delivery.impact", _damage_action())]
-	var cast := _activate(source, execution, &"test_beam")
+	var cast := _activate(source, execution, 207)
 	if cast != null:
 		execution.physics_advance(cast, 0.24)
 		_near(target.attributes.get_value(HEALTH), 100.0, "No pulse before its first deadline")
 		execution.physics_advance(cast, 0.51)
 		_near(target.attributes.get_value(HEALTH), 80.0, "Each paid pulse resolves one hit")
 		_near(source.attributes.get_value(MANA), 1.0, "Only the two affordable pulses spend Mana")
-		_check(cast.finished and source.get_active_cast(&"test_beam") == null,
+		_check(cast.finished and source.get_active_cast(cast.definition.ability_id) == null,
 				"Resource exhaustion cancels the channel before its unpaid pulse")
 	_free_arena()
 
@@ -238,7 +238,7 @@ func _test_detached_projectile_channel() -> void:
 			timings.append(event["timing"])
 			attacks.append(event["attack_execution_id"])
 	)
-	var cast := _activate(source, execution, &"test_missiles")
+	var cast := _activate(source, execution, 208)
 	if cast != null:
 		execution.physics_advance(cast, 0.5)
 		_check(_deliveries(AbilityProjectile).size() == 2, "Each due pulse spawns its own projectile")
@@ -268,7 +268,7 @@ func _test_aura_occupancy() -> void:
 	var entry := _phase(&"target.entered", _damage_action())
 	entry.run_once_per_target = true
 	execution.phases = [entry, _phase(&"area.tick", _damage_action())]
-	var cast := _activate(source, execution, &"test_aura")
+	var cast := _activate(source, execution, 209)
 	if cast != null:
 		execution.physics_advance(cast, 0.01)
 		var deliveries := _deliveries(AbilityAreaDelivery)
@@ -311,7 +311,7 @@ func _test_trap_arming() -> void:
 	execution.delivery.arm_delay = 0.25
 	execution.delivery.lifetime = 1.0
 	execution.phases = [_phase(&"delivery.impact", _damage_action())]
-	var cast := _activate(source, execution, &"test_trap")
+	var cast := _activate(source, execution, 210)
 	if cast != null:
 		execution.physics_advance(cast, 0.01)
 		var deliveries := _deliveries(AbilityAreaDelivery)
@@ -324,7 +324,7 @@ func _test_trap_arming() -> void:
 			trap._physics_process(0.50)
 			_near(target.attributes.get_value(HEALTH), 90.0, "An armed trap detonates once")
 			_check(trap.is_queued_for_deletion(), "Detonation releases the trap node")
-	var ability := _ability(execution, &"test_trap_placement")
+	var ability := _ability(execution, 211)
 	ability.interruption_policy = AbilityInterruptionPolicy.new()
 	ability.interruption_policy.cost_timing = AbilityInterruptionPolicy.CommitTiming.ON_RELEASE
 	var cost := AbilityResourceCost.new()
@@ -356,7 +356,7 @@ func _test_chain_hops() -> void:
 	execution.delivery.chain_targeting.radius = 2.0
 	execution.delivery.chain_targeting.max_targets = 1
 	execution.phases = [_phase(&"delivery.impact", _damage_action())]
-	var ability := _ability(execution, &"test_chain")
+	var ability := _ability(execution, 212)
 	var targets: Array[int] = []
 	var attacks: Array[int] = []
 	for actor: AbilitySystem in [first, second, third, outside]:
@@ -401,7 +401,7 @@ func _test_conditions_and_owned_cleanup() -> void:
 	own.owned_until_cast_ends = true
 	own.effects = [marker]
 	execution.phases = [_phase(&"ability.cast_started", own), _phase(&"delivery.impact", _damage_action())]
-	var ability := _ability(execution, &"test_execute")
+	var ability := _ability(execution, 213)
 	ability.interruption_policy = AbilityInterruptionPolicy.new()
 	ability.interruption_policy.cost_timing = AbilityInterruptionPolicy.CommitTiming.ON_RELEASE
 	var cost := AbilityResourceCost.new()
@@ -493,7 +493,7 @@ func _damage_action() -> AbilityApplyEffectsAction:
 	return action
 
 
-func _ability(execution: PhasedAbilityExecution, id: StringName) -> AbilityDefinition:
+func _ability(execution: PhasedAbilityExecution, id: int) -> AbilityDefinition:
 	var ability := AbilityDefinition.new()
 	ability.ability_id = id
 	ability.ability_tags = PackedStringArray(["Ability.Spell"])
@@ -502,7 +502,7 @@ func _ability(execution: PhasedAbilityExecution, id: StringName) -> AbilityDefin
 
 
 func _activate(
-		source: AbilitySystem, execution: PhasedAbilityExecution, id: StringName
+		source: AbilitySystem, execution: PhasedAbilityExecution, id: int
 ) -> AbilityCast:
 	_check(source.grant_ability(_ability(execution, id)), "Grant %s" % id)
 	_check(source.try_activate(id), "Activate %s" % id)

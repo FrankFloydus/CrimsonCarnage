@@ -100,12 +100,13 @@ const PERIODIC_EDITOR_FIELDS: PackedStringArray = [
 	"execute_periodic_on_application", "period_inhibition_policy", "snapshot_source",
 ]
 
-## Stable identity for telemetry and locating authored modifier effects.
-@export var effect_id: StringName = &""
+## Stable positive integer used to find and report this effect. Keep it unique across abilities and effects.
+## Zero leaves the ID unassigned.
+@export var effect_id: int = 0
 ## Human-readable name used in combat feedback and the log.
 @export var display_name: String = ""
-## Optional icon for this effect while it is retained on the player.
-## Assign a HUD category to display it.
+## Optional texture that represents this effect in the Ability Editor.
+## A retained effect also uses it on the player HUD when a HUD category is set.
 @export var icon: Texture2D
 ## Display group for the retained icon. This choice affects presentation only.
 @export var hud_category: HudCategory = HudCategory.NONE:
@@ -349,8 +350,6 @@ func _is_property_applicable(name: String) -> bool:
 	if PERIODIC_EDITOR_FIELDS.has(name):
 		return periodic
 	match name:
-		"icon":
-			return retained and hud_category != HudCategory.NONE
 		"duration":
 			return duration_mode
 		"executions":

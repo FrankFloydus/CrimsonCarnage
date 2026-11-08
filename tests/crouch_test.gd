@@ -3,6 +3,7 @@ extends SceneTree
 ## Run: godot --headless --path . --fixed-fps 60 --script res://tests/crouch_test.gd
 
 const CONTROLLER = preload("res://player/first_person_controller.tscn")
+const CROUCH = preload("res://player/abilities/crouch.tres")
 const LOCOMOTION_FIXTURE = preload("res://tests/locomotion_fixture.gd")
 
 var _world: Node3D
@@ -65,7 +66,7 @@ func _test_toggle_and_shape_isolation() -> void:
 	_look.advance_terrain(_delta, 0.2)
 	var camera: Camera3D = _look.get_node("Camera3D")
 	var camera_offset := camera.position
-	(_player.get_node("AbilitySystem") as AbilitySystem).try_activate(&"crouch")
+	(_player.get_node("AbilitySystem") as AbilitySystem).try_activate(CROUCH.ability_id)
 	_check(_crouch.is_crouching, "First toggle press enters crouch")
 	_check_close(_capsule.height, _crouch.settings.crouched_height,
 			"Crouching reduces the collision capsule to configured height")

@@ -1,6 +1,8 @@
 extends RefCounted
 ## Installs private numeric tuning while preserving the actor's saved Sprint and Exhaustion wiring.
 
+const SPRINT: int = 1
+const EXHAUSTION: int = 5
 const STAMINA_PER_CHARGE: float = 2.0
 const CHARGE_INTERVAL: float = 0.1
 const EXHAUSTION_DURATION: float = 1.0
@@ -12,7 +14,7 @@ static func configure(system: AbilitySystem) -> void:
 		var definition := grants[index]
 		if definition == null:
 			continue
-		if definition.ability_id == &"sprint" and definition.execution is PhasedAbilityExecution:
+		if definition.ability_id == SPRINT and definition.execution is PhasedAbilityExecution:
 			var copy := definition.duplicate_deep(Resource.DEEP_DUPLICATE_ALL) as AbilityDefinition
 			var execution := copy.execution as PhasedAbilityExecution
 			var sprint := execution.phases[0].actions[0] as PlayerSprintAction
@@ -22,7 +24,7 @@ static func configure(system: AbilitySystem) -> void:
 					if calculation is SprintStaminaUpkeepCalculation:
 						calculation.stamina_per_interval = STAMINA_PER_CHARGE
 			grants[index] = copy
-		elif definition.ability_id == &"stamina_exhaustion" \
+		elif definition.ability_id == EXHAUSTION \
 				and definition.execution is PhasedAbilityExecution:
 			var copy := definition.duplicate_deep(Resource.DEEP_DUPLICATE_ALL) as AbilityDefinition
 			var execution := copy.execution as PhasedAbilityExecution

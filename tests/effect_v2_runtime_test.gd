@@ -221,7 +221,7 @@ func _test_accumulator_and_exclusive_slot() -> void:
 	accumulator.threshold = 20.0
 	accumulator.publish_on_expiry = true
 	var effect := _retained(accumulator)
-	effect.effect_id = &"test.accumulator"
+	effect.effect_id = 263
 	effect.timing = GameplayEffectDefinition.Timing.DURATION
 	effect.duration = 1.0
 	var threshold_events: Array[Dictionary] = []
@@ -486,7 +486,7 @@ func _test_snapshot_transform() -> void:
 	capture.maximum_restore_distance = 5.0
 	capture.restore_on_manual_removal = true
 	var effect := _retained(capture)
-	effect.effect_id = &"test.snapshot"
+	effect.effect_id = 264
 	effect.timing = GameplayEffectDefinition.Timing.DURATION
 	effect.duration = 10.0
 	var toggle := AbilitySnapshotToggleAction.new()
@@ -497,7 +497,7 @@ func _test_snapshot_transform() -> void:
 	execution.delivery = AbilityDeliveryDefinition.new()
 	execution.phases.append(phase)
 	var definition := AbilityDefinition.new()
-	definition.ability_id = &"test.snapshot.toggle"
+	definition.ability_id = 265
 	definition.execution = execution
 	caster.attributes.set_base_value(HEALTH, 70.0)
 	var granted := caster.grant_ability(definition)

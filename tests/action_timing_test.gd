@@ -4,6 +4,7 @@ extends SceneTree
 
 const CASTER = preload("res://examples/fireball/caster.tscn")
 const FIREBALL_FIXTURE = preload("res://tests/fireball_fixture.gd")
+const FIREBALL_ID := FIREBALL_FIXTURE.FIREBALL
 
 var _arena: Node3D
 var _system: AbilitySystem
@@ -56,8 +57,8 @@ func _end_fixture() -> void:
 
 
 func _test_spell_release() -> void:
-	_check(_system.try_activate(&"fireball"), "The Fireball fixture begins")
-	var cast := _system.get_active_cast(&"fireball")
+	_check(_system.try_activate(FIREBALL_ID), "The Fireball fixture begins")
+	var cast := _system.get_active_cast(FIREBALL_ID)
 	var execution := cast.definition.execution as PhasedAbilityExecution
 	var clip := _animation.get_animation(execution.animation_name)
 	_close(_animation.get_playing_speed(), 1.0, "Spell playback uses its authored animation timing")
@@ -83,8 +84,8 @@ func _test_spell_release() -> void:
 func _test_sampled_cast_speed() -> void:
 	_system.attributes.set_base_value(CombatAttributes.Id.ATTACK_SPEED, 100.0)
 	_system.attributes.set_base_value(CombatAttributes.Id.CAST_SPEED, 50.0)
-	_check(_system.try_activate(&"fireball"), "Fireball starts with increased Cast Speed")
-	var cast := _system.get_active_cast(&"fireball")
+	_check(_system.try_activate(FIREBALL_ID), "Fireball starts with increased Cast Speed")
+	var cast := _system.get_active_cast(FIREBALL_ID)
 	var execution := cast.definition.execution as PhasedAbilityExecution
 	var clip := _animation.get_animation(execution.animation_name)
 	var windup := FIREBALL_FIXTURE.RELEASE_TIME / 1.5
@@ -99,11 +100,11 @@ func _test_sampled_cast_speed() -> void:
 	_check(cast.released and _projectile_count() == 1, "Faster playback crosses the same release key")
 	_close(execution.get_windup_progress(cast), -1.0, "Release hides windup progress during recovery")
 	_system.advance_animation(clip.length)
-	_system.advance(_system.get_cooldown_remaining(&"fireball") + 0.001)
-	_check(_system.try_activate(&"fireball"), "The next Fireball samples the changed stat")
-	cast = _system.get_active_cast(&"fireball")
+	_system.advance(_system.get_cooldown_remaining(FIREBALL_ID) + 0.001)
+	_check(_system.try_activate(FIREBALL_ID), "The next Fireball samples the changed stat")
+	cast = _system.get_active_cast(FIREBALL_ID)
 	_close(_animation.get_playing_speed(), 2.0, "Cast Speed caps at twice the authored rate")
-	_system.cancel_ability(&"fireball")
+	_system.cancel_ability(FIREBALL_ID)
 	_close(execution.get_windup_progress(cast), -1.0, "Cancellation hides windup progress")
 	_check(not cast.released, "A cancelled cast never reaches its release")
 
@@ -120,8 +121,8 @@ func _test_near_muzzle_cover() -> void:
 	wall.global_transform = Transform3D(view.basis, view.origin - view.basis.z * 0.3)
 	await physics_frame
 	await physics_frame
-	_check(_system.try_activate(&"fireball"), "Close cover does not change cast eligibility")
-	var cast := _system.get_active_cast(&"fireball")
+	_check(_system.try_activate(FIREBALL_ID), "Close cover does not change cast eligibility")
+	var cast := _system.get_active_cast(FIREBALL_ID)
 	var execution := cast.definition.execution as PhasedAbilityExecution
 	_system.advance_animation(FIREBALL_FIXTURE.RELEASE_TIME + 0.001)
 	_check(cast.released and _projectile_count() == 0,
@@ -131,27 +132,27 @@ func _test_near_muzzle_cover() -> void:
 
 func _test_authored_cooldown() -> void:
 	var before := _system.attributes.get_value(CombatAttributes.Id.MANA)
-	_check(_system.try_activate(&"fireball"), "An authored-cooldown ability starts")
-	_close(_system.get_cooldown_remaining(&"fireball"), FIREBALL_FIXTURE.COOLDOWN,
+	_check(_system.try_activate(FIREBALL_ID), "An authored-cooldown ability starts")
+	_close(_system.get_cooldown_remaining(FIREBALL_ID), FIREBALL_FIXTURE.COOLDOWN,
 			"The cooldown starts with its authored duration")
 	_close(before - _system.attributes.get_value(CombatAttributes.Id.MANA),
 			FIREBALL_FIXTURE.COST,
 			"Activation commits exactly the authored resource amount")
 	var after := _system.attributes.get_value(CombatAttributes.Id.MANA)
-	_check(not _system.try_activate(&"fireball"), "An overlapping activation is rejected")
+	_check(not _system.try_activate(FIREBALL_ID), "An overlapping activation is rejected")
 	_close(_system.attributes.get_value(CombatAttributes.Id.MANA), after,
 			"A rejected activation does not charge another resource cost")
 	_system.advance_animation(FIREBALL_FIXTURE.CLIP_LENGTH + 0.001)
 	_system.advance(FIREBALL_FIXTURE.COOLDOWN / 2.0)
-	_check(_system.get_active_cast(&"fireball") == null, "The action can finish before its cooldown")
-	_check(_system.get_activation_failure(&"fireball") == &"no_charges",
+	_check(_system.get_active_cast(FIREBALL_ID) == null, "The action can finish before its cooldown")
+	_check(_system.get_activation_failure(FIREBALL_ID) == &"no_charges",
 			"Animation completion does not bypass the remaining cooldown")
-	_close(_system.get_cooldown_remaining(&"fireball"), FIREBALL_FIXTURE.COOLDOWN / 2.0,
+	_close(_system.get_cooldown_remaining(FIREBALL_ID), FIREBALL_FIXTURE.COOLDOWN / 2.0,
 			"Cooldown time advances independently of animation time")
 	_system.advance(FIREBALL_FIXTURE.COOLDOWN / 2.0 + 0.001)
-	_check(_system.try_activate(&"fireball"), "The ability can start after the cooldown deadline")
-	_system.cancel_ability(&"fireball")
-	_check(_system.get_active_cast(&"fireball") == null, "Explicit interruption clears the active action")
+	_check(_system.try_activate(FIREBALL_ID), "The ability can start after the cooldown deadline")
+	_system.cancel_ability(FIREBALL_ID)
+	_check(_system.get_active_cast(FIREBALL_ID) == null, "Explicit interruption clears the active action")
 
 
 func _projectile_count() -> int:

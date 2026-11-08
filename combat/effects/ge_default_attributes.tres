@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://bmu4hnn0quf7l" path="res://combat/attributes/attribute_modifier.gd" id="2_modifier"]
 [ext_resource type="Script" uid="uid://divtubtmdgcq4" path="res://combat/effects/gameplay_effect_execution.gd" id="2_qliue"]
 [ext_resource type="Script" uid="uid://0pha8yyuqu58" path="res://combat/outcomes/reaction_definition.gd" id="4_qliue"]
+[ext_resource type="Texture2D" uid="uid://d16lhp3lly7ye" path="res://combat/effects/icons/default_attributes.svg" id="5_icon"]
 
 [sub_resource type="Resource" id="MaxHealth"]
 script = ExtResource("2_modifier")
@@ -96,8 +97,9 @@ excluded_context_tags = PackedStringArray()
 [resource]
 resource_name = "GE_DefaultAttributes"
 script = ExtResource("1_effect")
-effect_id = &"Effect.DefaultAttributes"
+effect_id = 11
 display_name = "Default Attributes"
+icon = ExtResource("5_icon")
 asset_tags = PackedStringArray()
 gameplay_cue_tags = PackedStringArray()
 damage_tags = PackedStringArray()

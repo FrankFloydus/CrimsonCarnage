@@ -44,7 +44,7 @@ func execute(outcome: CombatOutcome, context: CombatOutcomeContext, recipient: A
 		return
 	var event := outcome.get_event()
 	var definition := GameplayEffectDefinition.new()
-	definition.effect_id = StringName(event.get("effect_id", &""))
+	definition.effect_id = int(event.get("effect_id", 0))
 	definition.display_name = str(event.get("effect_name", ""))
 	definition.damage_type = int(event.get("damage_type", GameplayEffectDefinition.DamageType.PHYSICAL)) \
 			as GameplayEffectDefinition.DamageType
@@ -63,7 +63,7 @@ func execute(outcome: CombatOutcome, context: CombatOutcomeContext, recipient: A
 			else GameplayEffectContext.capture(source, null, tags)
 	payload.outcome_context = context.with_provenance(CombatOutcomeContext.Provenance.COPIED).for_contact(recipient)
 	payload.source_id = context.actor_id(CombatOutcomeContext.Role.ORIGINAL_SOURCE)
-	payload.ability_id = StringName(event.get("ability_id", &""))
+	payload.ability_id = int(event.get("ability_id", 0))
 	payload.ability_name = str(event.get("ability_name", ""))
 	if bool(event.get("is_critical", false)) and critical_rule == CriticalRule.REUSE:
 		payload = payload.with_critical_result(true, float(event.get("critical_multiplier", 1.0)),
