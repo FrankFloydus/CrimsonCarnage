@@ -2,13 +2,13 @@
 
 These instructions apply throughout this Godot project. Follow the user's current instructions and keep all work within the requested scope.
 
-The game is a first-person RPG inspired by the spirit of *The Elder Scrolls V: Skyrim*, with action RPG elements inspired by *Diablo*. This direction provides context; it does not authorize implementing particular features.
+This Godot 4.7 project contains the first-person Player and the Playground course. Use the [README](README.md) for controls and tuning and the [movement architecture](docs/architecture.md) for scene wiring and responsibilities. Keep the project focused on the requested scope.
 
 ## Explicit permission to use the user's PC
 
 - **NEVER EVER USE THE USER'S PC UNLESS THE USER EXPLICITLY PERMITS IT.**
 - Do not launch, focus, inspect, control, or capture desktop applications, browser windows, or screens, and do not operate the keyboard or mouse, without the user's explicit permission.
-- A request to implement, port, fix, or test project code does not grant permission to interact with the user's desktop. Do not infer that permission from available tools, skills, or prior agent behavior.
+- Require explicit desktop permission for implementation, porting, fixes, and tests regardless of available tools or skills.
 
 ## Scope and collaboration
 
@@ -40,19 +40,19 @@ The game is a first-person RPG inspired by the spirit of *The Elder Scrolls V: S
 ## Verification and handoff
 
 - Use judgment when testing. Keep automated tests focused on meaningful gameplay behavior and math-heavy logic. Avoid low-value tests that slow development without useful confidence.
-- **Behavior tests own their tuning.** Set costs, cooldowns, timing, speeds, resources, and other editable values on in-memory fixtures. Separate saved-asset checks from behavior checks. Verify saved assets have valid references, wiring, tags, and supported ranges. Keep fixture edits in the test process and exercise the same runtime entry points used by the game.
+- **Behavior tests own their tuning.** Set editable movement values on in-memory fixtures. Separate saved-asset checks from behavior checks. Verify saved assets have valid references, wiring, and supported ranges. Keep fixture edits in the test process and exercise the same runtime entry points used by the game.
 - **Never write tests that require UI elements to have a particular color or font size.** Use visual inspection when presentation needs checking.
-- Choose checks appropriate to the change. Documentation-only work does not require gameplay tests; a small editor check or relevant gameplay check may be enough for a small implementation change.
+- Match verification to the change. For documentation, check the claims and links against the project. For movement changes, verify the saved Playground scene and the affected input and physics behavior.
 - At completion, give a brief summary of what changed and what was checked. If the change can be tested manually, provide brief steps and the expected result. State clearly when a relevant check could not be performed.
 
 ## Documentation and instruction scope
 
 - [Architecture](docs/architecture.md) is the master reference for the project's code architecture. Consult it when creating or changing systems, responsibilities, dependencies, data ownership, or the project structure.
-- Read [Ability framework ownership](combat/AGENTS.md#ability-framework-ownership) before changing an ability, effect, or status rule, including when its caller lives outside `combat/`.
+- Read the [Player instructions](player/AGENTS.md) before changing the controller, movement physics, stance, or camera.
 - Keep this root file focused on project-wide rules. As substantial systems are introduced, place a scoped `AGENTS.md` in the relevant directory when it needs specific instructions, and link it from the relevant documentation.
 - Put detailed system explanations in focused Markdown files and reference them from the architecture document or the nearest `AGENTS.md`. Read supporting documents when they apply to the task; do not require every document for every small edit.
 - Before editing a directory, check for applicable nested `AGENTS.md` files. Codex's startup discovery follows the working-directory path; do not assume it has loaded every nested instruction file automatically.
 - Scoped instructions specialize the root guidance for their directory. Do not use them to silently weaken project-wide requirements; discuss a conflicting rule with the user.
-- **Before every final handoff, check whether the task made any AI-facing documentation inaccurate or obsolete. Update affected instructions, architecture, system documents, and links before finishing.** Keep implemented facts distinct from proposals.
+- **Before every final handoff, verify that the AI-facing instructions, architecture, system documents, and links describe the saved project and runtime behavior.** Keep implemented facts distinct from proposals.
 
 The instruction layout follows OpenAI's [AGENTS.md guidance](https://learn.chatgpt.com/docs/agent-configuration/agents-md) and its advice to [keep instructions focused and read documentation according to the task](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra).

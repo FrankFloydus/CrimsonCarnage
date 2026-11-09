@@ -7,83 +7,6 @@
 [ext_resource type="Resource" uid="uid://b3hofdexb4c6v" path="res://player/default_look_settings.tres" id="5_look_settings"]
 [ext_resource type="Script" uid="uid://mlnpvjmwxo2e" path="res://player/first_person_crouch.gd" id="6_crouch"]
 [ext_resource type="Resource" uid="uid://t406r5ht26s5" path="res://player/default_crouch_settings.tres" id="7_crouch_settings"]
-[ext_resource type="Script" uid="uid://diddh658ft18s" path="res://combat/attributes/actor_attributes.gd" id="8_attributes"]
-[ext_resource type="Script" path="res://combat/abilities/ability_system.gd" id="9_system"]
-[ext_resource type="Script" path="res://combat/abilities/attribute_gameplay_event_rule.gd" id="16_attribute_event"]
-[ext_resource type="Script" uid="uid://18usym0sqtyw" path="res://player/player_action_router.gd" id="4_input"]
-[ext_resource type="Script" uid="uid://di7er16wdo7v8" path="res://player/ability_cast_presentation.gd" id="17_cast_presentation"]
-
-[sub_resource type="SphereMesh" id="SphereMesh_7pye0"]
-radius = 0.1
-height = 0.2
-
-[sub_resource type="StandardMaterial3D" id="Material_cast"]
-shading_mode = 0
-albedo_color = Color(1, 0.38, 0.04, 1)
-
-[sub_resource type="SphereMesh" id="Mesh_cast"]
-material = SubResource("Material_cast")
-radial_segments = 16
-rings = 8
-
-[sub_resource type="Animation" id="Animation_reset"]
-resource_name = "RESET"
-length = 0.001
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("Look/Camera3D/MeshInstance3D/ProjectileOrigin/CastingOrb:scale")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector3(0.001, 0.001, 0.001)]
-}
-
-[sub_resource type="Animation" id="Animation_cast"]
-resource_name = "cast_fireball"
-length = 0.8
-tracks/0/type = "method"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("AbilitySystem")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0.73333335),
-"transitions": PackedFloat32Array(1),
-"values": [{
-"args": [&"Event.Combat.ProjectileRelease"],
-"method": &"handle_animation_event"
-}]
-}
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath("Look/Camera3D/MeshInstance3D/ProjectileOrigin/CastingOrb:scale")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.2, 0.35, 0.75),
-"transitions": PackedFloat32Array(1, 1, 1, 1),
-"update": 0,
-"values": [Vector3(0.001, 0.001, 0.001), Vector3(0.25, 0.25, 0.25), Vector3(0.001, 0.001, 0.001), Vector3(0.001, 0.001, 0.001)]
-}
-
-[sub_resource type="AnimationLibrary" id="AnimationLibrary_casting"]
-_data = {
-&"RESET": SubResource("Animation_reset"),
-&"cast_fireball": SubResource("Animation_cast")
-}
-
-[sub_resource type="Resource" id="AttributeEvent_carry"]
-script = ExtResource("16_attribute_event")
-attribute = 39
-threshold_attribute = 38
-entered_event = &"Event.Carry.Overloaded"
-exited_event = &"Event.Carry.WithinCapacity"
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
 radius = 0.35
@@ -106,10 +29,9 @@ collision = NodePath("../CollisionShape3D")
 eye = NodePath("../Look")
 settings = ExtResource("7_crouch_settings")
 
-[node name="Movement" type="Node" parent="." unique_id=1238766472 node_paths=PackedStringArray("body", "attributes")]
+[node name="Movement" type="Node" parent="." unique_id=1238766472 node_paths=PackedStringArray("body")]
 script = ExtResource("2_movement")
 body = NodePath("..")
-attributes = NodePath("../Attributes")
 settings = ExtResource("4_movement_settings")
 
 [node name="Look" type="Node3D" parent="." unique_id=794868390 node_paths=PackedStringArray("body")]
@@ -122,50 +44,6 @@ settings = ExtResource("5_look_settings")
 current = true
 fov = 60.4
 far = 600.0
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Look/Camera3D" unique_id=1694523250]
-transform = Transform3D(0.99918467, -0.0403728, 0, 0.0403728, 0.99918467, 0, 0, 0, 1, 0.41136372, -0.21044846, -0.61111575)
-mesh = SubResource("SphereMesh_7pye0")
-
-[node name="ProjectileOrigin" type="Marker3D" parent="Look/Camera3D/MeshInstance3D" unique_id=264549258]
-transform = Transform3D(0.9991848, 0.040372804, 0, -0.040372804, 0.9991848, 0, 0, 0, 1, 0.015998418, -0.018047666, -0.048829094)
-
-[node name="CastingOrb" type="MeshInstance3D" parent="Look/Camera3D/MeshInstance3D/ProjectileOrigin" unique_id=124744897]
-transform = Transform3D(0.001, 0, 0, 0, 0.001, 0, 0, 0, 0.001, 0, 0, 0)
-visible = false
-cast_shadow = 0
-mesh = SubResource("Mesh_cast")
-
-[node name="Attributes" type="Node" parent="." unique_id=567281778]
-script = ExtResource("8_attributes")
-gameplay_event_rules = Array[ExtResource("16_attribute_event")]([SubResource("AttributeEvent_carry")])
-
-[node name="AbilitySystem" type="Node" parent="." unique_id=1312116492 node_paths=PackedStringArray("attributes", "actor_body", "animation_player", "cast_origin", "aim_origin")]
-script = ExtResource("9_system")
-attributes = NodePath("../Attributes")
-actor_body = NodePath("..")
-animation_player = NodePath("../CastingAnimation")
-cast_origin = NodePath("../Look/Camera3D/MeshInstance3D/ProjectileOrigin")
-aim_origin = NodePath("../Look/Camera3D")
-granted_ability_files = Array[String](["res://player/abilities/sprint.ability.json", "res://player/abilities/jump.ability.json", "res://player/abilities/crouch.ability.json", "res://player/abilities/encumbered.ability.json", "res://player/abilities/stamina_exhaustion.ability.json", "res://examples/fireball/fireball.ability.json", "res://examples/test_ability.ability.json"])
-initial_tags = PackedStringArray()
-faction_id = &"1"
-hostile_factions = Array[StringName]([&"2"])
-startup_effect_files = Array[String](["res://combat/effects/ge_default_attributes.effect.json", "res://combat/effects/ge_attribute_derivations.effect.json", "res://combat/effects/ge_resource_regeneration.effect.json"])
-
-[node name="ActionRouter" type="Node" parent="." unique_id=281701267 node_paths=PackedStringArray("ability_system")]
-script = ExtResource("4_input")
-ability_system = NodePath("../AbilitySystem")
-starting_loadout = "res://player/starting_loadout.json"
-
-[node name="CastingAnimation" type="AnimationPlayer" parent="." unique_id=1509605877]
-libraries/ = SubResource("AnimationLibrary_casting")
-
-[node name="CastPresentation" type="Node" parent="." node_paths=PackedStringArray("ability_system", "visual")]
-script = ExtResource("17_cast_presentation")
-ability_system = NodePath("../AbilitySystem")
-cue_tag = &"GameplayCue.Cast.Fire"
-visual = NodePath("../Look/Camera3D/MeshInstance3D/ProjectileOrigin/CastingOrb")
 
 [connection signal="terrain_advanced" from="Movement" to="Look" method="advance_terrain"]
 [connection signal="terrain_reset" from="Movement" to="Look" method="clear_stair_smoothing"]

@@ -23,8 +23,3 @@ export_credentials.cfg
 Thumbs.db
 
 # Keep *.import, *.uid, and export_presets.cfg under version control.
-
-# Local Python caches and generated benchmark archives.
-__pycache__/
-*.py[cod]
-/tools/combat_simulator/*results/

@@ -7,8 +7,6 @@
 [ext_resource type="PackedScene" path="res://levels/playground/high_parkour_stairs.tscn" id="5_high_stairs"]
 [ext_resource type="Material" path="res://materials/prototype/arena_wall_grid.tres" id="6_wall_grid"]
 [ext_resource type="PackedScene" path="res://levels/playground/crouch_tunnels.tscn" id="7_crouch_tunnels"]
-[ext_resource type="PackedScene" uid="uid://ljapu5yh1usr" path="res://enemies/dummy.tscn" id="8_dummy"]
-[ext_resource type="PackedScene" path="res://levels/playground/testing/combat_test_tools.tscn" id="9_test_tools"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_playground"]
 sky_top_color = Color(0.18, 0.28, 0.38, 1)
@@ -225,15 +223,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 17)
 max_slides = 6
 floor_snap_length = 0.2
 
-[node name="Dummy" parent="." unique_id=2144875978 instance=ExtResource("8_dummy")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 14.5)
-
-[node name="CombatTestTools" parent="." unique_id=872192195 node_paths=PackedStringArray("player_system", "dummy", "player_look", "action_router") instance=ExtResource("9_test_tools")]
-player_system = NodePath("../Player/AbilitySystem")
-dummy = NodePath("../Dummy")
-player_look = NodePath("../Player/Look")
-action_router = NodePath("../Player/ActionRouter")
-
 [node name="LowStairs" parent="." unique_id=745807070 instance=ExtResource("4_stairs")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 15)
 
@@ -282,4 +271,3 @@ mesh = SubResource("BoxMesh_wall_north_south")
 shape = SubResource("BoxShape3D_wall_north_south")
 
 [editable path="Player"]
-[editable path="Dummy"]

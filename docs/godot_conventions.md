@@ -1,6 +1,6 @@
 # Godot conventions
 
-Use these conventions when authoring scripts, scenes, resources, and project folders. The project-wide requirements are in [AGENTS.md](../AGENTS.md); implemented system structure belongs in [Architecture](architecture.md).
+Use these conventions when authoring the Player, the Playground course, and their settings. [Project instructions](../AGENTS.md) · [Movement architecture](architecture.md)
 
 ## Coding style
 
@@ -22,14 +22,14 @@ Every exported property exposed in the Inspector must have a meaningful `##` doc
 
 Place the comment immediately above the property's annotation block. Explain its purpose and include units, constraints, or special behavior when relevant. A group heading does not document the individual properties beneath it.
 
-Example of a documented export:
+The stair height setting documents the unit and the meaning of zero.
 
 ```gdscript
-## Delay, in seconds, before the action can be used again.
-@export_range(0.0, 60.0, 0.1) var action_delay: float = 1.0
+## Maximum stair riser height, in meters. Zero disables automatic stair ascent.
+@export_range(0.0, 1.0, 0.01, "or_greater") var max_step_height: float = 0.3
 ```
 
-Godot uses documented exports for Inspector tooltips; see [GDScript documentation comments](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_documentation_comments.html). Use `#` for ordinary comments and `##` for documentation. Never use Python-style triple-quoted strings as comments or documentation.
+Use `#` for ordinary comments and `##` for documentation, including Inspector tooltips. Never use Python-style triple-quoted strings as comments or documentation. [GDScript documentation comments](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_documentation_comments.html)
 
 Put a `##` description immediately above every enum type and each enum member. Give each choice its own line. Describe the behavior it selects and preserve serialized values when adding or rearranging comments.
 
@@ -48,8 +48,7 @@ not require a scene node for every responsibility.
 - Have internal helpers receive needed configuration from their owner. Do not duplicate tuning
   or invent editable options to justify a scene node.
 
-For example, the controller owns its `FirstPersonGait` helper for runtime gait selection, while
-the saved `Movement` component exposes movement tuning through **Movement > Settings**.
+The controller owns its `FirstPersonGait` helper for runtime gait selection. The saved Movement, Crouch, and Look components each expose their own **Settings** resource.
 
 Keep requested scenes, UI, and resources as saved, editable project assets. Extracting internal
 logic into helpers must preserve that authored content and its meaningful editor controls.
@@ -77,6 +76,4 @@ Use the official Godot documentation and, when behavior is unclear or an underly
 C:\Users\Drako\Desktop\_QUADER_DEV\resources\_SOURCE_CODE\godot
 ```
 
-This is an external investigation reference. It is not a project dependency or permission to modify the engine.
-
-Check version compatibility before applying findings: this project's configuration declares Godot `4.7` features, while the checkout's `version.py` identified it as `4.8.0 beta` when these documents were created. Verify the editor build and relevant source revision when investigating version-sensitive behavior. The `stable` documentation URL may also change its target over time.
+Use the checkout for read-only investigation. The project targets **Godot 4.7**. Match version-sensitive findings to the editor build used to run the project. [Project settings](../project.godot)
