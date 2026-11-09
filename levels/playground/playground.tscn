@@ -269,5 +269,3 @@ mesh = SubResource("BoxMesh_wall_north_south")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Arena/SouthWall" unique_id=485415837]
 shape = SubResource("BoxShape3D_wall_north_south")
-
-[editable path="Player"]

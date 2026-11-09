@@ -1,0 +1,11 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://mymd2pbi8ain"]
+
+[ext_resource type="Texture2D" uid="uid://q8pjs07l2h6f" path="res://arms_first_person_Arms First Person - Seam Albedo 4K.png" id="1_n8n7c"]
+
+[resource]
+resource_name = "Arms First Person Skin - Seam Atlas"
+cull_mode = 2
+albedo_texture = ExtResource("1_n8n7c")
+roughness = 0.9
+texture_repeat = false
+metadata/_gltf_primary_texture_coord = 2
