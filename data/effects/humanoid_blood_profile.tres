@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BloodProfile" format=3 uid="uid://c8b5q37jcviot"]
+
+[ext_resource type="Script" uid="uid://cyblygb56bedt" path="res://scripts/effects/blood_profile.gd" id="1_profile"]
+[ext_resource type="PackedScene" path="res://particles/blood_burst.tscn" id="2_burst"]
+[ext_resource type="Resource" uid="uid://ixp1827fmrff" path="res://data/effects/blood_splatter_style.tres" id="3_style"]
+
+[resource]
+resource_name = "Humanoid Blood"
+script = ExtResource("1_profile")
+splatter_style = ExtResource("3_style")
+burst_scene = ExtResource("2_burst")
+droplet_speed = 8.0
+stain_size = Vector2(1, 2)
+show_droplet_wires = true

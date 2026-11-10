@@ -1,0 +1,12 @@
+[gd_scene format=3]
+
+[ext_resource type="Texture2D" path="res://textures/effects/blood_deposits/castoff_compact.png" id="1_splatter"]
+
+[node name="BloodWorldDecal" type="Decal"]
+size = Vector3(1.80, 0.22, 2.15)
+texture_albedo = ExtResource("1_splatter")
+modulate = Color(0.34, 0.11, 0.15, 0.94)
+upper_fade = 0.35
+lower_fade = 0.35
+normal_fade = 0.68
+cull_mask = 1

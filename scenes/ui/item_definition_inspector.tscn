@@ -1,0 +1,85 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/item_definition_inspector.gd" id="1_inspector"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.08, 0.105, 0.14, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.32, 0.42, 0.55, 0.9)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[node name="ItemDefinitionInspector" type="CanvasLayer"]
+script = ExtResource("1_inspector")
+
+[node name="Hint" type="Label" parent="."]
+unique_name_in_owner = true
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -410.0
+offset_top = 15.0
+offset_right = -18.0
+mouse_filter = 2
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 14
+text = "F4   Item definitions"
+horizontal_alignment = 2
+
+[node name="Panel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -506.0
+offset_top = 42.0
+offset_right = -18.0
+offset_bottom = 414.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Margins" type="MarginContainer" parent="Panel"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 12
+
+[node name="Details" type="VBoxContainer" parent="Panel/Margins"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="Panel/Margins/Details"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 18
+text = "Item definitions"
+
+[node name="Source" type="Label" parent="Panel/Margins/Details"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.69, 0.76, 0.84, 1)
+theme_override_font_sizes/font_size = 13
+text = "Loaded from Godot resources in data/items"
+
+[node name="Divider" type="HSeparator" parent="Panel/Margins/Details"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Report" type="RichTextLabel" parent="Panel/Margins/Details"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+theme_override_font_sizes/normal_font_size = 15
+text = "Item definitions appear here while playing the Playground."
+scroll_active = false
+selection_enabled = false

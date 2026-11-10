@@ -1,0 +1,93 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/effects/blood_burst.gd" id="1_burst"]
+[ext_resource type="Shader" path="res://shaders/effects/blood_burst.gdshader" id="2_draw"]
+[ext_resource type="Shader" path="res://shaders/effects/blood_burst_process.gdshader" id="3_motion"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_spray"]
+resource_name = "Airborne Blood"
+shader = ExtResource("2_draw")
+
+[sub_resource type="QuadMesh" id="QuadMesh_spray"]
+material = SubResource("ShaderMaterial_spray")
+size = Vector2(1, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_liquid_motion"]
+resource_name = "Liquid Filament Motion"
+resource_local_to_scene = true
+shader = ExtResource("3_motion")
+shader_parameter/layer = 0
+shader_parameter/speed_range = Vector2(3.7, 8.8)
+shader_parameter/spread = 0.93
+shader_parameter/drag = 4.8
+shader_parameter/gravity = 8.5
+shader_parameter/width_range = Vector2(0.057, 0.142)
+shader_parameter/life_range = Vector2(0.29, 0.48)
+shader_parameter/trail_range = Vector2(0.088, 0.159)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_drop_motion"]
+resource_name = "Droplet Motion"
+resource_local_to_scene = true
+shader = ExtResource("3_motion")
+shader_parameter/layer = 1
+shader_parameter/speed_range = Vector2(2.6, 9.6)
+shader_parameter/spread = 1.02
+shader_parameter/drag = 4.7
+shader_parameter/gravity = 9.8
+shader_parameter/width_range = Vector2(0.0028, 0.022)
+shader_parameter/life_range = Vector2(0.29, 0.65)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_mist_motion"]
+resource_name = "Impact Mist Motion"
+resource_local_to_scene = true
+shader = ExtResource("3_motion")
+shader_parameter/layer = 2
+shader_parameter/speed_range = Vector2(0.70, 3.0)
+shader_parameter/spread = 1.0
+shader_parameter/drag = 8.6
+shader_parameter/gravity = 1.2
+shader_parameter/width_range = Vector2(0.38, 0.70)
+shader_parameter/life_range = Vector2(0.22, 0.42)
+
+[node name="BloodBurst" type="Node3D"]
+script = ExtResource("1_burst")
+
+[node name="LiquidPatches" type="GPUParticles3D" parent="."]
+cast_shadow = 0
+emitting = false
+amount = 17
+lifetime = 0.67
+one_shot = true
+explosiveness = 0.96
+fixed_fps = 0
+visibility_aabb = AABB(-2.4, -2, -3, 4.8, 4, 4.5)
+draw_order = 2
+process_material = SubResource("ShaderMaterial_liquid_motion")
+draw_pass_1 = SubResource("QuadMesh_spray")
+
+[node name="Droplets" type="GPUParticles3D" parent="."]
+cast_shadow = 0
+emitting = false
+amount = 510
+lifetime = 0.67
+one_shot = true
+explosiveness = 0.92
+randomness = 0.32
+fixed_fps = 0
+visibility_aabb = AABB(-2.4, -2, -3, 4.8, 4, 4.5)
+draw_order = 2
+process_material = SubResource("ShaderMaterial_drop_motion")
+draw_pass_1 = SubResource("QuadMesh_spray")
+
+[node name="ImpactMist" type="GPUParticles3D" parent="."]
+cast_shadow = 0
+emitting = false
+amount = 27
+lifetime = 0.67
+one_shot = true
+explosiveness = 0.94
+fixed_fps = 0
+visibility_aabb = AABB(-0.9, -0.9, -1, 1.8, 1.8, 1.8)
+draw_order = 2
+process_material = SubResource("ShaderMaterial_mist_motion")
+draw_pass_1 = SubResource("QuadMesh_spray")

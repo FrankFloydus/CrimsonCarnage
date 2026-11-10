@@ -1,6 +1,0 @@
-[gd_resource type="Resource" script_class="FirstPersonCrouchSettings" format=3 uid="uid://t406r5ht26s5"]
-
-[ext_resource type="Script" uid="uid://bnexmskhh1rmf" path="res://player/first_person_crouch_settings.gd" id="1_settings"]
-
-[resource]
-script = ExtResource("1_settings")

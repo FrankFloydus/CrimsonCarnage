@@ -1,7 +1,0 @@
-[gd_resource type="Resource" script_class="FirstPersonMovementSettings" format=3 uid="uid://cc31xas73uelj"]
-
-[ext_resource type="Script" uid="uid://dammvc43mnbpn" path="res://player/first_person_movement_settings.gd" id="1_settings"]
-
-[resource]
-script = ExtResource("1_settings")
-coyote_time = 0.25

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="MeleeAttackReach" format=3 uid="uid://cq5mly5bqouu8"]
+
+[ext_resource type="Script" uid="uid://bixmo8mod68sk" path="res://scripts/melee/melee_attack_reach.gd" id="1_reach"]
+
+[resource]
+resource_name = "Slash Reach"
+script = ExtResource("1_reach")
+reach_multiplier = 2.0
+flat_bonus = 0.6
+blade_offset = 0.15

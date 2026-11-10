@@ -1,0 +1,377 @@
+[gd_scene format=3 uid="uid://bx6r2r5geskx"]
+
+[ext_resource type="Script" uid="uid://3ry3r8c72k06" path="res://scripts/player/player.gd" id="1_controller"]
+[ext_resource type="Script" uid="uid://dqtstqyhulsqh" path="res://scripts/player/first_person_movement.gd" id="2_movement"]
+[ext_resource type="Script" uid="uid://c4420ury171pa" path="res://scripts/player/first_person_look.gd" id="3_look"]
+[ext_resource type="Resource" uid="uid://cc31xas73uelj" path="res://data/player/default_movement_settings.tres" id="4_movement_settings"]
+[ext_resource type="Resource" uid="uid://b3hofdexb4c6v" path="res://data/player/default_look_settings.tres" id="5_look_settings"]
+[ext_resource type="Script" uid="uid://mlnpvjmwxo2e" path="res://scripts/player/first_person_crouch.gd" id="6_crouch"]
+[ext_resource type="Resource" uid="uid://t406r5ht26s5" path="res://data/player/default_crouch_settings.tres" id="7_crouch_settings"]
+[ext_resource type="PackedScene" uid="uid://cos2v3i0bpyyp" path="res://scenes/weapons/prototype_sword.tscn" id="8_rgyib"]
+[ext_resource type="Script" uid="uid://d2f5hidbivb0r" path="res://scripts/melee/first_person_melee.gd" id="9_melee"]
+[ext_resource type="PackedScene" uid="uid://cnwst0susmmxs" path="res://scenes/weapons/short_sword.tscn" id="10_short_sword"]
+[ext_resource type="Resource" uid="uid://cq5mly5bqouu8" path="res://data/melee/slash_reach.tres" id="11_slash_reach"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="Animation" id="Animation_hg6s5"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Look/Camera3D/WeaponControl:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0.21490398, -0.22514963, -0.32550502)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Look/Camera3D/WeaponControl:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0.06784744, 1.4690952, -0.30370566)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Look/Camera3D/WeaponControl:quaternion")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Quaternion(-0.113874376, 0.6690851, 0.72959423, 0.083964616)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Look/Camera3D/LeftWeaponControl:position")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(-0.21490398, -0.22514963, -0.32550502)]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Look/Camera3D/LeftWeaponControl:rotation")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0.06784744, -1.4690952, 0.30370566)]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Look/Camera3D/LeftWeaponControl:quaternion")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Quaternion(-0.113874376, -0.6690851, -0.72959423, 0.083964616)]
+}
+
+[sub_resource type="Animation" id="Animation_ebec5"]
+resource_name = "idle"
+length = 2.0
+loop_mode = 1
+step = 0.0333333
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Look/Camera3D/WeaponControl:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1, 2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(0.21490398, -0.22514963, -0.32550502), Vector3(0.213, -0.23, -0.319), Vector3(0.21490398, -0.22514963, -0.32550502)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Look/Camera3D/WeaponControl:quaternion")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Quaternion(-0.076449096, 0.665965, -0.13466944, 0.72973305)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Look/Camera3D/LeftWeaponControl:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 1, 2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(-0.21490398, -0.22514963, -0.32550502), Vector3(-0.213, -0.23, -0.319), Vector3(-0.21490398, -0.22514963, -0.32550502)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Look/Camera3D/LeftWeaponControl:quaternion")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Quaternion(-0.076449096, -0.665965, 0.13466944, 0.72973305)]
+}
+
+[sub_resource type="Animation" id="Animation_8t03j"]
+resource_name = "slash"
+length = 0.44
+step = 0.05
+markers = [{
+"color": Color(1, 1, 1, 1),
+"name": &"HitStart",
+"time": 0.1
+}, {
+"color": Color(1, 1, 1, 1),
+"name": &"HitEnd",
+"time": 0.3
+}]
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Look/Camera3D/WeaponControl:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.25, 0.3, 0.44),
+"transitions": PackedFloat32Array(1, 1, 1, 1, -1.5, 1),
+"update": 0,
+"values": [Vector3(0.21490398, -0.22514963, -0.32550502), Vector3(0.21490398, -0.22514963, -0.32550502), Vector3(-0.039572954, -0.19355369, -0.32550502), Vector3(-0.18231298, -0.19355369, -0.32550502), Vector3(-0.182313, -0.25949752, -0.32550502), Vector3(0.21490398, -0.22514963, -0.32550502)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Look/Camera3D/WeaponControl:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.25, 0.3, 0.44),
+"transitions": PackedFloat32Array(1, 1, 1, 1, -1.5, 1),
+"update": 0,
+"values": [Vector3(0.06784744, 1.4690952, -0.30370566), Vector3(1.3710129, 1.0706586, -0.15091412), Vector3(1.3710129, 2.7631009, -0.15091403), Vector3(1.299859, 2.1636896, -1.8732538), Vector3(1.0765014, 2.202883, -2.1645827), Vector3(0.06784744, 1.4690952, -0.30370566)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Look/Camera3D/LeftWeaponControl:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(-0.21490398, -0.22514963, -0.32550502)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Look/Camera3D/LeftWeaponControl:quaternion")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Quaternion(-0.076449096, -0.665965, 0.13466944, 0.72973305)]
+}
+
+[sub_resource type="Animation" id="Animation_left_slash"]
+resource_name = "slash_left"
+length = 0.44
+step = 0.05
+markers = [{
+"color": Color(1, 1, 1, 1),
+"name": &"HitStart",
+"time": 0.1
+}, {
+"color": Color(1, 1, 1, 1),
+"name": &"HitEnd",
+"time": 0.3
+}]
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Look/Camera3D/LeftWeaponControl:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.25, 0.3, 0.44),
+"transitions": PackedFloat32Array(1, 1, 1, 1, -1.5, 1),
+"update": 0,
+"values": [Vector3(-0.21490398, -0.22514963, -0.32550502), Vector3(-0.21490398, -0.22514963, -0.32550502), Vector3(0.039572954, -0.19355369, -0.32550502), Vector3(0.18231298, -0.19355369, -0.32550502), Vector3(0.182313, -0.25949752, -0.32550502), Vector3(-0.21490398, -0.22514963, -0.32550502)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Look/Camera3D/LeftWeaponControl:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.25, 0.3, 0.44),
+"transitions": PackedFloat32Array(1, 1, 1, 1, -1.5, 1),
+"update": 0,
+"values": [Vector3(0.06784744, -1.4690952, 0.30370566), Vector3(1.3710129, -1.0706586, 0.15091412), Vector3(1.3710129, -2.7631009, 0.15091403), Vector3(1.299859, -2.1636896, 1.8732538), Vector3(1.0765014, -2.202883, 2.1645827), Vector3(0.06784744, -1.4690952, 0.30370566)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Look/Camera3D/WeaponControl:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0.21490398, -0.22514963, -0.32550502)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Look/Camera3D/WeaponControl:quaternion")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Quaternion(-0.076449096, 0.665965, -0.13466944, 0.72973305)]
+}
+
+[sub_resource type="Animation" id="Animation_rgyib"]
+resource_name = "slash_r"
+length = 0.8
+loop_mode = 1
+step = 0.0333333
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Look/Camera3D/WeaponControl:quaternion")
+tracks/0/interp = 1
+tracks/0/loop_wrap = false
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.10000001, 0.20000002),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Quaternion(-0.113874376, 0.6690851, 0.72959423, 0.083964616), Quaternion(-0.664896, 0.014048809, -0.13617094, 0.73428434), Quaternion(-0.5659251, -0.34930328, -0.513123, 0.5426055)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Look/Camera3D/WeaponControl:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = false
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.10000001, 0.20000002),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(-0.582944, -0.17407858, -0.42173138), Vector3(-0.053767316, -0.11115225, -0.24175423), Vector3(0.15429865, -0.16503581, -0.15131947)]
+}
+
+[sub_resource type="Animation" id="Animation_2ieo8"]
+resource_name = "start"
+step = 0.0333333
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_ebec5"]
+_data = {
+&"RESET": SubResource("Animation_hg6s5"),
+&"idle": SubResource("Animation_ebec5"),
+&"slash": SubResource("Animation_8t03j"),
+&"slash_left": SubResource("Animation_left_slash"),
+&"slash_r": SubResource("Animation_rgyib"),
+&"start": SubResource("Animation_2ieo8")
+}
+
+[node name="Player" type="CharacterBody3D" unique_id=223682386]
+process_physics_priority = -10
+max_slides = 8
+floor_snap_length = 0.3
+script = ExtResource("1_controller")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1243220061]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_player")
+
+[node name="Crouch" type="Node" parent="." unique_id=1880628811 node_paths=PackedStringArray("body", "collision", "eye")]
+script = ExtResource("6_crouch")
+body = NodePath("..")
+collision = NodePath("../CollisionShape3D")
+eye = NodePath("../Look")
+settings = ExtResource("7_crouch_settings")
+
+[node name="Movement" type="Node" parent="." unique_id=1238766472 node_paths=PackedStringArray("body")]
+script = ExtResource("2_movement")
+body = NodePath("..")
+settings = ExtResource("4_movement_settings")
+
+[node name="Look" type="Node3D" parent="." unique_id=794868390 node_paths=PackedStringArray("body")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.62, 0)
+script = ExtResource("3_look")
+body = NodePath("..")
+settings = ExtResource("5_look_settings")
+
+[node name="Camera3D" type="Camera3D" parent="Look" unique_id=897164582]
+current = true
+fov = 50.0
+
+[node name="WeaponControl" type="Node3D" parent="Look/Camera3D" unique_id=1988381765 node_paths=PackedStringArray("animation_player", "long_sweep", "short_sweep", "left_sweep")]
+process_physics_priority = 1
+transform = Transform3D(-0.9599652, -0.2749035, -0.053805225, -0.029863097, -0.090550184, 0.99544394, -0.27852312, 0.9571984, 0.078715555, 0.21490398, -0.22514963, -0.32550502)
+rotation_edit_mode = 1
+script = ExtResource("9_melee")
+animation_player = NodePath("../../../AnimationPlayer")
+long_sweep = NodePath("PrototypeSword/MeleeSweep")
+short_sweep = NodePath("ShortSword/MeleeSweep")
+left_sweep = NodePath("../LeftWeaponControl/LeftSword/MeleeSweep")
+slash_reach = ExtResource("11_slash_reach")
+contact_direction_fallback = Vector3(0, 0, 0)
+
+[node name="PrototypeSword" parent="Look/Camera3D/WeaponControl" unique_id=332934415 instance=ExtResource("8_rgyib")]
+
+[node name="ShortSword" parent="Look/Camera3D/WeaponControl" unique_id=969067622 instance=ExtResource("10_short_sword")]
+visible = false
+
+[node name="LeftWeaponControl" type="Node3D" parent="Look/Camera3D" unique_id=1748731221]
+transform = Transform3D(-0.9599652, 0.2749035, 0.053805225, 0.029863097, -0.090550184, 0.99544394, 0.27852312, 0.9571984, 0.078715555, -0.21490398, -0.22514963, -0.32550502)
+rotation_edit_mode = 1
+
+[node name="LeftSword" parent="Look/Camera3D/LeftWeaponControl" unique_id=1748731222 instance=ExtResource("8_rgyib")]
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=104067665]
+callback_mode_process = 2
+libraries/ = SubResource("AnimationLibrary_ebec5")
+autoplay = &"idle"
+
+[connection signal="terrain_advanced" from="Movement" to="Look" method="advance_terrain"]
+[connection signal="terrain_reset" from="Movement" to="Look" method="clear_stair_smoothing"]

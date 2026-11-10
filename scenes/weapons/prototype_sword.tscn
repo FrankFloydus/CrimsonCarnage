@@ -1,0 +1,134 @@
+[gd_scene format=3 uid="uid://cos2v3i0bpyyp"]
+
+[ext_resource type="Script" uid="uid://bbh2jpn1wtnl3" path="res://scripts/melee/melee_sweep_3d.gd" id="1_sweep"]
+
+[sub_resource type="StandardMaterial3D" id="Material_Steel"]
+resource_name = "Brushed Steel"
+albedo_color = Color(0.48967475, 0.4857062, 0.4659456, 1)
+metallic = 1.0
+roughness = 0.24
+
+[sub_resource type="BoxMesh" id="Mesh_Blade"]
+material = SubResource("Material_Steel")
+size = Vector3(0.046, 0.53, 0.007)
+
+[sub_resource type="PrismMesh" id="Mesh_BladeTip"]
+material = SubResource("Material_Steel")
+size = Vector3(0.046, 0.1, 0.007)
+
+[sub_resource type="StandardMaterial3D" id="Material_Fuller"]
+resource_name = "Fuller Inlay"
+albedo_color = Color(0.5150463, 0.5210874, 0.5210866, 1)
+metallic = 1.0
+roughness = 0.18
+
+[sub_resource type="BoxMesh" id="Mesh_Fuller"]
+material = SubResource("Material_Fuller")
+size = Vector3(0.01, 0.415, 0.001)
+
+[sub_resource type="StandardMaterial3D" id="Material_Brass"]
+resource_name = "Brass Fittings"
+albedo_color = Color(0.68, 0.44, 0.19, 1)
+metallic = 1.0
+roughness = 0.21
+
+[sub_resource type="BoxMesh" id="Mesh_Guard"]
+material = SubResource("Material_Brass")
+size = Vector3(0.164, 0.019, 0.033)
+
+[sub_resource type="StandardMaterial3D" id="Material_Leather"]
+resource_name = "Dark Leather"
+albedo_color = Color(0.12, 0.08, 0.06, 1)
+roughness = 0.85
+
+[sub_resource type="CylinderMesh" id="Mesh_Grip"]
+material = SubResource("Material_Leather")
+top_radius = 0.015
+bottom_radius = 0.014
+height = 0.252
+radial_segments = 12
+rings = 1
+
+[sub_resource type="CylinderMesh" id="Mesh_Collar"]
+material = SubResource("Material_Brass")
+top_radius = 0.017
+bottom_radius = 0.017
+height = 0.011
+radial_segments = 12
+rings = 1
+
+[sub_resource type="SphereMesh" id="Mesh_Pommel"]
+material = SubResource("Material_Brass")
+radius = 0.021
+height = 0.043
+radial_segments = 12
+rings = 6
+
+[node name="PrototypeSword" type="Node3D" unique_id=4064154]
+
+[node name="Visuals" type="Node3D" parent="." unique_id=499747207]
+
+[node name="Blade" type="MeshInstance3D" parent="Visuals" unique_id=955804504]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.354, 0)
+cast_shadow = 0
+mesh = SubResource("Mesh_Blade")
+
+[node name="BladeTip" type="MeshInstance3D" parent="Visuals" unique_id=970188352]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.668, 0)
+cast_shadow = 0
+mesh = SubResource("Mesh_BladeTip")
+
+[node name="FullerFront" type="MeshInstance3D" parent="Visuals" unique_id=1538975626]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.352, 0.0037)
+cast_shadow = 0
+mesh = SubResource("Mesh_Fuller")
+
+[node name="FullerBack" type="MeshInstance3D" parent="Visuals" unique_id=31302423]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.352, -0.0037)
+cast_shadow = 0
+mesh = SubResource("Mesh_Fuller")
+
+[node name="Guard" type="MeshInstance3D" parent="Visuals" unique_id=1782713917]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.085, 0)
+cast_shadow = 0
+mesh = SubResource("Mesh_Guard")
+
+[node name="Grip" type="MeshInstance3D" parent="Visuals" unique_id=1629268752]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.048, 0)
+cast_shadow = 0
+mesh = SubResource("Mesh_Grip")
+
+[node name="UpperCollar" type="MeshInstance3D" parent="Visuals" unique_id=1100445544]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0695, 0)
+cast_shadow = 0
+mesh = SubResource("Mesh_Collar")
+
+[node name="LowerCollar" type="MeshInstance3D" parent="Visuals" unique_id=1370706325]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.172, 0)
+cast_shadow = 0
+mesh = SubResource("Mesh_Collar")
+
+[node name="Pommel" type="MeshInstance3D" parent="Visuals" unique_id=1734701176]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.192, 0)
+cast_shadow = 0
+mesh = SubResource("Mesh_Pommel")
+
+[node name="MainGrip" type="Marker3D" parent="." unique_id=821388101]
+
+[node name="SupportGrip" type="Marker3D" parent="." unique_id=1101649213]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.11, 0)
+
+[node name="MeleeSweep" type="Node3D" parent="." unique_id=62204352]
+script = ExtResource("1_sweep")
+width = 0.075
+height = 0.045
+show_sweeps = false
+
+[node name="SweepStart" type="Marker3D" parent="MeleeSweep" unique_id=525939685]
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 0.089, 0)
+
+[node name="SweepEnd" type="Marker3D" parent="MeleeSweep" unique_id=1695990232]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.99075216, 0)
+
+[node name="BloodMotion" type="Marker3D" parent="MeleeSweep" unique_id=147357205]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.38, 0)

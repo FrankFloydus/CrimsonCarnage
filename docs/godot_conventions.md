@@ -63,17 +63,19 @@ logic into helpers must preserve that authored content and its meaningful editor
 
 ## Folder organization
 
-- Group files by a clear feature or responsibility, keeping closely related scenes, scripts, and resources together.
-- Create a shared location only when something is actually shared. Prefer specific folder names over catch-all folders such as `misc`.
-- Add folders as needed for requested work; keep the structure shallow enough to navigate comfortably.
-- Keep documentation in `docs/`, with system details linked from the architecture document. Place scoped `AGENTS.md` files beside the systems they govern when specialized rules are needed.
+- Put data-driven definitions, catalogs, and reusable gameplay tuning in `data/`, with a subfolder for each category that has content.
+- Group standalone assets by type. Use `scenes/`, `scripts/`, `shaders/`, `materials/`, `textures/`, `meshes/`, and `particles/` as needed. Use shallow domain subfolders such as `scripts/player/` and `scenes/weapons/`.
+- Keep scene-specific subresources in their scenes and keep Godot editor plugins under `addons/`. Move `.uid` and `.import` sidecars with their assets.
+- Keep documentation in `docs/`, with system details linked from the architecture document. Place scoped `AGENTS.md` files beside the scripts they govern when specialized rules are needed.
 
 ## Engine references
 
-Use the official Godot documentation and, when behavior is unclear or an underlying implementation needs checking, inspect the local official Godot source checkout:
+The project targets **Godot 4.8 beta** built from upstream revision `c51ff06e8` in the sibling Godot checkout. It uses Jolt Physics, physics interpolation, and Forward Plus with D3D12 on Windows. Melee and effect scripts use the upstream `*_into` physics query APIs available in this revision. Match version-sensitive findings to the installed build. [Godot source](../../godot) · [Local editor](../../Godot_RPG.exe) · [Project settings](../project.godot)
 
-```text
-C:\Users\Drako\Desktop\_QUADER_DEV\resources\_SOURCE_CODE\godot
+For an already imported checkout, run this PowerShell command from the Godot project root to verify scene startup and the item catalog report. For a fresh test copy, run the same executable with `--headless --path . --import` first.
+
+```powershell
+& ..\godot\bin\godot.windows.editor.x86_64.console.exe --headless --path . --quit-after 60
 ```
 
-Use the checkout for read-only investigation. The project targets **Godot 4.7**. Match version-sensitive findings to the editor build used to run the project. [Project settings](../project.godot)
+Use the Playground's rendered view for checks of GPU particles, decals, shadows, and first-person presentation. [Manual checks](../README.md)

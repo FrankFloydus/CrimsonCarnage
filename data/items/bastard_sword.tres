@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemDefinition" format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_definition"]
+[ext_resource type="PackedScene" path="res://scenes/weapons/prototype_sword.tscn" id="2_world"]
+
+[resource]
+script = ExtResource("1_definition")
+item_id = &"BastardSword"
+display_name = "Bastard Sword"
+category = 2
+description = "A long, balanced blade with a leather-wrapped grip."
+world_scene = ExtResource("2_world")
+width = 2
+height = 3
+vendor_value = 75
+weapon_type = 5
+equip_profile = 3

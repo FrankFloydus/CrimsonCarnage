@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://bacllir55kydp"]
+
+[ext_resource type="Script" uid="uid://cq5m5vy4markb" path="res://scripts/effects/blood_world.gd" id="1_world"]
+[ext_resource type="PackedScene" path="res://scenes/effects/blood_world_decal.tscn" id="2_decal"]
+[ext_resource type="Resource" uid="uid://ixp1827fmrff" path="res://data/effects/blood_splatter_style.tres" id="3_style"]
+
+[node name="BloodWorld" type="Node3D" unique_id=1810055455]
+script = ExtResource("1_world")
+decal_scene = ExtResource("2_decal")
+splatter_style = ExtResource("3_style")
+floor_footprint = Vector2(1.95, 2.15)
+floor_grazing_stretch = 1.24
+decal_lifetime = 60.0

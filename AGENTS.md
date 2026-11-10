@@ -2,13 +2,12 @@
 
 These instructions apply throughout this Godot project. Follow the user's current instructions and keep all work within the requested scope.
 
-This Godot 4.7 project contains the first-person Player and the Playground course. Use the [README](README.md) for controls and tuning and the [movement architecture](docs/architecture.md) for scene wiring and responsibilities. Keep the project focused on the requested scope.
+Crimson Carnage is checked out at `C:\Users\Drako\Desktop\_CRIMSON_CARNAGE_DEV\CrimsonCarnage`. It uses Godot 4.8 beta built from upstream source in the sibling Godot checkout. The Playground exercises first-person movement, melee sweeps, blood effects, and item resource loading. Use the [README](README.md) for controls and the [architecture](docs/architecture.md) for scene wiring and responsibilities. Resolve the intended `project.godot` before editing when more than one checkout is available.
 
-## Explicit permission to use the user's PC
+## Item authoring
 
-- **NEVER EVER USE THE USER'S PC UNLESS THE USER EXPLICITLY PERMITS IT.**
-- Do not launch, focus, inspect, control, or capture desktop applications, browser windows, or screens, and do not operate the keyboard or mouse, without the user's explicit permission.
-- Require explicit desktop permission for implementation, porting, fixes, and tests regardless of available tools or skills.
+- Author item definitions in the Godot Inspector and save them as `.tres` resources in [data/items](data/items). **F4** shows the definitions loaded at Playground startup and any rejected records.
+- Read the [item authoring guide](docs/item_authoring.md) before changing item fields or the catalog. Verify saved resources and their asset references in Godot.
 
 ## Scope and collaboration
 
@@ -48,7 +47,7 @@ This Godot 4.7 project contains the first-person Player and the Playground cours
 ## Documentation and instruction scope
 
 - [Architecture](docs/architecture.md) is the master reference for the project's code architecture. Consult it when creating or changing systems, responsibilities, dependencies, data ownership, or the project structure.
-- Read the [Player instructions](player/AGENTS.md) before changing the controller, movement physics, stance, or camera.
+- Read the [Player instructions](scripts/player/AGENTS.md) before changing the controller, movement physics, stance, or camera.
 - Keep this root file focused on project-wide rules. As substantial systems are introduced, place a scoped `AGENTS.md` in the relevant directory when it needs specific instructions, and link it from the relevant documentation.
 - Put detailed system explanations in focused Markdown files and reference them from the architecture document or the nearest `AGENTS.md`. Read supporting documents when they apply to the task; do not require every document for every small edit.
 - Before editing a directory, check for applicable nested `AGENTS.md` files. Codex's startup discovery follows the working-directory path; do not assume it has loaded every nested instruction file automatically.

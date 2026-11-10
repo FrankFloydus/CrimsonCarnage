@@ -1,0 +1,172 @@
+[gd_resource type="Resource" script_class="BloodSplatterStyle" format=3 uid="uid://ixp1827fmrff"]
+
+[ext_resource type="Script" uid="uid://equtq8vvkijg" path="res://scripts/effects/blood_splatter_style.gd" id="1_style"]
+[ext_resource type="Script" uid="uid://cln40h1vng351" path="res://scripts/effects/blood_floor_splatter.gd" id="2_floor_splatter"]
+[ext_resource type="Texture2D" uid="uid://blm0bfsptwe48" path="res://textures/effects/blood_deposits/castoff_compact.png" id="3_compact"]
+[ext_resource type="Texture2D" uid="uid://defftxtjqk6vq" path="res://textures/effects/blood_deposits/castoff_fan.png" id="4_fan"]
+[ext_resource type="Texture2D" uid="uid://devssbpuw2jq5" path="res://textures/effects/blood_deposits/castoff_compact_orm.png" id="5_compact_orm"]
+[ext_resource type="Texture2D" uid="uid://diqbobm4ujowa" path="res://textures/effects/blood_deposits/castoff_fan_orm.png" id="6_fan_orm"]
+[ext_resource type="Texture2D" uid="uid://q3er0mdepts3" path="res://textures/effects/blood_deposits/pooled_01.png" id="a01"]
+[ext_resource type="Texture2D" uid="uid://cp2lmj3yv8uho" path="res://textures/effects/blood_deposits/pooled_02.png" id="a02"]
+[ext_resource type="Texture2D" uid="uid://bc5fle71ltnym" path="res://textures/effects/blood_deposits/pooled_03.png" id="a03"]
+[ext_resource type="Texture2D" uid="uid://1mk2kskb6rfg" path="res://textures/effects/blood_deposits/pooled_04.png" id="a04"]
+[ext_resource type="Texture2D" uid="uid://conf3821yilb7" path="res://textures/effects/blood_deposits/pooled_05.png" id="a05"]
+[ext_resource type="Texture2D" uid="uid://d4k0dx44le1qh" path="res://textures/effects/blood_deposits/pooled_06.png" id="a06"]
+[ext_resource type="Texture2D" uid="uid://1r6gm2xyaetx" path="res://textures/effects/blood_deposits/pooled_07.png" id="a07"]
+[ext_resource type="Texture2D" uid="uid://bx50m8e8yenq" path="res://textures/effects/blood_deposits/pooled_08.png" id="a08"]
+[ext_resource type="Texture2D" uid="uid://crbyit3ob57ts" path="res://textures/effects/blood_deposits/pooled_09.png" id="a09"]
+[ext_resource type="Texture2D" uid="uid://boc2rxf3fnlhh" path="res://textures/effects/blood_deposits/pooled_10.png" id="a10"]
+[ext_resource type="Texture2D" uid="uid://dge6lhtxrujgu" path="res://textures/effects/blood_deposits/pooled_01_normal.png" id="n01"]
+[ext_resource type="Texture2D" uid="uid://bl1yb3a5htspt" path="res://textures/effects/blood_deposits/pooled_02_normal.png" id="n02"]
+[ext_resource type="Texture2D" uid="uid://bq3wg0pllf8lg" path="res://textures/effects/blood_deposits/pooled_03_normal.png" id="n03"]
+[ext_resource type="Texture2D" uid="uid://cpit3roxoamvi" path="res://textures/effects/blood_deposits/pooled_04_normal.png" id="n04"]
+[ext_resource type="Texture2D" uid="uid://koxw43ogpnmo" path="res://textures/effects/blood_deposits/pooled_05_normal.png" id="n05"]
+[ext_resource type="Texture2D" uid="uid://bqslxqaahnar8" path="res://textures/effects/blood_deposits/pooled_06_normal.png" id="n06"]
+[ext_resource type="Texture2D" uid="uid://b7a313boxmw0j" path="res://textures/effects/blood_deposits/pooled_07_normal.png" id="n07"]
+[ext_resource type="Texture2D" uid="uid://dnm43hscmpgte" path="res://textures/effects/blood_deposits/pooled_08_normal.png" id="n08"]
+[ext_resource type="Texture2D" uid="uid://gxx35rkeqyjn" path="res://textures/effects/blood_deposits/pooled_09_normal.png" id="n09"]
+[ext_resource type="Texture2D" uid="uid://dkxjn8xq2uvi4" path="res://textures/effects/blood_deposits/pooled_10_normal.png" id="n10"]
+[ext_resource type="Texture2D" uid="uid://bhkjwg8lwm1it" path="res://textures/effects/blood_deposits/pooled_01_orm.png" id="o01"]
+[ext_resource type="Texture2D" uid="uid://ulfrlrj3t4ry" path="res://textures/effects/blood_deposits/pooled_02_orm.png" id="o02"]
+[ext_resource type="Texture2D" uid="uid://batrfim22q6ws" path="res://textures/effects/blood_deposits/pooled_03_orm.png" id="o03"]
+[ext_resource type="Texture2D" uid="uid://cwfkbf30i81f8" path="res://textures/effects/blood_deposits/pooled_04_orm.png" id="o04"]
+[ext_resource type="Texture2D" uid="uid://bfe5lw6itgsx0" path="res://textures/effects/blood_deposits/pooled_05_orm.png" id="o05"]
+[ext_resource type="Texture2D" uid="uid://1v7p4yhu3kio" path="res://textures/effects/blood_deposits/pooled_06_orm.png" id="o06"]
+[ext_resource type="Texture2D" uid="uid://bbnyt4kafodng" path="res://textures/effects/blood_deposits/pooled_07_orm.png" id="o07"]
+[ext_resource type="Texture2D" uid="uid://cbym30t8s8q42" path="res://textures/effects/blood_deposits/pooled_08_orm.png" id="o08"]
+[ext_resource type="Texture2D" uid="uid://jpv66mollgkk" path="res://textures/effects/blood_deposits/pooled_09_orm.png" id="o09"]
+[ext_resource type="Texture2D" uid="uid://dkukn4vr7sb5s" path="res://textures/effects/blood_deposits/pooled_10_orm.png" id="o10"]
+[ext_resource type="Texture2D" uid="uid://o6fi0amh2qmm" path="res://textures/effects/blood_deposits/spray_dripping_fan.png" id="spray_a01"]
+[ext_resource type="Texture2D" uid="uid://cw27pn38rlotp" path="res://textures/effects/blood_deposits/spray_split_streak.png" id="spray_a02"]
+[ext_resource type="Texture2D" uid="uid://ckhyko5joh1k3" path="res://textures/effects/blood_deposits/spray_split_drips.png" id="spray_a03"]
+[ext_resource type="Texture2D" uid="uid://xamop6nn4iqg" path="res://textures/effects/blood_deposits/spray_scattered_impact.png" id="spray_a04"]
+[ext_resource type="Texture2D" uid="uid://bjwxnhjsuel3c" path="res://textures/effects/blood_deposits/spray_forked_fan.png" id="spray_a05"]
+[ext_resource type="Texture2D" uid="uid://c8p1rw2hwkkxx" path="res://textures/effects/blood_deposits/spray_swept_drips.png" id="spray_a06"]
+[ext_resource type="Texture2D" uid="uid://bv55l4cjtk1gb" path="res://textures/effects/blood_deposits/spray_dripping_fan_orm.png" id="spray_o01"]
+[ext_resource type="Texture2D" uid="uid://c35m4pxox1u4y" path="res://textures/effects/blood_deposits/spray_split_streak_orm.png" id="spray_o02"]
+[ext_resource type="Texture2D" uid="uid://5o51e16av74m" path="res://textures/effects/blood_deposits/spray_split_drips_orm.png" id="spray_o03"]
+[ext_resource type="Texture2D" uid="uid://bwg3yhqv6rkx" path="res://textures/effects/blood_deposits/spray_scattered_impact_orm.png" id="spray_o04"]
+[ext_resource type="Texture2D" uid="uid://bg8ea0us0sdah" path="res://textures/effects/blood_deposits/spray_forked_fan_orm.png" id="spray_o05"]
+[ext_resource type="Texture2D" uid="uid://cup2nt0ahcaey" path="res://textures/effects/blood_deposits/spray_swept_drips_orm.png" id="spray_o06"]
+
+[sub_resource type="Resource" id="BloodFloorSplatter_01"]
+resource_name = "Broad Pooled Impact"
+script = ExtResource("2_floor_splatter")
+albedo = ExtResource("a01")
+orm = ExtResource("o01")
+normal = ExtResource("n01")
+
+[sub_resource type="Resource" id="BloodFloorSplatter_02"]
+resource_name = "Long Slashing Streak"
+script = ExtResource("2_floor_splatter")
+albedo = ExtResource("a02")
+orm = ExtResource("o02")
+normal = ExtResource("n02")
+
+[sub_resource type="Resource" id="BloodFloorSplatter_03"]
+resource_name = "Wide Fork"
+script = ExtResource("2_floor_splatter")
+albedo = ExtResource("a03")
+orm = ExtResource("o03")
+normal = ExtResource("n03")
+
+[sub_resource type="Resource" id="BloodFloorSplatter_04"]
+resource_name = "Twin Deposits"
+script = ExtResource("2_floor_splatter")
+albedo = ExtResource("a04")
+orm = ExtResource("o04")
+normal = ExtResource("n04")
+
+[sub_resource type="Resource" id="BloodFloorSplatter_05"]
+resource_name = "Diffuse Spray Cloud"
+script = ExtResource("2_floor_splatter")
+albedo = ExtResource("a05")
+orm = ExtResource("o05")
+normal = ExtResource("n05")
+
+[sub_resource type="Resource" id="BloodFloorSplatter_06"]
+resource_name = "Hooked Drag"
+script = ExtResource("2_floor_splatter")
+albedo = ExtResource("a06")
+orm = ExtResource("o06")
+normal = ExtResource("n06")
+
+[sub_resource type="Resource" id="BloodFloorSplatter_07"]
+resource_name = "Heavy Compact Strike"
+script = ExtResource("2_floor_splatter")
+albedo = ExtResource("a07")
+orm = ExtResource("o07")
+normal = ExtResource("n07")
+
+[sub_resource type="Resource" id="BloodFloorSplatter_08"]
+resource_name = "Wide Three-Lobe Impact"
+script = ExtResource("2_floor_splatter")
+albedo = ExtResource("a08")
+orm = ExtResource("o08")
+normal = ExtResource("n08")
+
+[sub_resource type="Resource" id="BloodFloorSplatter_09"]
+resource_name = "One-Sided Feathered Fan"
+script = ExtResource("2_floor_splatter")
+albedo = ExtResource("a09")
+orm = ExtResource("o09")
+normal = ExtResource("n09")
+
+[sub_resource type="Resource" id="BloodFloorSplatter_10"]
+resource_name = "Shattered Center"
+script = ExtResource("2_floor_splatter")
+albedo = ExtResource("a10")
+orm = ExtResource("o10")
+normal = ExtResource("n10")
+
+[sub_resource type="Resource" id="BloodSpraySplatter_01"]
+resource_name = "Dripping Fan"
+script = ExtResource("2_floor_splatter")
+albedo = ExtResource("spray_a01")
+orm = ExtResource("spray_o01")
+wall_drips = true
+
+[sub_resource type="Resource" id="BloodSpraySplatter_02"]
+resource_name = "Long Split Streak"
+script = ExtResource("2_floor_splatter")
+albedo = ExtResource("spray_a02")
+orm = ExtResource("spray_o02")
+
+[sub_resource type="Resource" id="BloodSpraySplatter_03"]
+resource_name = "Split Drops and Runs"
+script = ExtResource("2_floor_splatter")
+albedo = ExtResource("spray_a03")
+orm = ExtResource("spray_o03")
+wall_drips = true
+
+[sub_resource type="Resource" id="BloodSpraySplatter_04"]
+resource_name = "Scattered Paint Splatter"
+script = ExtResource("2_floor_splatter")
+albedo = ExtResource("spray_a04")
+orm = ExtResource("spray_o04")
+wall_drips = true
+
+[sub_resource type="Resource" id="BloodSpraySplatter_05"]
+resource_name = "Far Forked Spray"
+script = ExtResource("2_floor_splatter")
+albedo = ExtResource("spray_a05")
+orm = ExtResource("spray_o05")
+
+[sub_resource type="Resource" id="BloodSpraySplatter_06"]
+resource_name = "Swept Crescent with Runs"
+script = ExtResource("2_floor_splatter")
+albedo = ExtResource("spray_a06")
+orm = ExtResource("spray_o06")
+wall_drips = true
+
+[resource]
+resource_name = "Blood Splatter Style"
+script = ExtResource("1_style")
+compact_mask = ExtResource("3_compact")
+fan_mask = ExtResource("4_fan")
+compact_orm = ExtResource("5_compact_orm")
+fan_orm = ExtResource("6_fan_orm")
+floor_variants = Array[ExtResource("2_floor_splatter")]([SubResource("BloodFloorSplatter_01"), SubResource("BloodFloorSplatter_02"), SubResource("BloodFloorSplatter_03"), SubResource("BloodFloorSplatter_04"), SubResource("BloodFloorSplatter_05"), SubResource("BloodFloorSplatter_06"), SubResource("BloodFloorSplatter_07"), SubResource("BloodFloorSplatter_08"), SubResource("BloodFloorSplatter_09"), SubResource("BloodFloorSplatter_10"), SubResource("BloodSpraySplatter_01"), SubResource("BloodSpraySplatter_02"), SubResource("BloodSpraySplatter_03"), SubResource("BloodSpraySplatter_04"), SubResource("BloodSpraySplatter_05"), SubResource("BloodSpraySplatter_06")])
+floor_albedo_mix = 1.0
+dark_tint = Color(0.1252662, 0.012302261, 0.020367876, 0.9647059)
+light_tint = Color(0.27159566, 0.058725826, 0.080156244, 0.9098039)

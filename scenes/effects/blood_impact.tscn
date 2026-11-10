@@ -1,0 +1,8 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/effects/blood_impact.gd" id="1_impact"]
+[ext_resource type="Resource" path="res://data/effects/humanoid_blood_profile.tres" id="2_profile"]
+
+[node name="BloodImpact" type="Node3D"]
+script = ExtResource("1_impact")
+default_profile = ExtResource("2_profile")

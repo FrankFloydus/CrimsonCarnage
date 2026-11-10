@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://cnwst0susmmxs"]
+
+[ext_resource type="PackedScene" uid="uid://cos2v3i0bpyyp" path="res://scenes/weapons/prototype_sword.tscn" id="1_sword"]
+
+[node name="ShortSword" unique_id=449770382 instance=ExtResource("1_sword")]
+
+[node name="Blade" parent="Visuals" parent_id_path=PackedInt32Array(499747207) index="0" unique_id=955804504]
+transform = Transform3D(1, 0, 0, 0, 0.55, 0, 0, 0, 1, 0, 0.2352, 0)
+
+[node name="BladeTip" parent="Visuals" parent_id_path=PackedInt32Array(499747207) index="1" unique_id=970188352]
+transform = Transform3D(1, 0, 0, 0, 0.55, 0, 0, 0, 1, 0, 0.4079, 0)
+
+[node name="FullerFront" parent="Visuals" parent_id_path=PackedInt32Array(499747207) index="2" unique_id=1538975626]
+transform = Transform3D(1, 0, 0, 0, 0.55, 0, 0, 0, 1, 0, 0.2341, 0.0037)
+
+[node name="FullerBack" parent="Visuals" parent_id_path=PackedInt32Array(499747207) index="3" unique_id=31302423]
+transform = Transform3D(1, 0, 0, 0, 0.55, 0, 0, 0, 1, 0, 0.2341, -0.0037)
+
+[node name="SweepEnd" parent="MeleeSweep" parent_id_path=PackedInt32Array(62204352) index="1" unique_id=1695990232]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4354, 0)
+
+[node name="BloodMotion" parent="MeleeSweep" parent_id_path=PackedInt32Array(62204352) index="2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
