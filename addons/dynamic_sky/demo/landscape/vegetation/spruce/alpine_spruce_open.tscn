@@ -1,0 +1,68 @@
+[gd_scene format=3]
+
+[ext_resource type="Mesh" path="res://addons/dynamic_sky/demo/landscape/vegetation/spruce/spruce_open_near.obj" id="1_near"]
+[ext_resource type="Mesh" path="res://addons/dynamic_sky/demo/landscape/vegetation/spruce/spruce_open_mid.obj" id="2_mid"]
+[ext_resource type="Mesh" path="res://addons/dynamic_sky/demo/landscape/vegetation/spruce/spruce_open_far.obj" id="3_far"]
+[ext_resource type="Mesh" path="res://addons/dynamic_sky/demo/landscape/vegetation/spruce/spruce_open_distant.obj" id="4_distant"]
+[ext_resource type="Material" path="res://addons/dynamic_sky/demo/landscape/vegetation/spruce/spruce_material.tres" id="5_material"]
+[ext_resource type="PackedScene" path="res://addons/dynamic_sky/weather/wind/foliage_wind.tscn" id="6_wind"]
+[ext_resource type="Script" path="res://addons/dynamic_sky/surfaces/weather_surface.gd" id="7_surface"]
+
+[node name="AlpineSpruceOpen" type="Node3D"]
+
+[node name="Near" type="MeshInstance3D" parent="."]
+mesh = ExtResource("1_near")
+material_override = ExtResource("5_material")
+visibility_range_end = 35.0
+visibility_range_end_margin = 5.0
+visibility_range_fade_mode = 1
+
+[node name="Wind" parent="Near" instance=ExtResource("6_wind")]
+flexible_height = 10.2
+bend_per_wind_speed = 0.014
+
+[node name="Weather" type="Node" parent="Near"]
+script = ExtResource("7_surface")
+
+[node name="Middle" type="MeshInstance3D" parent="."]
+mesh = ExtResource("2_mid")
+material_override = ExtResource("5_material")
+visibility_range_begin = 35.0
+visibility_range_begin_margin = 5.0
+visibility_range_end = 150.0
+visibility_range_end_margin = 12.0
+visibility_range_fade_mode = 1
+
+[node name="Wind" parent="Middle" instance=ExtResource("6_wind")]
+flexible_height = 10.2
+bend_per_wind_speed = 0.014
+
+[node name="Weather" type="Node" parent="Middle"]
+script = ExtResource("7_surface")
+
+[node name="Far" type="MeshInstance3D" parent="."]
+mesh = ExtResource("3_far")
+material_override = ExtResource("5_material")
+visibility_range_begin = 150.0
+visibility_range_begin_margin = 12.0
+visibility_range_end = 650.0
+visibility_range_end_margin = 40.0
+visibility_range_fade_mode = 1
+
+[node name="Wind" parent="Far" instance=ExtResource("6_wind")]
+flexible_height = 10.2
+bend_per_wind_speed = 0.014
+
+[node name="Weather" type="Node" parent="Far"]
+script = ExtResource("7_surface")
+
+[node name="Distant" type="MeshInstance3D" parent="."]
+mesh = ExtResource("4_distant")
+material_override = ExtResource("5_material")
+visibility_range_begin = 650.0
+visibility_range_begin_margin = 40.0
+visibility_range_fade_mode = 1
+
+[node name="Weather" type="Node" parent="Distant"]
+script = ExtResource("7_surface")
+

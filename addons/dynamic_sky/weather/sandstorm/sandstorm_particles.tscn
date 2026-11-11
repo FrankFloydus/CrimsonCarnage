@@ -1,0 +1,109 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/weather/sandstorm/sandstorm_particles.gd" id="1_sand"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/weather/sandstorm/sandstorm_process.gdshader" id="2_motion"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/weather/sandstorm/sandstorm_draw.gdshader" id="3_optics"]
+[ext_resource type="Texture3D" path="res://addons/dynamic_sky/rendering/cloud_noise.png" id="4_noise"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_unit"]
+size = Vector2(1, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_grain_motion"]
+resource_local_to_scene = true
+shader = ExtResource("2_motion")
+shader_parameter/spawn_half_extents = Vector3(14, 4.2, 14)
+shader_parameter/size_range = Vector2(0.009, 0.038)
+shader_parameter/drift_range = Vector2(0.63, 1.02)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_grain_optics"]
+resource_local_to_scene = true
+shader = ExtResource("3_optics")
+shader_parameter/grain_tint = Color(0.69, 0.59, 0.48, 0.59)
+shader_parameter/near_fade = Vector2(0.65, 1.8)
+shader_parameter/far_fade = Vector2(16, 28)
+shader_parameter/surface_fade_distance = 0.16
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_saltation_motion"]
+resource_local_to_scene = true
+shader = ExtResource("2_motion")
+shader_parameter/particle_kind = 1
+shader_parameter/spawn_half_extents = Vector3(13, 0.035, 13)
+shader_parameter/size_range = Vector2(0.013, 0.050)
+shader_parameter/drift_range = Vector2(0.42, 0.74)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_saltation_optics"]
+resource_local_to_scene = true
+shader = ExtResource("3_optics")
+shader_parameter/particle_kind = 1
+shader_parameter/grain_tint = Color(0.69, 0.57, 0.44, 0.63)
+shader_parameter/near_fade = Vector2(0.50, 1.5)
+shader_parameter/far_fade = Vector2(17, 31)
+shader_parameter/surface_fade_distance = 0.085
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_gust_motion"]
+resource_local_to_scene = true
+shader = ExtResource("2_motion")
+shader_parameter/particle_kind = 2
+shader_parameter/spawn_half_extents = Vector3(32, 1.0, 32)
+shader_parameter/size_range = Vector2(4.3, 8.5)
+shader_parameter/drift_range = Vector2(0.33, 0.55)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_gust_optics"]
+resource_local_to_scene = true
+render_priority = -1
+shader = ExtResource("3_optics")
+shader_parameter/particle_kind = 2
+shader_parameter/density_noise = ExtResource("4_noise")
+shader_parameter/scatter_tint = Color(0.74, 0.63, 0.50, 0.43)
+shader_parameter/near_fade = Vector2(3.5, 8.0)
+shader_parameter/far_fade = Vector2(33, 60)
+shader_parameter/surface_fade_distance = 1.3
+
+[node name="SandstormParticles" type="Node3D"]
+script = ExtResource("1_sand")
+
+[node name="SuspendedGrains" type="GPUParticles3D" parent="."]
+material_override = SubResource("ShaderMaterial_grain_optics")
+layers = 524288
+cast_shadow = 0
+emitting = false
+amount = 4100
+amount_ratio = 0.0
+lifetime = 2.45
+preprocess = 1.5
+randomness = 0.9
+visibility_aabb = AABB(-53, -13, -53, 106, 26, 106)
+draw_order = 2
+process_material = SubResource("ShaderMaterial_grain_motion")
+draw_pass_1 = SubResource("QuadMesh_unit")
+
+[node name="GroundSaltation" type="GPUParticles3D" parent="."]
+material_override = SubResource("ShaderMaterial_saltation_optics")
+layers = 524288
+cast_shadow = 0
+emitting = false
+amount = 2300
+amount_ratio = 0.0
+lifetime = 1.75
+preprocess = 1.1
+randomness = 0.86
+visibility_aabb = AABB(-43, -3, -43, 86, 8, 86)
+collision_base_size = 0.018
+draw_order = 2
+process_material = SubResource("ShaderMaterial_saltation_motion")
+draw_pass_1 = SubResource("QuadMesh_unit")
+
+[node name="GustBillows" type="GPUParticles3D" parent="."]
+material_override = SubResource("ShaderMaterial_gust_optics")
+layers = 524288
+cast_shadow = 0
+emitting = false
+amount = 68
+amount_ratio = 0.0
+lifetime = 5.2
+preprocess = 3.2
+randomness = 0.95
+visibility_aabb = AABB(-98, -9, -98, 196, 23, 196)
+draw_order = 3
+process_material = SubResource("ShaderMaterial_gust_motion")
+draw_pass_1 = SubResource("QuadMesh_unit")

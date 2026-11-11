@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="DynamicSkyClimate" format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/weather/climate.gd" id="1_climate"]
+[ext_resource type="Script" path="res://addons/dynamic_sky/weather/weather_probability.gd" id="2_probability"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/clear.tres" id="3_clear"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/overcast.tres" id="4_overcast"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/rain.tres" id="5_rain"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/storm.tres" id="6_storm"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/snow.tres" id="7_snow"]
+
+[sub_resource type="Resource" id="Resource_clear"]
+script = ExtResource("2_probability")
+weather = ExtResource("3_clear")
+seasonal_weights = Vector4(4, 7, 3, 2)
+
+[sub_resource type="Resource" id="Resource_overcast"]
+script = ExtResource("2_probability")
+weather = ExtResource("4_overcast")
+seasonal_weights = Vector4(3, 2, 5, 5)
+
+[sub_resource type="Resource" id="Resource_rain"]
+script = ExtResource("2_probability")
+weather = ExtResource("5_rain")
+seasonal_weights = Vector4(4, 2, 5, 2)
+
+[sub_resource type="Resource" id="Resource_storm"]
+script = ExtResource("2_probability")
+weather = ExtResource("6_storm")
+seasonal_weights = Vector4(1, 2, 1, 0)
+
+[sub_resource type="Resource" id="Resource_snow"]
+script = ExtResource("2_probability")
+weather = ExtResource("7_snow")
+seasonal_weights = Vector4(0, 0, 0, 5)
+
+[resource]
+resource_name = "Temperate Climate"
+script = ExtResource("1_climate")
+probabilities = Array[ExtResource("2_probability")]([SubResource("Resource_clear"), SubResource("Resource_overcast"), SubResource("Resource_rain"), SubResource("Resource_storm"), SubResource("Resource_snow")])

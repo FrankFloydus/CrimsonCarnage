@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="DynamicSkyRainbowSettings" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/rendering/atmospheric_optics/rainbow_settings.gd" id="1_settings"]
+
+[resource]
+resource_local_to_scene = true
+resource_name = "Rainbow"
+script = ExtResource("1_settings")
+enabled = false
+max_strength = 0.2
+strength_from_rain = 0.5
+strength_from_fog = 0.5
+strength_in_any_weather = 0.0
+persistence_seconds = 100.0
+primary_angle_degrees = 42.0
+primary_width_degrees = 2.0
+secondary_strength = 0.28
+secondary_angle_degrees = 51.0
+secondary_width_degrees = 2.5
+mask_above_clouds = 1.0
+mask_below_water = 1.0

@@ -1,0 +1,35 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://addons/dynamic_sky/surfaces/weather_surface.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/demo/materials/pbr/alpine_rock_albedo.webp" id="2_albedo"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/demo/materials/pbr/alpine_rock_normal.webp" id="3_normal"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/demo/materials/pbr/alpine_rock_orm.webp" id="4_orm"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/demo/materials/pbr/alpine_rock_macro_normal.webp" id="5_macro_normal"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/demo/materials/pbr/alpine_rock_macro_orm.webp" id="6_macro_orm"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/surfaces/textures/snowpack_albedo.webp" id="7_snow_albedo"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/surfaces/textures/snowpack_normal.webp" id="8_snow_normal"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/surfaces/textures/snowpack_orm.webp" id="9_snow_orm"]
+
+[resource]
+resource_name = "Alpine Rock - World Projection"
+shader = ExtResource("1_shader")
+shader_parameter/base_color = Color(0.93, 0.94, 0.92, 1)
+shader_parameter/albedo_texture = ExtResource("2_albedo")
+shader_parameter/normal_texture = ExtResource("3_normal")
+shader_parameter/orm_texture = ExtResource("4_orm")
+shader_parameter/use_orm_map = true
+shader_parameter/roughness = 0.94
+shader_parameter/normal_strength = 0.35
+shader_parameter/use_world_triplanar = true
+shader_parameter/world_texture_scale = 0.4545
+shader_parameter/use_macro_material = true
+shader_parameter/macro_normal_texture = ExtResource("5_macro_normal")
+shader_parameter/macro_orm_texture = ExtResource("6_macro_orm")
+shader_parameter/macro_texture_scale = 0.2778
+shader_parameter/macro_normal_strength = 0.70
+shader_parameter/use_snow_material = true
+shader_parameter/snow_albedo_texture = ExtResource("7_snow_albedo")
+shader_parameter/snow_normal_texture = ExtResource("8_snow_normal")
+shader_parameter/snow_orm_texture = ExtResource("9_snow_orm")
+shader_parameter/snow_texture_scale = 0.625
+shader_parameter/snow_normal_strength = 0.52

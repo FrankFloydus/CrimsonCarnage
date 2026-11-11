@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="DynamicSkyWeather" format=3 uid="uid://bmt7ebvnv2sd1"]
+
+[ext_resource type="Script" uid="uid://c1xk5mfkswtr8" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="1_weather"]
+
+[resource]
+resource_name = "Clear"
+script = ExtResource("1_weather")
+fog_density = 0.0009
+fog_amount = 0.0
+snow_coverage_limit = 0.0
+wind = Vector2(2.5, 0.8)
+gustiness = 0.15

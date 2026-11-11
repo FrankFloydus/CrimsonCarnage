@@ -12,21 +12,33 @@
 | `scripts/` | Player, melee, effect, item, and UI code in separate domain folders |
 | `particles/` | Reusable particle scenes, including the directional blood burst |
 | `materials/`, `shaders/`, `textures/`, `meshes/` | Standalone rendering assets |
+| `addons/dynamic_sky/` | Reusable sky and weather rig, editor commands, presets, and standalone demo |
 
 Place new data-driven definitions under `data/<category>/`. Use type folders such as `particles/`, `textures/`, and `meshes/` when adding those assets. [Folder conventions](godot_conventions.md#folder-organization)
 
 ## Scenes and ownership
 
-`project.godot` starts the Playground. The scene owns the ground, parkour blocks, arena walls, lighting, and environment. It instances the Player, two stair courses, crouch tunnels, the blood test target and effect coordinator, and the read-only item catalog inspector. The course uses the grid materials under `materials/prototype/`. [Project settings](../project.godot) · [Playground scene](../scenes/levels/playground.tscn)
+`project.godot` starts the Playground. The scene owns the ground, parkour blocks, arena collision boundaries, lighting, and environment. It instances the Player, two stair courses, crouch tunnels, the blood test target and effect coordinator, and the read-only item catalog inspector. The gray floor and blood-test backstop use **25 cm** charcoal grid cells. Parkour surfaces and the blood-test barrel share the darker grid material with **12.5 cm** cells. A gray sky, broad directional light, and distance fog give the course its overcast lighting. [Project settings](../project.godot) · [Playground scene](../scenes/levels/playground.tscn) · [Grid materials](../materials/prototype)
 
 The Player is a `CharacterBody3D` with a standing capsule **1.80 m** high and **0.35 m** in radius. The body origin is at the feet, and the `Look` pivot places the standing eye at **1.62 m**. [Player scene](../scenes/player/player.tscn)
 
 | Owner | Responsibility | Settings |
 | --- | --- | --- |
 | Player | Reads the Input Map and resolves stance and gait before each movement step | [Project settings](../project.godot) |
-| Movement | Advances velocity and collisions, including acceleration, braking, gravity, jumps, and stairs | [Movement settings](../data/player/default_movement_settings.tres) |
+| Movement | Advances velocity and collisions, including acceleration, braking, gravity, jumps, dashes, and stairs | [Movement settings](../data/player/default_movement_settings.tres) |
 | Crouch | Resizes the capsule, checks standing clearance, and blends eye height | [Crouch settings](../data/player/default_crouch_settings.tres) |
 | Look | Handles mouse capture and aiming, camera roll, and stair height compensation | [Look settings](../data/player/default_look_settings.tres) |
+| CameraEffects | Blends the camera's FOV during a dash | [Player scene](../scenes/player/player.tscn) |
+| ScreenEffects | Draws dash distortion, damage vignette, lens overlays, and the final post-processing pass below the HUD | [Player scene](../scenes/player/player.tscn) |
+| HUD | Draws the incoming-damage direction marker above screen effects | [Damage indicator scene](../scenes/ui/damage_indicator.tscn) |
+
+## Dynamic Sky addon
+
+West Ridge Observatory instances the Dynamic Sky rig. The rig resolves global and local weather, drives the atmosphere and celestial lights, and forwards conditions to precipitation, spatial audio, and weather-responsive surfaces. The Volumetric renderer and the native directional light projector share the cloud field, with cheaper projection paths for 2D Dynamic and Static. A distant lightning controller reports the strike position for the localized sky flash and travel-time-delayed thunder. The Playground uses its own overcast environment. [Authoring and runtime API](dynamic_sky.md) · [Unreal reference map](ultra_dynamic_sky_audit.md)
+
+The rig's Exposure Settings resource owns observer attenuation above volumetric clouds and beneath authored water surfaces. The saved WeatherExposure child filters the camera's resolved local weather before the sky and camera effects consume it. Global weather, per-position physical wind, cloud motion, and material accumulation retain their unfiltered state. Saved Box or Sphere water regions define horizontal footprints and surface heights; the demo lake owns one such region. [Exposure authoring](dynamic_sky.md#local-weather-and-materials) · [Water Region scene](../addons/dynamic_sky/weather/exposure/water_region.tscn)
+
+The demo's terrain mesh owns meadow, trail, drainage, and forest masks in its vertex colors. Saved materials own PBR maps, physical texture scales, slope and altitude transitions, and coating appearance. A shared triplanar sampler keeps stochastic albedo, normal, and ORM transforms aligned across terrain and optional world-projected weather materials. `DynamicSkySurface` owns each mesh's accumulated water, snow, and dust. The fine and geological PBR bake tools derive shading maps from the original ImageGen artwork. [Terrain and surface authoring](dynamic_sky.md#local-weather-and-materials) · [Shared sampler](../addons/dynamic_sky/surfaces/material_sampling.gdshaderinc) · [Artwork provenance](dynamic_sky_imagegen.md)
 
 ## Movement and jumping
 
@@ -34,13 +46,14 @@ The controller reads movement input while the mouse is captured. With the mouse 
 
 | Gait | Input and stance | Configured ground speed |
 | --- | --- | --- |
-| Run | Standing | 4 m/s |
+| Run | Standing | 6 m/s |
 | Walk | Standing with Ctrl held | 2 m/s |
-| Sprint | Standing with Shift held | 6 m/s |
 | Crouch | Crouched | 2.4 m/s |
 | Crouch walk | Crouched with Ctrl held | 1.2 m/s |
 
-Walk and crouch override sprint. Jump requires floor support or a remaining **0.25 s** coyote window, with a gait other than sprint. The authored jump height is **1.50 m** standing and **0.75 m** crouched, with **24 m/s²** custom gravity. Sprint speed gained on the ground carries over when leaving an edge. Air steering uses the normal run cap when sprint is selected. [Gait selection](../scripts/player/first_person_gait.gd) · [Movement tuning fields](../scripts/player/first_person_movement_settings.gd)
+Jump works in each gait and requires floor support or a remaining **0.25 s** coyote window. The authored jump height is **1.50 m** standing and **0.75 m** crouched, with **24 m/s²** custom gravity. [Gait selection](../scripts/player/first_person_gait.gd) · [Movement tuning fields](../scripts/player/first_person_movement_settings.gd)
+
+**Left Shift** requires directional input to spend a dash charge on the ground or in the air. Movement locks the horizontal direction from the current input and body yaw. The saved player starts with **two charges**. It restores one charge per **1.0 s** while below capacity. A burst runs at **24 m/s** for up to **0.14 s** and ends early on a blocking wall. It uses the same capsule collision and stair path as regular movement. An air dash pauses vertical motion and resumes it on exit if the player is still airborne. The burst ends with zero horizontal dash speed. Tune capacity, recharge time, speed, and duration under **Movement → Settings → Dash**. [Dash tuning fields](../scripts/player/first_person_movement_settings.gd)
 
 ## Crouch, stairs, and camera
 
@@ -50,11 +63,19 @@ During the crouch blend, the eye can descend early to clear a low ceiling. Movin
 
 Movement uses an internal stair-step helper for risers up to **0.30 m** and walkable slopes up to **45°**. Floor snapping supports descent. The saved `terrain_advanced` and `terrain_reset` connections drive Look's **0.10 s** stair spring. The Player body turns for yaw, the Look pivot tilts for pitch, and Camera3D rolls with lateral movement. [Stair stepper](../scripts/player/first_person_stair_stepper.gd) · [Look controller](../scripts/player/first_person_look.gd)
 
+Movement emits `dash_state_changed` with the locked local direction when a dash starts and signals again when it ends. **CameraEffects** narrows the authored **50°** vertical FOV to **40°** on straight forward and backward dashes. The **0.80×** multiplier follows Vermintide 2's Handmaiden dash. Entry uses **0.08 s** to fit the shorter local dash, and return uses **0.30 s** from the current FOV. Both transitions use sine easing. Sideways and diagonal dashes leave any existing return blend alone. [Camera effects](../scripts/player/first_person_camera_effects.gd)
+
+**DashSpeedStreaks** listens to the same signal in every dash direction. Its original **512 × 512** flow map stores signed displacement in red and green and a tapered spoke mask in blue. Alpha feathers both toward the center. The shader samples an expanding burst and a sustained layer, then offsets the 3D scene color with their displacement. On the masked spokes, eight weighted samples taken inward along the ray stretch scene details outward. **Radial Streak Length** sets the sample span relative to the shorter viewport side. **Streak Tint** can add a separate line overlay through the same mask. Its alpha defaults to zero. The effect blends in over **0.035 s** and clears over **0.14 s** after movement stops. It draws before the vignette and lens marks, and the HUD draws above the screen effects. [Dash overlay](../scenes/effects/dash_speed_streaks.tscn) · [Shader](../shaders/effects/dash_speed_streaks.gdshader) · [Flow map](../textures/effects/dash_speed_streak_flow.png) · [Godot screen reads](https://docs.godotengine.org/en/stable/tutorials/shaders/screen-reading_shaders.html)
+
+## Post-processing
+
+**PostProcessing** is the final child of **Player → ScreenEffects**. **ScreenCopy** captures the scene after the dash, damage vignette, and lens effects have drawn. **Pass** reads that copy once and applies the continuous vignette, a screen-aligned **4 × 4 Bayer** pattern, and then per-channel posterization. Applying the dither before quantization breaks up color-band boundaries. The F4 item inspector and damage HUD, including its HDR bloom composite, render above the pass. The material owns all three effects' settings. [PostProcessing scene](../scenes/effects/post_processing.tscn) · [Shader](../shaders/effects/post_processing.gdshader) · [Player scene](../scenes/player/player.tscn)
+
 ## Melee
 
 Open **Player → AnimationPlayer** to edit `idle`, `slash` for the right hand, and `slash_left` for the left. Key the position and rotation of **Look → Camera3D → WeaponControl** for the right mount and **LeftWeaponControl** for the left. The left mount's saved pose and idle keys mirror the right mount across camera-local X. Its slash mirrors the right-hand keys, so it travels left to right. To preview the short sword on the right while scrubbing, hide **PrototypeSword** and show **ShortSword**. [Player scene](../scenes/player/player.tscn) · [Long sword](../scenes/weapons/prototype_sword.tscn) · [Short sword](../scenes/weapons/short_sword.tscn)
 
-With the mouse captured, left click starts on the right hand and alternates on each accepted slash. The other hand holds its idle pose. WeaponControl evaluates the animation during physics after Player movement and queries the attacking sword's sweep. The `HitStart` and `HitEnd` markers define the contact window for each clip. Both use **0.10 s to 0.30 s**, followed by animated recovery to **0.44 s**. One click during the slash queues the next hand and starts it at the end of recovery. **1** and **2** switch the right-hand sword between long and short, and the left hand holds a long sword. Switching the right sword or releasing mouse capture during a slash returns to idle and clears the queued input. [Playback](../scripts/melee/first_person_melee.gd)
+With the mouse captured, left click starts on the right hand and alternates on each accepted slash. The other hand holds its idle pose. WeaponControl evaluates the animation during physics after Player movement and queries the attacking sword's sweep. The `HitStart` and `HitEnd` markers define the contact window for each clip. Both use **0.10 s to 0.30 s**, followed by animated recovery to **0.44 s**. One click during the slash queues the next hand and starts it at the end of recovery. **9** and **0** switch the right-hand sword between long and short, and the left hand holds a long sword. Switching the right sword or releasing mouse capture during a slash returns to idle and clears the queued input. [Playback](../scripts/melee/first_person_melee.gd)
 
 Each sword owns a **MeleeSweep**. Move **SweepStart** and **SweepEnd** to set the base span. Rotate **SweepStart** around the blade axis to set the box orientation. **Width** and **Height** set the full cross-section in meters. [Sweep component](../scripts/melee/melee_sweep_3d.gd)
 
@@ -85,6 +106,20 @@ For skinned body stains, assign the component's **Body Stain Mesh → Skeleton**
 The shared **Blood Splatter Style** owns tint, footprint, angle variation, and wet finish. Floor and wall hits use the same sixteen generated deposits from **Floor Variants**. Each includes an albedo and coverage map and a nonmetallic roughness map. Pooled deposits also use a shallow relief normal. **Wall Drips** variants follow the surface's downhill direction with a small angle variation. The wall shuffles a pool per profile and uses every available texture before repeating, including a check against immediate repeats when reshuffling. Dense patches are smoother than their edges. **Floor Albedo Mix** controls how much receiver color remains under the deposit. Body hits alternate two generated cast-off patterns with matched roughness. **Wet Roughness** is the fallback for a pattern without a roughness texture. Oblique hits alternate rotation sides around the projected motion. Floor and wall rotation histories are tracked separately. Nearly head-on hits turn 60–150° from the previous offset. [Style settings](../data/effects/blood_splatter_style.tres) · [Godot decal material channels](https://docs.godotengine.org/en/latest/classes/class_decal.html)
 
 The deposit textures use 640 × 640 albedo and coverage maps with 384 × 384 roughness and relief maps. Their silhouettes came from three generated grayscale atlases. The supplied *Vermintide 2* footage and read-only study of its installed textures and VFX code informed the shape, buildup, and timing. [Deposit textures](../textures/effects/blood_deposits)
+
+The player's **LensBlood** scene draws temporary drops and edge spray in the shared **ScreenEffects** canvas. It uses four regions from the drop atlas, imported as white with the source alpha, and four grayscale spray regions. **Drop Material → Shader Parameters → Drop Color** tints the small drops through their alpha masks. The spray material samples a softened mip level of the atlas and feathers its luminance into alpha coverage. **Edge Tint** supplies the spray color and limits its opacity. Each new mark picks a variant different from the previous mark of its kind. Large spray marks use square quads with side lengths of **0.30–0.60 times half the viewport diagonal**. Their centers are sampled on a ring **0.40–0.50** from screen center in normalized screen coordinates. Small drops slide down at an editable fraction of the viewport height per second, and the spray stays in place as it fades. The scene also owns burst timings, lifetimes, opacity, and the active mark cap. [Lens overlay](../scenes/effects/lens_blood.tscn) · [Spray material shader](../shaders/effects/lens_blood_spray.gdshader) · [Drop artwork](../textures/effects/lens_blood_atlas.png) · [Edge spray atlas](../textures/effects/lens_blood_spray_atlas.png)
+
+The saved **LensBlood** scene emits six small drops per burst at **0, 0.05, and 0.15 seconds** after a splatter starts. Drops vary in height, aspect ratio, and opacity. **Drop Material → Shader Parameters → Softness** controls how much the mipmapped drop mask is blurred. The Playground wires **WeaponControl** contact and swing signals to a lens preview that plays once per swing for contacts on the mannequin within **3 m** of the camera, measured to the mannequin's root plus one meter of height. This preview uses a contact because the mannequin has no death state. [Playground trigger](../scripts/levels/playground.gd)
+
+## Damage vignette
+
+**DamageVignette** draws before **LensBlood** in the shared screen canvas. Its shader samples the alpha of an original **512 × 512** feathered mask to multiply the scene toward a dark red at the edges. **Mask Size** sets the width and height of the centered texture in units of half the viewport diagonal. **WeaponControl** relays overlaps from the active sword's sweep. The Playground pulses the vignette on the first overlap per swing, including wall hits, so a swing that touches several bodies produces one pulse. The standalone effect uses a **15 ms** rise and **185 ms** linear fade based on *Vermintide 2*'s incoming-hit particle. The saved Player instance uses a **650 ms** fade. A new hit restarts the pulse from its current strength. [Vignette scene](../scenes/effects/damage_vignette.tscn) · [Vignette shader](../shaders/effects/damage_vignette.gdshader) · [Mask texture](../textures/effects/damage_vignette_mask.png) · [Playground trigger](../scripts/levels/playground.gd)
+
+## Damage direction HUD
+
+**DamageIndicator** owns the authored style, layout, tint, body, and glow settings in its Inspector. The scene offers **Worn A1**, **Original A1**, **Classic**, **Ash Arc**, **Split Brush**, and **Torn Chevron**. The temporary editor preview draws one to eight markers in the active scene, adding them clockwise from the top at **45°** intervals. It uses the same tinted alpha mask and native bloom passes as a runtime hit. The translucent body draws into the HUD. **BloomViewport** draws emission over black in HDR 2D and runs Godot's **Canvas** environment glow in **Replace** mode. **BloomComposite** adds the resulting RGB over the main viewport, where the Playground uses **Sky**. The emission viewport resizes with the HUD and goes idle when there are no runtime markers or when the editor preview is off or leaves the active scene. The editor saves the scene with the bloom viewport idle. [Indicator scene](../scenes/ui/damage_indicator.tscn) · [Body shader](../shaders/ui/damage_indicator.gdshader) · [Emission shader](../shaders/ui/damage_indicator_emission.gdshader) · [Playground environment](../scenes/levels/playground.tscn)
+
+The Player instance supplies the observer and inherits its appearance from the **DamageIndicator** scene. The HUD stores each hit's source position and recomputes its horizontal bearing from the Player's position and yaw while visible. A new hit replaces existing markers within **40°** of its bearing. At the **three-marker** cap it replaces the oldest marker. Body opacity and emission follow the same cubic fade. Playground keys **1–8** test eight hit directions in **45°** steps from the Player's forward direction. [Bearing and fade](../scripts/ui/damage_indicator.gd) · [Player HUD](../scenes/player/player.tscn) · [Preview input](../scripts/levels/playground.gd) · [Controls](../README.md#test-the-damage-direction-hud)
 
 ## Item definitions
 

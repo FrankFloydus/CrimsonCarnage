@@ -1,0 +1,67 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/precipitation/snow/snowfall.gd" id="1_controller"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/precipitation/snow/snow_particle_process.gdshader" id="2_process"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/precipitation/snow/snow_particle_draw.gdshader" id="3_draw"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/precipitation/snow/textures/snow_sheet.png" id="4_sheet"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/precipitation/snow/spindrift_process.gdshader" id="5_drift_process"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/precipitation/snow/snowfall_draw.gdshader" id="6_drift_draw"]
+[ext_resource type="ArrayMesh" path="res://addons/dynamic_sky/precipitation/snow/spindrift_grains.obj" id="7_grains"]
+[ext_resource type="PackedScene" path="res://addons/dynamic_sky/precipitation/snow_contact/snow_contact.tscn" id="8_contact"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_process"]
+resource_local_to_scene = true
+shader = ExtResource("2_process")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_draw"]
+resource_local_to_scene = true
+shader = ExtResource("3_draw")
+shader_parameter/snow_sheet = ExtResource("4_sheet")
+
+[sub_resource type="QuadMesh" id="QuadMesh_snow"]
+size = Vector2(1, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_drift_process"]
+resource_local_to_scene = true
+shader = ExtResource("5_drift_process")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_drift_draw"]
+shader = ExtResource("6_drift_draw")
+shader_parameter/snow_color = Color(0.86, 0.91, 0.97, 0.75)
+shader_parameter/near_fade = Vector2(0.45, 0.9)
+shader_parameter/far_fade = Vector2(13, 21)
+shader_parameter/streak = 0.75
+
+[node name="Snowfall" type="Node3D"]
+script = ExtResource("1_controller")
+
+[node name="SnowParticles" type="GPUParticles3D" parent="."]
+layers = 524288
+cast_shadow = 0
+material_override = SubResource("ShaderMaterial_draw")
+emitting = false
+amount = 420000
+amount_ratio = 0.0
+lifetime = 3.0
+fixed_fps = 60
+visibility_aabb = AABB(-28, -12, -28, 56, 28, 56)
+local_coords = false
+sub_emitter = NodePath("../SnowContact")
+process_material = SubResource("ShaderMaterial_process")
+draw_pass_1 = SubResource("QuadMesh_snow")
+
+[node name="GroundDrift" type="GPUParticles3D" parent="."]
+layers = 524288
+cast_shadow = 0
+material_override = SubResource("ShaderMaterial_drift_draw")
+emitting = false
+amount = 1950
+lifetime = 1.65
+fixed_fps = 60
+collision_base_size = 0.022
+visibility_aabb = AABB(-36, -16, -36, 72, 25, 72)
+local_coords = false
+process_material = SubResource("ShaderMaterial_drift_process")
+draw_pass_1 = ExtResource("7_grains")
+
+[node name="SnowContact" parent="." instance=ExtResource("8_contact")]

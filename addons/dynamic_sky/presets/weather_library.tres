@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="DynamicSkyWeatherLibrary" format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/weather/weather_library.gd" id="1_library"]
+[ext_resource type="Script" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="2_weather"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/clear.tres" id="clear"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/partly_cloudy.tres" id="partly"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/cloudy.tres" id="cloudy"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/overcast.tres" id="overcast"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/foggy.tres" id="foggy"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/light_rain.tres" id="light_rain"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/rain.tres" id="rain"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/storm.tres" id="storm"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/light_snow.tres" id="light_snow"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/snow.tres" id="snow"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/blizzard.tres" id="blizzard"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/calm_dust.tres" id="dust"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/sandstorm.tres" id="sandstorm"]
+
+[resource]
+resource_name = "Dynamic Sky Weather Presets"
+script = ExtResource("1_library")
+presets = Array[ExtResource("2_weather")]([ExtResource("clear"), ExtResource("partly"), ExtResource("cloudy"), ExtResource("overcast"), ExtResource("foggy"), ExtResource("light_rain"), ExtResource("rain"), ExtResource("storm"), ExtResource("light_snow"), ExtResource("snow"), ExtResource("blizzard"), ExtResource("dust"), ExtResource("sandstorm")])

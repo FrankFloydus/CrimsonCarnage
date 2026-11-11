@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/rendering/cloud_shadows/cloud_shadows.gd" id="1_shadows"]
+
+[node name="CloudShadows" type="Node"]
+script = ExtResource("1_shadows")

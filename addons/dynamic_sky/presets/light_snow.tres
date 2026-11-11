@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="DynamicSkyWeather" format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="1_weather"]
+
+[resource]
+resource_name = "Light Snow"
+script = ExtResource("1_weather")
+cloud_coverage = 0.43
+fog_density = 0.0007
+fog_amount = 0.3
+snow = 0.33
+snow_coverage_limit = 0.5
+wind = Vector2(1.1, -0.4)
+gustiness = 0.1
+temperature_offset = -20.0

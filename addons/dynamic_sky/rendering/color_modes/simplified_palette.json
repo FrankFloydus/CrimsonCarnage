@@ -1,0 +1,21 @@
+{
+  "sun": {
+    "day_zenith": "#3979bd",
+    "day_horizon": "#a9cbe1",
+    "day_ground": "#526579",
+    "night_zenith": "#050918",
+    "night_horizon": "#111c34",
+    "night_ground": "#090e1b",
+    "twilight_zenith": "#344c8c",
+    "twilight_antisolar": "#7f789b",
+    "twilight_horizon": "#e38b48",
+    "twilight_solar": "#f4b977",
+    "twilight_ground": "#41445d"
+  },
+  "moon": {
+    "scattered_light": "#708fcc",
+    "horizon_scatter": "#9bb9df",
+    "sky_strength": 0.044,
+    "halo_strength": 0.19
+  }
+}

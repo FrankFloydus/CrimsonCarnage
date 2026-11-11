@@ -1,38 +1,157 @@
 [gd_scene format=3 uid="uid://dnp0mab635kx4"]
 
 [ext_resource type="Material" uid="uid://b2islhbhxuylt" path="res://materials/prototype/prototype_grid.tres" id="1_grid"]
+[ext_resource type="PackedScene" uid="uid://2fbk60pr8twj" path="res://addons/dynamic_sky/dynamic_sky.tscn" id="2_0obgs"]
 [ext_resource type="PackedScene" uid="uid://bx6r2r5geskx" path="res://scenes/player/player.tscn" id="2_player"]
-[ext_resource type="Material" path="res://materials/prototype/parkour_grid.tres" id="3_parkour_grid"]
+[ext_resource type="Material" uid="uid://ccdvkxtwftcuj" path="res://materials/prototype/parkour_grid.tres" id="3_parkour_grid"]
+[ext_resource type="Script" uid="uid://b0thy0f3wu642" path="res://addons/dynamic_sky/rendering/atmospheric_optics/rainbow_settings.gd" id="4_1soop"]
 [ext_resource type="PackedScene" path="res://scenes/levels/parkour_stairs.tscn" id="4_stairs"]
+[ext_resource type="Shader" uid="uid://di76ut38qwnkc" path="res://addons/dynamic_sky/rendering/dynamic_sky.gdshader" id="5_e6tnd"]
 [ext_resource type="PackedScene" path="res://scenes/levels/high_parkour_stairs.tscn" id="5_high_stairs"]
-[ext_resource type="Material" path="res://materials/prototype/arena_wall_grid.tres" id="6_wall_grid"]
+[ext_resource type="Texture2D" uid="uid://d016jgp22smmq" path="res://addons/dynamic_sky/rendering/atmosphere_transmittance.png" id="6_0obgs"]
+[ext_resource type="Material" uid="uid://da386k8oui4l0" path="res://materials/prototype/arena_wall_grid.tres" id="6_wall_grid"]
 [ext_resource type="PackedScene" path="res://scenes/levels/crouch_tunnels.tscn" id="7_crouch_tunnels"]
+[ext_resource type="CompressedTexture3D" uid="uid://dfdfkdivt7cfo" path="res://addons/dynamic_sky/rendering/atmosphere_view.png" id="7_q3yie"]
+[ext_resource type="CompressedTexture3D" uid="uid://c0ycajjqsal2o" path="res://addons/dynamic_sky/rendering/cloud_formation.png" id="8_b2wub"]
 [ext_resource type="PackedScene" path="res://scenes/ui/item_definition_inspector.tscn" id="8_item_inspector"]
+[ext_resource type="CompressedTexture3D" uid="uid://dtc75rrue2tif" path="res://addons/dynamic_sky/rendering/cloud_noise.png" id="9_j0x21"]
 [ext_resource type="PackedScene" uid="uid://dvselcect811b" path="res://scenes/characters/blood_test_target.tscn" id="10_blood_target"]
+[ext_resource type="Texture2D" uid="uid://ouigrcst8ni5" path="res://addons/dynamic_sky/rendering/cloud_weather.png" id="10_l66j3"]
+[ext_resource type="Texture2D" uid="uid://xcdhi2gls3ig" path="res://addons/dynamic_sky/rendering/cloud_modes/dynamic_2d_cloud_map.png" id="11_35ntd"]
 [ext_resource type="Script" uid="uid://c4akrcwbxpgtq" path="res://scripts/effects/blood_component.gd" id="12_p5pig"]
+[ext_resource type="CompressedTexture3D" uid="uid://rhaxo3d81ve3" path="res://addons/dynamic_sky/rendering/color_modes/simple_moon_color.png" id="12_ptf2i"]
+[ext_resource type="CompressedTexture3D" uid="uid://bgelm4xvgsb4g" path="res://addons/dynamic_sky/rendering/color_modes/simple_sun_color.png" id="13_ghqvo"]
+[ext_resource type="Script" uid="uid://c7bow0nlk628q" path="res://scripts/levels/playground.gd" id="13_playground"]
+[ext_resource type="Texture2D" uid="uid://cy287dfv7p53w" path="res://addons/dynamic_sky/rendering/cloud_modes/static_cloud_dome_lighting.png" id="14_882tv"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/blizzard.tres" id="14_rkli7"]
 
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_playground"]
-sky_top_color = Color(0.18, 0.28, 0.38, 1)
-sky_horizon_color = Color(0.67, 0.74, 0.79, 1)
-ground_bottom_color = Color(0.27, 0.34, 0.39, 1)
-ground_horizon_color = Color(0.67, 0.74, 0.79, 1)
-sun_angle_max = 20.0
+[sub_resource type="Resource" id="Resource_kfa7q"]
+script = ExtResource("4_1soop")
+enabled = true
+max_strength = 0.58
+metadata/_custom_type_script = "uid://b0thy0f3wu642"
 
-[sub_resource type="Sky" id="Sky_playground"]
-sky_material = SubResource("ProceduralSkyMaterial_playground")
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_cwva6"]
+resource_local_to_scene = true
+shader = ExtResource("5_e6tnd")
+shader_parameter/sun_direction = Vector3(-0.5, 0.7094065, 0.49673176)
+shader_parameter/moon_direction = Vector3(0.5, -0.7094065, -0.49673176)
+shader_parameter/moon_phase = 0.5
+shader_parameter/star_rotation = Basis(1, 0, 0, 0, 1, 0, 0, 0, 1)
+shader_parameter/cloud_observer_position_km = Vector3(0, 0.00167, 0.017)
+shader_parameter/lightning_flash = 0.0
+shader_parameter/lightning_direction = Vector3(0, 0, 0)
+shader_parameter/lightning_position_km = Vector3(0, 0, 0)
+shader_parameter/lightning_radius_km = 0.41
+shader_parameter/lightning_cloud_strength = 0.78
+shader_parameter/dust_density = 0.0
+shader_parameter/atmosphere_view = ExtResource("7_q3yie")
+shader_parameter/atmosphere_transmittance = ExtResource("6_0obgs")
+shader_parameter/atmosphere_exposure = 0.52
+shader_parameter/sky_zenith = Color(0.16, 0.39, 0.68, 1)
+shader_parameter/sky_horizon = Color(0.68, 0.79, 0.91, 1)
+shader_parameter/sky_ground = Color(0.29, 0.33, 0.39, 1)
+shader_parameter/sun_angular_radius = 0.27
+shader_parameter/moon_angular_radius = 0.45
+shader_parameter/star_brightness = 1.0
+shader_parameter/volumetric_quality = 1
+shader_parameter/cloud_light = Color(0.93, 0.95, 0.98, 1)
+shader_parameter/cloud_shadow = Color(0.34, 0.4, 0.48, 1)
+shader_parameter/cloud_steps = 64
+shader_parameter/high_cloud_scale = 3.0
+shader_parameter/high_cloud_amount = 0.0
+shader_parameter/cloud_formation = ExtResource("8_b2wub")
+shader_parameter/cloud_noise = ExtResource("9_j0x21")
+shader_parameter/cloud_weather = ExtResource("10_l66j3")
+shader_parameter/cloud_coverage = 1.0
+shader_parameter/cloud_offset = Vector2(0, 0)
+shader_parameter/cloud_base_km = 0.6
+shader_parameter/cloud_thickness_km = 0.7
+shader_parameter/cloud_extinction = 10.0
+shader_parameter/low_cloud_scale = 2.4
+shader_parameter/aurora_intensity = 0.0
+shader_parameter/aurora_azimuth_degrees = 0.0
+shader_parameter/aurora_distance_km = 480.0
+shader_parameter/aurora_scroll = 0.0
+shader_parameter/aurora_green = Color(0.14, 1, 0.49, 1)
+shader_parameter/aurora_red = Color(0.98, 0.21, 0.25, 1)
+shader_parameter/aurora_violet = Color(0.44, 0.33, 1, 1)
+shader_parameter/celestial_mode = 0
+shader_parameter/space_backdrop_on_earth = false
+shader_parameter/space_background_strength = 0.16
+shader_parameter/use_space_panorama = false
+shader_parameter/planet_direction = Vector3(0.35, 0.26, -0.9)
+shader_parameter/planet_radius_degrees = 0.0
+shader_parameter/planet_color = Color(0.85, 0.63, 0.42, 1)
+shader_parameter/planet_ring_tilt = 24.0
+shader_parameter/planet_ring_opacity = 0.68
+shader_parameter/cloud_mode = 0
+shader_parameter/static_cloud_altitude_km = 1.25
+shader_parameter/static_cloud_scale = 1.0
+shader_parameter/sky_color_mode = 0
+shader_parameter/simple_sun_lut = ExtResource("13_ghqvo")
+shader_parameter/simple_moon_lut = ExtResource("12_ptf2i")
+shader_parameter/simple_sky_exposure = 1.0
+shader_parameter/simple_moon_strength = 1.0
+shader_parameter/simple_day_sky_tint = Color(1, 1, 1, 1)
+shader_parameter/simple_twilight_sky_tint = Color(1, 1, 1, 1)
+shader_parameter/simple_night_sky_tint = Color(1, 1, 1, 1)
+shader_parameter/simple_dust_tint = Color(0.54, 0.35, 0.2, 1)
+shader_parameter/simple_cloud_day_tint = Color(1, 0.93, 0.81, 1)
+shader_parameter/simple_cloud_twilight_tint = Color(1, 0.53, 0.26, 1)
+shader_parameter/simple_cloud_night_tint = Color(0.43, 0.56, 0.87, 1)
+shader_parameter/simple_cloud_day_ambient = Color(0.34, 0.43, 0.58, 1)
+shader_parameter/simple_cloud_twilight_ambient = Color(0.16, 0.18, 0.32, 1)
+shader_parameter/simple_cloud_night_ambient = Color(0.012, 0.02, 0.044, 1)
+shader_parameter/rainbow_enabled = true
+shader_parameter/rainbow_strength = 0.015950000345706938
+shader_parameter/rainbow_cloud_transmission = 0.0
+shader_parameter/rainbow_exposure = 1.0
+shader_parameter/rainbow_primary_angle_degrees = 42.0
+shader_parameter/rainbow_primary_width_degrees = 2.0
+shader_parameter/rainbow_secondary_strength = 0.28
+shader_parameter/rainbow_secondary_angle_degrees = 51.0
+shader_parameter/rainbow_secondary_width_degrees = 2.5
+shader_parameter/dynamic_2d_cloud_map = ExtResource("11_35ntd")
+shader_parameter/dynamic_2d_base_km = 1.25
+shader_parameter/dynamic_2d_scale = 1.25
+shader_parameter/dynamic_2d_pattern_phase = Vector2(0.12, 0.756)
+shader_parameter/dynamic_2d_opacity = 1.0
+shader_parameter/dynamic_2d_upper_separation_km = 1.6
+shader_parameter/dynamic_2d_upper_opacity = 0.24
+shader_parameter/static_cloud_dome_map = ExtResource("14_882tv")
+shader_parameter/static_cloud_yaw_degrees = 0.0
+shader_parameter/static_cloud_opacity = 1.0
 
-[sub_resource type="Environment" id="Environment_playground"]
+[sub_resource type="Sky" id="Sky_sf41h"]
+resource_local_to_scene = true
+sky_material = SubResource("ShaderMaterial_cwva6")
+process_mode = 2
+radiance_size = 1
+
+[sub_resource type="Environment" id="Environment_rqaut"]
+resource_local_to_scene = true
 background_mode = 2
-sky = SubResource("Sky_playground")
+sky = SubResource("Sky_sf41h")
 tonemap_mode = 3
+ssr_enabled = true
 ssao_enabled = true
+ssil_enabled = true
+sdfgi_enabled = true
 glow_enabled = true
-glow_bloom = 0.07
+glow_intensity = 0.23
 fog_enabled = true
-fog_sun_scatter = 0.05
-fog_density = 0.0308
-fog_aerial_perspective = 0.25
-fog_sky_affect = 0.8
+fog_light_color = Color(0.48, 0.54, 0.63, 1)
+fog_density = 0.042
+fog_aerial_perspective = 0.06
+fog_sky_affect = 0.9251198
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.00035
+volumetric_fog_gi_inject = 0.0
+volumetric_fog_length = 1400.0
+volumetric_fog_ambient_inject = 0.7
+volumetric_fog_sky_affect = 0.15
+volumetric_fog_temporal_reprojection_amount = 0.72
 
 [sub_resource type="BoxMesh" id="BoxMesh_ground"]
 material = ExtResource("1_grid")
@@ -104,20 +223,6 @@ size = Vector3(5, 6, 4)
 [sub_resource type="BoxShape3D" id="BoxShape3D_finish"]
 size = Vector3(5, 6, 4)
 
-[sub_resource type="BoxMesh" id="BoxMesh_wall_east_west"]
-material = ExtResource("6_wall_grid")
-size = Vector3(1, 12, 40)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_wall_east_west"]
-size = Vector3(1, 12, 40)
-
-[sub_resource type="BoxMesh" id="BoxMesh_wall_north_south"]
-material = ExtResource("6_wall_grid")
-size = Vector3(40, 12, 1)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_wall_north_south"]
-size = Vector3(40, 12, 1)
-
 [sub_resource type="BoxMesh" id="BoxMesh_blood_backstop"]
 material = ExtResource("6_wall_grid")
 size = Vector3(0.24, 2.3, 3.2)
@@ -126,6 +231,7 @@ size = Vector3(0.24, 2.3, 3.2)
 size = Vector3(0.24, 2.3, 3.2)
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_hwsr1"]
+material = ExtResource("3_parkour_grid")
 top_radius = 0.4
 bottom_radius = 0.4
 height = 1.2
@@ -135,15 +241,25 @@ radial_segments = 12
 data = PackedVector3Array(0, 0.59999996, 0.39999998, 0.19999999, 0.59999996, 0.3464, 0, 0.35999998, 0.39999998, 0.19999999, 0.59999996, 0.3464, 0.19999999, 0.35999998, 0.3464, 0, 0.35999998, 0.39999998, 0.19999999, 0.59999996, 0.3464, 0.3464, 0.59999996, 0.19999999, 0.19999999, 0.35999998, 0.3464, 0.3464, 0.59999996, 0.19999999, 0.3464, 0.35999998, 0.19999999, 0.19999999, 0.35999998, 0.3464, 0.3464, 0.59999996, 0.19999999, 0.39999998, 0.59999996, 0, 0.3464, 0.35999998, 0.19999999, 0.39999998, 0.59999996, 0, 0.39999998, 0.35999998, 0, 0.3464, 0.35999998, 0.19999999, 0.39999998, 0.59999996, 0, 0.3464, 0.59999996, -0.19999999, 0.39999998, 0.35999998, 0, 0.3464, 0.59999996, -0.19999999, 0.3464, 0.35999998, -0.19999999, 0.39999998, 0.35999998, 0, 0.3464, 0.59999996, -0.19999999, 0.19999999, 0.59999996, -0.3464, 0.3464, 0.35999998, -0.19999999, 0.19999999, 0.59999996, -0.3464, 0.19999999, 0.35999998, -0.3464, 0.3464, 0.35999998, -0.19999999, 0.19999999, 0.59999996, -0.3464, 0, 0.59999996, -0.39999998, 0.19999999, 0.35999998, -0.3464, 0, 0.59999996, -0.39999998, 0, 0.35999998, -0.39999998, 0.19999999, 0.35999998, -0.3464, 0, 0.59999996, -0.39999998, -0.19999999, 0.59999996, -0.3464, 0, 0.35999998, -0.39999998, -0.19999999, 0.59999996, -0.3464, -0.19999999, 0.35999998, -0.3464, 0, 0.35999998, -0.39999998, -0.19999999, 0.59999996, -0.3464, -0.3464, 0.59999996, -0.19999999, -0.19999999, 0.35999998, -0.3464, -0.3464, 0.59999996, -0.19999999, -0.3464, 0.35999998, -0.19999999, -0.19999999, 0.35999998, -0.3464, -0.3464, 0.59999996, -0.19999999, -0.39999998, 0.59999996, 0, -0.3464, 0.35999998, -0.19999999, -0.39999998, 0.59999996, 0, -0.39999998, 0.35999998, 0, -0.3464, 0.35999998, -0.19999999, -0.39999998, 0.59999996, 0, -0.3464, 0.59999996, 0.19999999, -0.39999998, 0.35999998, 0, -0.3464, 0.59999996, 0.19999999, -0.3464, 0.35999998, 0.19999999, -0.39999998, 0.35999998, 0, -0.3464, 0.59999996, 0.19999999, -0.19999999, 0.59999996, 0.3464, -0.3464, 0.35999998, 0.19999999, -0.19999999, 0.59999996, 0.3464, -0.19999999, 0.35999998, 0.3464, -0.3464, 0.35999998, 0.19999999, -0.19999999, 0.59999996, 0.3464, 0, 0.59999996, 0.39999998, -0.19999999, 0.35999998, 0.3464, 0, 0.59999996, 0.39999998, 0, 0.35999998, 0.39999998, -0.19999999, 0.35999998, 0.3464, 0, 0.35999998, 0.39999998, 0.19999999, 0.35999998, 0.3464, 0, 0.12, 0.39999998, 0.19999999, 0.35999998, 0.3464, 0.19999999, 0.12, 0.3464, 0, 0.12, 0.39999998, 0.19999999, 0.35999998, 0.3464, 0.3464, 0.35999998, 0.19999999, 0.19999999, 0.12, 0.3464, 0.3464, 0.35999998, 0.19999999, 0.3464, 0.12, 0.19999999, 0.19999999, 0.12, 0.3464, 0.3464, 0.35999998, 0.19999999, 0.39999998, 0.35999998, 0, 0.3464, 0.12, 0.19999999, 0.39999998, 0.35999998, 0, 0.39999998, 0.12, 0, 0.3464, 0.12, 0.19999999, 0.39999998, 0.35999998, 0, 0.3464, 0.35999998, -0.19999999, 0.39999998, 0.12, 0, 0.3464, 0.35999998, -0.19999999, 0.3464, 0.12, -0.19999999, 0.39999998, 0.12, 0, 0.3464, 0.35999998, -0.19999999, 0.19999999, 0.35999998, -0.3464, 0.3464, 0.12, -0.19999999, 0.19999999, 0.35999998, -0.3464, 0.19999999, 0.12, -0.3464, 0.3464, 0.12, -0.19999999, 0.19999999, 0.35999998, -0.3464, 0, 0.35999998, -0.39999998, 0.19999999, 0.12, -0.3464, 0, 0.35999998, -0.39999998, 0, 0.12, -0.39999998, 0.19999999, 0.12, -0.3464, 0, 0.35999998, -0.39999998, -0.19999999, 0.35999998, -0.3464, 0, 0.12, -0.39999998, -0.19999999, 0.35999998, -0.3464, -0.19999999, 0.12, -0.3464, 0, 0.12, -0.39999998, -0.19999999, 0.35999998, -0.3464, -0.3464, 0.35999998, -0.19999999, -0.19999999, 0.12, -0.3464, -0.3464, 0.35999998, -0.19999999, -0.3464, 0.12, -0.19999999, -0.19999999, 0.12, -0.3464, -0.3464, 0.35999998, -0.19999999, -0.39999998, 0.35999998, 0, -0.3464, 0.12, -0.19999999, -0.39999998, 0.35999998, 0, -0.39999998, 0.12, 0, -0.3464, 0.12, -0.19999999, -0.39999998, 0.35999998, 0, -0.3464, 0.35999998, 0.19999999, -0.39999998, 0.12, 0, -0.3464, 0.35999998, 0.19999999, -0.3464, 0.12, 0.19999999, -0.39999998, 0.12, 0, -0.3464, 0.35999998, 0.19999999, -0.19999999, 0.35999998, 0.3464, -0.3464, 0.12, 0.19999999, -0.19999999, 0.35999998, 0.3464, -0.19999999, 0.12, 0.3464, -0.3464, 0.12, 0.19999999, -0.19999999, 0.35999998, 0.3464, 0, 0.35999998, 0.39999998, -0.19999999, 0.12, 0.3464, 0, 0.35999998, 0.39999998, 0, 0.12, 0.39999998, -0.19999999, 0.12, 0.3464, 0, 0.12, 0.39999998, 0.19999999, 0.12, 0.3464, 0, -0.12, 0.39999998, 0.19999999, 0.12, 0.3464, 0.19999999, -0.12, 0.3464, 0, -0.12, 0.39999998, 0.19999999, 0.12, 0.3464, 0.3464, 0.12, 0.19999999, 0.19999999, -0.12, 0.3464, 0.3464, 0.12, 0.19999999, 0.3464, -0.12, 0.19999999, 0.19999999, -0.12, 0.3464, 0.3464, 0.12, 0.19999999, 0.39999998, 0.12, 0, 0.3464, -0.12, 0.19999999, 0.39999998, 0.12, 0, 0.39999998, -0.12, 0, 0.3464, -0.12, 0.19999999, 0.39999998, 0.12, 0, 0.3464, 0.12, -0.19999999, 0.39999998, -0.12, 0, 0.3464, 0.12, -0.19999999, 0.3464, -0.12, -0.19999999, 0.39999998, -0.12, 0, 0.3464, 0.12, -0.19999999, 0.19999999, 0.12, -0.3464, 0.3464, -0.12, -0.19999999, 0.19999999, 0.12, -0.3464, 0.19999999, -0.12, -0.3464, 0.3464, -0.12, -0.19999999, 0.19999999, 0.12, -0.3464, 0, 0.12, -0.39999998, 0.19999999, -0.12, -0.3464, 0, 0.12, -0.39999998, 0, -0.12, -0.39999998, 0.19999999, -0.12, -0.3464, 0, 0.12, -0.39999998, -0.19999999, 0.12, -0.3464, 0, -0.12, -0.39999998, -0.19999999, 0.12, -0.3464, -0.19999999, -0.12, -0.3464, 0, -0.12, -0.39999998, -0.19999999, 0.12, -0.3464, -0.3464, 0.12, -0.19999999, -0.19999999, -0.12, -0.3464, -0.3464, 0.12, -0.19999999, -0.3464, -0.12, -0.19999999, -0.19999999, -0.12, -0.3464, -0.3464, 0.12, -0.19999999, -0.39999998, 0.12, 0, -0.3464, -0.12, -0.19999999, -0.39999998, 0.12, 0, -0.39999998, -0.12, 0, -0.3464, -0.12, -0.19999999, -0.39999998, 0.12, 0, -0.3464, 0.12, 0.19999999, -0.39999998, -0.12, 0, -0.3464, 0.12, 0.19999999, -0.3464, -0.12, 0.19999999, -0.39999998, -0.12, 0, -0.3464, 0.12, 0.19999999, -0.19999999, 0.12, 0.3464, -0.3464, -0.12, 0.19999999, -0.19999999, 0.12, 0.3464, -0.19999999, -0.12, 0.3464, -0.3464, -0.12, 0.19999999, -0.19999999, 0.12, 0.3464, 0, 0.12, 0.39999998, -0.19999999, -0.12, 0.3464, 0, 0.12, 0.39999998, 0, -0.12, 0.39999998, -0.19999999, -0.12, 0.3464, 0, -0.12, 0.39999998, 0.19999999, -0.12, 0.3464, 0, -0.35999998, 0.39999998, 0.19999999, -0.12, 0.3464, 0.19999999, -0.35999998, 0.3464, 0, -0.35999998, 0.39999998, 0.19999999, -0.12, 0.3464, 0.3464, -0.12, 0.19999999, 0.19999999, -0.35999998, 0.3464, 0.3464, -0.12, 0.19999999, 0.3464, -0.35999998, 0.19999999, 0.19999999, -0.35999998, 0.3464, 0.3464, -0.12, 0.19999999, 0.39999998, -0.12, 0, 0.3464, -0.35999998, 0.19999999, 0.39999998, -0.12, 0, 0.39999998, -0.35999998, 0, 0.3464, -0.35999998, 0.19999999, 0.39999998, -0.12, 0, 0.3464, -0.12, -0.19999999, 0.39999998, -0.35999998, 0, 0.3464, -0.12, -0.19999999, 0.3464, -0.35999998, -0.19999999, 0.39999998, -0.35999998, 0, 0.3464, -0.12, -0.19999999, 0.19999999, -0.12, -0.3464, 0.3464, -0.35999998, -0.19999999, 0.19999999, -0.12, -0.3464, 0.19999999, -0.35999998, -0.3464, 0.3464, -0.35999998, -0.19999999, 0.19999999, -0.12, -0.3464, 0, -0.12, -0.39999998, 0.19999999, -0.35999998, -0.3464, 0, -0.12, -0.39999998, 0, -0.35999998, -0.39999998, 0.19999999, -0.35999998, -0.3464, 0, -0.12, -0.39999998, -0.19999999, -0.12, -0.3464, 0, -0.35999998, -0.39999998, -0.19999999, -0.12, -0.3464, -0.19999999, -0.35999998, -0.3464, 0, -0.35999998, -0.39999998, -0.19999999, -0.12, -0.3464, -0.3464, -0.12, -0.19999999, -0.19999999, -0.35999998, -0.3464, -0.3464, -0.12, -0.19999999, -0.3464, -0.35999998, -0.19999999, -0.19999999, -0.35999998, -0.3464, -0.3464, -0.12, -0.19999999, -0.39999998, -0.12, 0, -0.3464, -0.35999998, -0.19999999, -0.39999998, -0.12, 0, -0.39999998, -0.35999998, 0, -0.3464, -0.35999998, -0.19999999, -0.39999998, -0.12, 0, -0.3464, -0.12, 0.19999999, -0.39999998, -0.35999998, 0, -0.3464, -0.12, 0.19999999, -0.3464, -0.35999998, 0.19999999, -0.39999998, -0.35999998, 0, -0.3464, -0.12, 0.19999999, -0.19999999, -0.12, 0.3464, -0.3464, -0.35999998, 0.19999999, -0.19999999, -0.12, 0.3464, -0.19999999, -0.35999998, 0.3464, -0.3464, -0.35999998, 0.19999999, -0.19999999, -0.12, 0.3464, 0, -0.12, 0.39999998, -0.19999999, -0.35999998, 0.3464, 0, -0.12, 0.39999998, 0, -0.35999998, 0.39999998, -0.19999999, -0.35999998, 0.3464, 0, -0.35999998, 0.39999998, 0.19999999, -0.35999998, 0.3464, 0, -0.59999996, 0.39999998, 0.19999999, -0.35999998, 0.3464, 0.19999999, -0.59999996, 0.3464, 0, -0.59999996, 0.39999998, 0.19999999, -0.35999998, 0.3464, 0.3464, -0.35999998, 0.19999999, 0.19999999, -0.59999996, 0.3464, 0.3464, -0.35999998, 0.19999999, 0.3464, -0.59999996, 0.19999999, 0.19999999, -0.59999996, 0.3464, 0.3464, -0.35999998, 0.19999999, 0.39999998, -0.35999998, 0, 0.3464, -0.59999996, 0.19999999, 0.39999998, -0.35999998, 0, 0.39999998, -0.59999996, 0, 0.3464, -0.59999996, 0.19999999, 0.39999998, -0.35999998, 0, 0.3464, -0.35999998, -0.19999999, 0.39999998, -0.59999996, 0, 0.3464, -0.35999998, -0.19999999, 0.3464, -0.59999996, -0.19999999, 0.39999998, -0.59999996, 0, 0.3464, -0.35999998, -0.19999999, 0.19999999, -0.35999998, -0.3464, 0.3464, -0.59999996, -0.19999999, 0.19999999, -0.35999998, -0.3464, 0.19999999, -0.59999996, -0.3464, 0.3464, -0.59999996, -0.19999999, 0.19999999, -0.35999998, -0.3464, 0, -0.35999998, -0.39999998, 0.19999999, -0.59999996, -0.3464, 0, -0.35999998, -0.39999998, 0, -0.59999996, -0.39999998, 0.19999999, -0.59999996, -0.3464, 0, -0.35999998, -0.39999998, -0.19999999, -0.35999998, -0.3464, 0, -0.59999996, -0.39999998, -0.19999999, -0.35999998, -0.3464, -0.19999999, -0.59999996, -0.3464, 0, -0.59999996, -0.39999998, -0.19999999, -0.35999998, -0.3464, -0.3464, -0.35999998, -0.19999999, -0.19999999, -0.59999996, -0.3464, -0.3464, -0.35999998, -0.19999999, -0.3464, -0.59999996, -0.19999999, -0.19999999, -0.59999996, -0.3464, -0.3464, -0.35999998, -0.19999999, -0.39999998, -0.35999998, 0, -0.3464, -0.59999996, -0.19999999, -0.39999998, -0.35999998, 0, -0.39999998, -0.59999996, 0, -0.3464, -0.59999996, -0.19999999, -0.39999998, -0.35999998, 0, -0.3464, -0.35999998, 0.19999999, -0.39999998, -0.59999996, 0, -0.3464, -0.35999998, 0.19999999, -0.3464, -0.59999996, 0.19999999, -0.39999998, -0.59999996, 0, -0.3464, -0.35999998, 0.19999999, -0.19999999, -0.35999998, 0.3464, -0.3464, -0.59999996, 0.19999999, -0.19999999, -0.35999998, 0.3464, -0.19999999, -0.59999996, 0.3464, -0.3464, -0.59999996, 0.19999999, -0.19999999, -0.35999998, 0.3464, 0, -0.35999998, 0.39999998, -0.19999999, -0.59999996, 0.3464, 0, -0.35999998, 0.39999998, 0, -0.59999996, 0.39999998, -0.19999999, -0.59999996, 0.3464, 0, 0.59999996, 0, 0.19999999, 0.59999996, 0.3464, 0, 0.59999996, 0.39999998, 0, 0.59999996, 0, 0.3464, 0.59999996, 0.19999999, 0.19999999, 0.59999996, 0.3464, 0, 0.59999996, 0, 0.39999998, 0.59999996, 0, 0.3464, 0.59999996, 0.19999999, 0, 0.59999996, 0, 0.3464, 0.59999996, -0.19999999, 0.39999998, 0.59999996, 0, 0, 0.59999996, 0, 0.19999999, 0.59999996, -0.3464, 0.3464, 0.59999996, -0.19999999, 0, 0.59999996, 0, 0, 0.59999996, -0.39999998, 0.19999999, 0.59999996, -0.3464, 0, 0.59999996, 0, -0.19999999, 0.59999996, -0.3464, 0, 0.59999996, -0.39999998, 0, 0.59999996, 0, -0.3464, 0.59999996, -0.19999999, -0.19999999, 0.59999996, -0.3464, 0, 0.59999996, 0, -0.39999998, 0.59999996, 0, -0.3464, 0.59999996, -0.19999999, 0, 0.59999996, 0, -0.3464, 0.59999996, 0.19999999, -0.39999998, 0.59999996, 0, 0, 0.59999996, 0, -0.19999999, 0.59999996, 0.3464, -0.3464, 0.59999996, 0.19999999, 0, 0.59999996, 0, 0, 0.59999996, 0.39999998, -0.19999999, 0.59999996, 0.3464, 0, -0.59999996, 0, 0, -0.59999996, 0.39999998, 0.19999999, -0.59999996, 0.3464, 0, -0.59999996, 0, 0.19999999, -0.59999996, 0.3464, 0.3464, -0.59999996, 0.19999999, 0, -0.59999996, 0, 0.3464, -0.59999996, 0.19999999, 0.39999998, -0.59999996, 0, 0, -0.59999996, 0, 0.39999998, -0.59999996, 0, 0.3464, -0.59999996, -0.19999999, 0, -0.59999996, 0, 0.3464, -0.59999996, -0.19999999, 0.19999999, -0.59999996, -0.3464, 0, -0.59999996, 0, 0.19999999, -0.59999996, -0.3464, 0, -0.59999996, -0.39999998, 0, -0.59999996, 0, 0, -0.59999996, -0.39999998, -0.19999999, -0.59999996, -0.3464, 0, -0.59999996, 0, -0.19999999, -0.59999996, -0.3464, -0.3464, -0.59999996, -0.19999999, 0, -0.59999996, 0, -0.3464, -0.59999996, -0.19999999, -0.39999998, -0.59999996, 0, 0, -0.59999996, 0, -0.39999998, -0.59999996, 0, -0.3464, -0.59999996, 0.19999999, 0, -0.59999996, 0, -0.3464, -0.59999996, 0.19999999, -0.19999999, -0.59999996, 0.3464, 0, -0.59999996, 0, -0.19999999, -0.59999996, 0.3464, 0, -0.59999996, 0.39999998)
 
 [node name="Playground" type="Node3D" unique_id=1151024986]
+script = ExtResource("13_playground")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=2126848778]
-environment = SubResource("Environment_playground")
+[node name="DynamicSky" parent="." unique_id=516336137 instance=ExtResource("2_0obgs")]
+start_weather = ExtResource("14_rkli7")
+volumetric_quality = 1
+rainbow_settings = SubResource("Resource_kfa7q")
+snow_settings = null
+precipitation_surface_collision = false
+snow_contact_enabled = false
+airborne_settings = null
+wind_fog_settings = null
+screen_settings = null
+wind_shake_settings = null
+wind_debris_settings = null
+weather_audio_settings = null
+lightning_settings = null
 
-[node name="Sun" type="DirectionalLight3D" parent="." unique_id=225896615]
-transform = Transform3D(0.71490043, 0.5002017, 0.4885849, -0.25321126, -0.46612623, 0.847709, 0.6517676, -0.7297429, -0.20657706, 0, 15.726345, 0)
-light_color = Color(1, 0.94, 0.85, 1)
-light_energy = 1.15
-shadow_enabled = true
+[node name="WorldEnvironment" parent="DynamicSky" index="0" unique_id=1677835470]
+environment = SubResource("Environment_rqaut")
 
 [node name="Ground" type="StaticBody3D" parent="." unique_id=368391055]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
@@ -250,44 +366,6 @@ transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -18,
 
 [node name="CrouchTunnels" parent="." unique_id=905863008 instance=ExtResource("7_crouch_tunnels")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 13)
-
-[node name="Arena" type="Node3D" parent="." unique_id=1603506175]
-
-[node name="WestWall" type="StaticBody3D" parent="Arena" unique_id=1315441164]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 6, 0)
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Arena/WestWall" unique_id=1649541433]
-mesh = SubResource("BoxMesh_wall_east_west")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Arena/WestWall" unique_id=1429212245]
-shape = SubResource("BoxShape3D_wall_east_west")
-
-[node name="EastWall" type="StaticBody3D" parent="Arena" unique_id=1533428236]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 6, 0)
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Arena/EastWall" unique_id=1794368894]
-mesh = SubResource("BoxMesh_wall_east_west")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Arena/EastWall" unique_id=1295244380]
-shape = SubResource("BoxShape3D_wall_east_west")
-
-[node name="NorthWall" type="StaticBody3D" parent="Arena" unique_id=129217028]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6, -20)
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Arena/NorthWall" unique_id=191695708]
-mesh = SubResource("BoxMesh_wall_north_south")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Arena/NorthWall" unique_id=497109911]
-shape = SubResource("BoxShape3D_wall_north_south")
-
-[node name="SouthWall" type="StaticBody3D" parent="Arena" unique_id=1432092334]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6, 20)
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Arena/SouthWall" unique_id=1679714516]
-mesh = SubResource("BoxMesh_wall_north_south")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Arena/SouthWall" unique_id=485415837]
-shape = SubResource("BoxShape3D_wall_north_south")
 
 [node name="ItemDefinitionInspector" parent="." unique_id=1418025125 instance=ExtResource("8_item_inspector")]
 

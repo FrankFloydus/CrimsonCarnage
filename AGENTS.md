@@ -4,6 +4,8 @@ These instructions apply throughout this Godot project. Follow the user's curren
 
 Crimson Carnage is checked out at `C:\Users\Drako\Desktop\_CRIMSON_CARNAGE_DEV\CrimsonCarnage`. It uses Godot 4.8 beta built from upstream source in the sibling Godot checkout. The Playground exercises first-person movement, melee sweeps, blood effects, and item resource loading. Use the [README](README.md) for controls and the [architecture](docs/architecture.md) for scene wiring and responsibilities. Resolve the intended `project.godot` before editing when more than one checkout is available.
 
+The project can modify and rebuild the engine in `C:\Users\Drako\Desktop\_CRIMSON_CARNAGE_DEV\godot`. Make needed engine changes in that checkout. After verification, always install the rebuilt editor as `C:\Users\Drako\Desktop\_CRIMSON_CARNAGE_DEV\Godot_RPG.exe`, replacing the existing launch executable. Verify this root executable as well as the build output. A successful build left only in `godot\bin` does not complete engine delivery. The Dynamic Sky parity goal includes authorization for the engine changes it needs. [Engine conventions](docs/godot_conventions.md#engine-references)
+
 ## Item authoring
 
 - Author item definitions in the Godot Inspector and save them as `.tres` resources in [data/items](data/items). **F4** shows the definitions loaded at Playground startup and any rejected records.

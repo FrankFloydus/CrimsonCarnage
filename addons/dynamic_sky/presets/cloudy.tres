@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DynamicSkyWeather" format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="1_weather"]
+
+[resource]
+resource_name = "Cloudy"
+script = ExtResource("1_weather")
+cloud_coverage = 0.72
+fog_density = 0.0023
+fog_amount = 0.1
+wind = Vector2(3.8, 1.2)
+gustiness = 0.19
+temperature_offset = -1.5

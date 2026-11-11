@@ -1,0 +1,15 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://addons/dynamic_sky/demo/landscape/vegetation/spruce/spruce.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/demo/materials/spruce_bough.png" id="2_needles"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/demo/materials/pbr/spruce_bark_albedo.webp" id="3_bark"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/demo/materials/pbr/spruce_bark_normal.webp" id="4_normal"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/demo/materials/pbr/spruce_bark_orm.webp" id="5_orm"]
+
+[resource]
+resource_name = "Botanical alpine spruce"
+shader = ExtResource("1_shader")
+shader_parameter/spruce_bough = ExtResource("2_needles")
+shader_parameter/bark_texture = ExtResource("3_bark")
+shader_parameter/bark_normal_texture = ExtResource("4_normal")
+shader_parameter/bark_orm_texture = ExtResource("5_orm")

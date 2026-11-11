@@ -1,0 +1,10 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://addons/dynamic_sky/demo/landscape/vegetation/ground_plants/ground_plant.gdshader" id="shader"]
+
+[resource]
+resource_name = "Modeled Shrub"
+shader = ExtResource("shader")
+shader_parameter/leaf_color = Color(0.29, 0.42, 0.18, 1)
+shader_parameter/transmission = 0.25
+shader_parameter/leaf_roughness = 0.8

@@ -1,0 +1,120 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/weather/wind_debris/wind_debris.gd" id="1_script"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/weather/wind_debris/wind_debris_process.gdshader" id="2_process"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/weather/wind_debris/wind_debris_draw.gdshader" id="3_draw"]
+[ext_resource type="Mesh" path="res://addons/dynamic_sky/weather/wind_debris/meshes/curved_leaf.obj" id="4_leaf"]
+[ext_resource type="Mesh" path="res://addons/dynamic_sky/weather/wind_debris/meshes/pine_needles.obj" id="5_needles"]
+[ext_resource type="Mesh" path="res://addons/dynamic_sky/weather/wind_debris/meshes/bent_twig.obj" id="6_twig"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_leaf_process"]
+resource_local_to_scene = true
+shader = ExtResource("2_process")
+shader_parameter/size_range = Vector2(0.58, 1.42)
+shader_parameter/fall_speed_range = Vector2(0.47, 1.15)
+shader_parameter/wind_coupling = 0.68
+shader_parameter/flutter_frequency = 3.1
+shader_parameter/air_drag = 2.4
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_leaf_draw"]
+resource_local_to_scene = true
+shader = ExtResource("3_draw")
+shader_parameter/dry_color = Color(0.22, 0.135, 0.063, 1)
+shader_parameter/pale_color = Color(0.51, 0.37, 0.20, 1)
+shader_parameter/vein_contrast = 0.27
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_needles_process"]
+resource_local_to_scene = true
+shader = ExtResource("2_process")
+shader_parameter/spawn_half_size = Vector3(7, 2.4, 7)
+shader_parameter/size_range = Vector2(0.65, 1.5)
+shader_parameter/fall_speed_range = Vector2(0.72, 1.48)
+shader_parameter/wind_coupling = 0.56
+shader_parameter/flutter_frequency = 4.2
+shader_parameter/air_drag = 1.9
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_needles_draw"]
+resource_local_to_scene = true
+shader = ExtResource("3_draw")
+shader_parameter/dry_color = Color(0.13, 0.16, 0.071, 1)
+shader_parameter/pale_color = Color(0.32, 0.31, 0.141, 1)
+shader_parameter/vein_contrast = 0.08
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_twig_process"]
+resource_local_to_scene = true
+shader = ExtResource("2_process")
+shader_parameter/spawn_half_size = Vector3(7.5, 2.1, 7.5)
+shader_parameter/size_range = Vector2(0.47, 1.02)
+shader_parameter/fall_speed_range = Vector2(1.22, 2.37)
+shader_parameter/wind_coupling = 0.43
+shader_parameter/flutter_frequency = 2.4
+shader_parameter/air_drag = 1.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_twig_draw"]
+resource_local_to_scene = true
+shader = ExtResource("3_draw")
+shader_parameter/dry_color = Color(0.18, 0.129, 0.088, 1)
+shader_parameter/pale_color = Color(0.36, 0.27, 0.166, 1)
+shader_parameter/vein_contrast = 0.0
+
+[node name="WindDebris" type="Node3D"]
+top_level = true
+physics_interpolation_mode = 2
+script = ExtResource("1_script")
+enabled = true
+
+[node name="CollisionField" type="GPUParticlesCollisionHeightField3D" parent="."]
+top_level = true
+visible = false
+cull_mask = 131072
+size = Vector3(44, 22, 44)
+resolution = 0
+heightfield_mask = 1
+
+[node name="Leaves" type="GPUParticles3D" parent="."]
+position = Vector3(0, 0.75, 0)
+visible = false
+layers = 131072
+cast_shadow = 0
+material_override = SubResource("ShaderMaterial_leaf_draw")
+emitting = false
+amount = 140
+amount_ratio = 0.0
+lifetime = 3.4
+visibility_aabb = AABB(-24, -10, -24, 48, 21, 48)
+draw_order = 3
+collision_base_size = 0.025
+process_material = SubResource("ShaderMaterial_leaf_process")
+draw_pass_1 = ExtResource("4_leaf")
+
+[node name="Needles" type="GPUParticles3D" parent="."]
+position = Vector3(0, 0.7, 0)
+visible = false
+layers = 131072
+cast_shadow = 0
+material_override = SubResource("ShaderMaterial_needles_draw")
+emitting = false
+amount = 80
+amount_ratio = 0.0
+lifetime = 3.1
+visibility_aabb = AABB(-24, -10, -24, 48, 21, 48)
+draw_order = 3
+collision_base_size = 0.018
+process_material = SubResource("ShaderMaterial_needles_process")
+draw_pass_1 = ExtResource("5_needles")
+
+[node name="Twigs" type="GPUParticles3D" parent="."]
+position = Vector3(0, 0.58, 0)
+visible = false
+layers = 131072
+cast_shadow = 0
+material_override = SubResource("ShaderMaterial_twig_draw")
+emitting = false
+amount = 44
+amount_ratio = 0.0
+lifetime = 2.8
+visibility_aabb = AABB(-24, -10, -24, 48, 21, 48)
+draw_order = 3
+collision_base_size = 0.025
+process_material = SubResource("ShaderMaterial_twig_process")
+draw_pass_1 = ExtResource("6_twig")

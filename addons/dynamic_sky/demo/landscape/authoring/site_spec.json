@@ -1,0 +1,142 @@
+{
+  "terrain_seed": 13091,
+  "domain_half_extent_meters": 1800,
+  "erosion_grid_step_meters": 6,
+  "fault_ridges": [
+    [
+      [
+        -330,
+        -250,
+        230
+      ],
+      [
+        -450,
+        -610,
+        505
+      ],
+      [
+        -285,
+        -910,
+        620
+      ],
+      [
+        -540,
+        -1450,
+        570
+      ]
+    ],
+    [
+      [
+        350,
+        -210,
+        170
+      ],
+      [
+        545,
+        -520,
+        325
+      ],
+      [
+        480,
+        -850,
+        490
+      ],
+      [
+        875,
+        -1350,
+        665
+      ]
+    ],
+    [
+      [
+        -640,
+        470,
+        315
+      ],
+      [
+        -215,
+        790,
+        385
+      ],
+      [
+        185,
+        480,
+        245
+      ],
+      [
+        590,
+        930,
+        470
+      ]
+    ],
+    [
+      [
+        -1130,
+        -450,
+        560
+      ],
+      [
+        -1050,
+        350,
+        615
+      ],
+      [
+        -780,
+        1150,
+        650
+      ]
+    ]
+  ],
+  "trail_points": [
+    [
+      8,
+      8
+    ],
+    [
+      15,
+      20
+    ],
+    [
+      23,
+      32
+    ],
+    [
+      17,
+      51
+    ],
+    [
+      35,
+      72
+    ],
+    [
+      61,
+      89
+    ],
+    [
+      54,
+      110
+    ],
+    [
+      83,
+      135
+    ],
+    [
+      69,
+      161
+    ],
+    [
+      104,
+      192
+    ]
+  ],
+  "forest_spacing_meters": 6.2,
+  "forest_patch_size_meters": 96,
+  "forest_near_distance_meters": 120,
+  "forest_distant_distance_meters": 650,
+  "meadow_spacing_meters": 0.22,
+  "meadow_radius_meters": 115,
+  "meadow_patch_size_meters": 16,
+  "meadow_near_distance_meters": 18,
+  "meadow_distant_distance_meters": 65,
+  "accent_spacing_meters": 0.65
+}

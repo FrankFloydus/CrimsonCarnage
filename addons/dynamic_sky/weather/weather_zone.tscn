@@ -1,0 +1,24 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/weather/weather_zone.gd" id="1_zone"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_region"]
+resource_local_to_scene = true
+size = Vector3(20, 12, 20)
+
+[sub_resource type="Curve3D" id="Curve3D_footprint"]
+resource_local_to_scene = true
+closed = true
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, -10, 0, -8, 0, 0, 0, 0, 0, 0, 1, 0, -10, 0, 0, 0, 0, 0, 0, 10, 0, -6, 0, 0, 0, 0, 0, 0, 10, 0, 7, 0, 0, 0, 0, 0, 0, 2, 0, 9, 0, 0, 0, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0, -10, 0, 9),
+"tilts": PackedFloat32Array(0, 0, 0, 0, 0, 0, 0)
+}
+point_count = 7
+
+[node name="WeatherZone" type="Node3D" node_paths=PackedStringArray("spline_path")]
+script = ExtResource("1_zone")
+region = SubResource("BoxShape3D_region")
+spline_path = NodePath("Footprint")
+
+[node name="Footprint" type="Path3D" parent="."]
+curve = SubResource("Curve3D_footprint")

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="DynamicSkyWeather" format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="1_weather"]
+
+[resource]
+resource_name = "Storm"
+script = ExtResource("1_weather")
+cloud_coverage = 1.0
+fog_density = 0.017
+fog_amount = 0.65
+rain = 1.0
+wind = Vector2(11, 4)
+gustiness = 0.66
+lightning_rate = 11.0
+sheet_lightning_rate = 3.5
+temperature_offset = -7.0

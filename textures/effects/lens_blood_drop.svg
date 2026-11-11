@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="160" viewBox="0 0 128 160">
+  <defs>
+    <radialGradient id="blood" cx=".43" cy=".43" r=".66">
+      <stop offset="0" stop-color="#55121b" stop-opacity=".97"/>
+      <stop offset=".47" stop-color="#67141f" stop-opacity=".95"/>
+      <stop offset=".73" stop-color="#3c0a13" stop-opacity=".94"/>
+      <stop offset=".89" stop-color="#771722" stop-opacity=".79"/>
+      <stop offset="1" stop-color="#a33840" stop-opacity=".24"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2=".65" y2="1">
+      <stop offset="0" stop-color="#bd4349" stop-opacity=".15"/>
+      <stop offset=".62" stop-color="#761824" stop-opacity=".36"/>
+      <stop offset="1" stop-color="#320710" stop-opacity=".05"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1=".17" y1=".1" x2=".62" y2="1">
+      <stop offset="0" stop-color="#ffd3c4" stop-opacity=".48"/>
+      <stop offset=".54" stop-color="#cb6865" stop-opacity=".27"/>
+      <stop offset="1" stop-color="#903238" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#rim)" d="M73 9C79 19 84 34 93 45C107 59 118 73 116 93C115 119 98 140 74 149C51 158 27 146 16 127C7 112 10 93 20 77C32 58 46 50 55 34C64 19 66 8 73 9Z"/>
+  <path fill="url(#blood)" d="M72 14C77 17 81 36 90 47C101 61 112 75 112 93C111 116 96 137 74 144C53 151 32 142 21 125C12 111 14 94 24 79C36 62 49 52 59 35C65 25 68 13 72 14Z"/>
+  <path fill="url(#gloss)" d="M55 54C58 52 61 54 59 58C50 71 37 78 34 92C33 98 34 103 33 107C27 104 26 95 29 86C33 72 44 62 55 54Z"/>
+  <path fill="#d56e67" opacity=".27" d="M49 65C51 64 54 65 52 68C48 72 43 76 41 76C39 74 44 68 49 65Z"/>
+  <path fill="#26060f" opacity=".31" d="M95 103C99 96 101 87 102 78C108 99 98 122 83 130C74 135 66 136 59 135C77 130 90 116 95 103Z"/>
+</svg>

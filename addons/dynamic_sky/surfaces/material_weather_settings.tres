@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="DynamicSkyMaterialWeatherSettings" format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/surfaces/material_weather_settings.gd" id="1"]
+
+[resource]
+resource_local_to_scene = true
+resource_name = "Material Weather Response"
+script = ExtResource("1")

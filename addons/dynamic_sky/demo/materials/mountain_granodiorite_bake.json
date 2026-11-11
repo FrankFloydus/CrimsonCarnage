@@ -1,0 +1,98 @@
+{
+  "source_dimensions": [
+    1254,
+    1254
+  ],
+  "derived_dimensions": [
+    4096,
+    4096
+  ],
+  "height_source": "masters/mountain_granodiorite_height.png",
+  "grain_full_height_range_meters": 0.0001,
+  "albedo_multiplier": 1.0,
+  "albedo_wrap": {
+    "horizontal_wrap_mean": 0.006654348224401474,
+    "vertical_wrap_mean": 0.006966784596443176,
+    "horizontal_interior_mean": 0.0177412498742342,
+    "vertical_interior_mean": 0.018404077738523483
+  },
+  "detail": {
+    "tile_width_meters": 12.0,
+    "height_range_meters": 0.16,
+    "normal_slope_degrees_percentiles": {
+      "25": 3.1269490718841553,
+      "50": 5.187582969665527,
+      "75": 8.163357973098755,
+      "95": 28.590773105621338,
+      "99": 53.76269054412837,
+      "99.9": 71.00133972168214
+    },
+    "ao_range": [
+      0.5406808257102966,
+      1.0
+    ],
+    "roughness_range": [
+      0.7829166650772095,
+      0.8634759783744812
+    ],
+    "metallic_range": [
+      0.0,
+      0.0
+    ],
+    "height_wrap": {
+      "horizontal_wrap_mean": 0.00018687083502300084,
+      "vertical_wrap_mean": 0.00025170581648126245,
+      "horizontal_interior_mean": 0.0002739756309892982,
+      "vertical_interior_mean": 0.00031556119211018085
+    },
+    "normal_wrap": {
+      "horizontal_wrap_mean": 1.098876953125,
+      "vertical_wrap_mean": 1.4186197519302368,
+      "horizontal_interior_mean": 1.2805038690567017,
+      "vertical_interior_mean": 1.361325740814209
+    }
+  },
+  "macro": {
+    "tile_width_meters": 36.0,
+    "height_range_meters": 0.45,
+    "normal_slope_degrees_percentiles": {
+      "25": 1.2133182883262634,
+      "50": 2.087384581565857,
+      "75": 4.367554306983948,
+      "95": 22.144895553588867,
+      "99": 40.056230735778804,
+      "99.9": 57.49372827530086
+    },
+    "ao_range": [
+      0.7734358906745911,
+      1.0
+    ],
+    "roughness_range": [
+      0.7955548167228699,
+      0.8291255235671997
+    ],
+    "metallic_range": [
+      0.0,
+      0.0
+    ],
+    "height_wrap": {
+      "horizontal_wrap_mean": 0.0003470526135060936,
+      "vertical_wrap_mean": 0.0007050159620121121,
+      "horizontal_interior_mean": 0.00047103280667215586,
+      "vertical_interior_mean": 0.0005639572627842426
+    },
+    "normal_wrap": {
+      "horizontal_wrap_mean": 0.232666015625,
+      "vertical_wrap_mean": 0.4613443911075592,
+      "horizontal_interior_mean": 0.22201763093471527,
+      "vertical_interior_mean": 0.2637580335140228
+    }
+  },
+  "notes": [
+    "Original 1254-square generated color and separately generated structural height; 4096-square derived storage maps.",
+    "Structural height is independent of diffuse mica/mineral coloration; optional microscopic grain is seeded and bounded.",
+    "Height PNGs store unsigned 16-bit normalized linear data; the JSON ranges convert them into meters.",
+    "Packed ORM is linear: ambient visibility R, roughness G, dielectric metallic zero B.",
+    "PBR values are authored estimates, not measured scan channels or commercial reference assets."
+  ]
+}

@@ -18,7 +18,7 @@ func _physics_process(delta: float) -> void:
 	advance_locomotion(delta, movement_input,
 			Input.is_action_just_pressed(&"jump"),
 			Input.is_action_just_pressed(&"crouch"), Input.is_action_pressed(&"crouch"),
-			Input.is_action_pressed(&"sprint"), Input.is_action_pressed(&"walk")
+			Input.is_action_pressed(&"walk"), Input.is_action_just_pressed(&"dash")
 	)
 
 
@@ -29,13 +29,13 @@ func advance_locomotion(
 		jump_pressed: bool = false,
 		crouch_pressed: bool = false,
 		crouch_held: bool = false,
-		sprint_held: bool = false,
-		walk_held: bool = false
+		walk_held: bool = false,
+		dash_pressed: bool = false
 ) -> void:
 	_update_crouch_input(crouch_pressed, crouch_held, not jump_pressed and _movement.is_grounded())
 	_crouch.retry_standing()
-	_gait.advance(sprint_held, walk_held, _crouch.is_crouching)
-	_movement.move(delta, movement_input, _gait.current_gait, jump_pressed)
+	_gait.advance(walk_held, _crouch.is_crouching)
+	_movement.move(delta, movement_input, _gait.current_gait, jump_pressed, dash_pressed)
 
 
 func _update_crouch_input(pressed: bool, held: bool, can_enter: bool) -> void:

@@ -1,6 +1,8 @@
 shader_type spatial;
 render_mode diffuse_burley, specular_schlick_ggx;
 
+#include "res://addons/dynamic_sky/surfaces/weather_layer.gdshaderinc"
+
 group_uniforms Base;
 // Surface color beneath both grids.
 uniform vec4 base_color : source_color = vec4(0.32, 0.39, 0.44, 1.0);
@@ -73,4 +75,5 @@ void fragment() {
 			+ texture(roughness_map, position.xy).r * weights.z;
 		ROUGHNESS *= mapped_roughness;
 	}
+	APPLY_DYNAMIC_SKY_WEATHER(world_position, world_normal);
 }

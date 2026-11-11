@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="DynamicSkyScreenSettings" format=3 uid="uid://bkf8bqv0sdrg4"]
+
+[ext_resource type="Script" uid="uid://pi7gslkw4hp6" path="res://addons/dynamic_sky/weather/screen/screen_settings.gd" id="1_settings"]
+[ext_resource type="Texture2D" uid="uid://dap6ed3ok47n7" path="res://addons/dynamic_sky/weather/screen/frost_crystals.png" id="2_frost"]
+
+[resource]
+resource_local_to_scene = true
+script = ExtResource("1_settings")
+frost_enabled = false
+frost_texture = ExtResource("2_frost")

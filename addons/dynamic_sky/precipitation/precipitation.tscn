@@ -1,0 +1,26 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/precipitation/precipitation.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://addons/dynamic_sky/precipitation/rain_splashes.tscn" id="4_splashes"]
+[ext_resource type="PackedScene" path="res://addons/dynamic_sky/precipitation/snow/snowfall.tscn" id="5_snowfall"]
+[ext_resource type="PackedScene" path="res://addons/dynamic_sky/precipitation/rain/rain.tscn" id="6_rain"]
+
+[node name="Precipitation" type="Node3D"]
+physics_interpolation_mode = 2
+top_level = true
+script = ExtResource("1_script")
+
+[node name="CollisionField" type="GPUParticlesCollisionHeightField3D" parent="."]
+top_level = true
+visible = false
+cull_mask = 524288
+size = Vector3(42, 26, 42)
+resolution = 0
+heightfield_mask = 1
+
+[node name="Rain" parent="." instance=ExtResource("6_rain")]
+sub_emitter = NodePath("../RainSplashes")
+
+[node name="Snowfall" parent="." instance=ExtResource("5_snowfall")]
+
+[node name="RainSplashes" parent="." instance=ExtResource("4_splashes")]

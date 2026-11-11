@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="DynamicSkyAstronomy" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/astronomy/dynamic_sky_astronomy.gd" id="1_astronomy"]
+
+[resource]
+resource_name = "Rome Summer Solstice"
+script = ExtResource("1_astronomy")
+year = 2026
+month = 6
+day = 21
+longitude = 12.4964
+utc_offset_hours = 2.0

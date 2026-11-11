@@ -1,0 +1,10 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://addons/dynamic_sky/demo/landscape/lake.gdshader" id="1_water"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/demo/landscape/lake_bathymetry.png" id="2_depth"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/demo/landscape/lake_wave_slopes.png" id="3_waves"]
+
+[resource]
+shader = ExtResource("1_water")
+shader_parameter/lake_bathymetry = ExtResource("2_depth")
+shader_parameter/wave_slopes = ExtResource("3_waves")

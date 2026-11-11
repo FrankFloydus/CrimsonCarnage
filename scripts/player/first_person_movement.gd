@@ -6,10 +6,13 @@ extends Node
 signal terrain_advanced(delta: float, height_change: float)
 ## Clears terrain presentation when an external position change invalidates stair contacts.
 signal terrain_reset
+## Reports a dash start with its locked local direction (X strafe, negative Y forward).
+## Reports a dash stop with a zero direction, including when a collision ends it early.
+signal dash_state_changed(active: bool, local_direction: Vector2)
 
 ## Character whose velocity and collision movement this component owns.
 @export var body: CharacterBody3D
-## Gait, jump, acceleration, gravity and terrain settings.
+## Gait, jump, dash, acceleration, gravity and terrain settings.
 @export var settings: FirstPersonMovementSettings
 
 ## Gait used by the last movement step.
@@ -24,24 +27,27 @@ var _stair_stepper := FirstPersonStairStepper.new()
 var _stepped_last_tick: bool = false
 var _last_position: Vector3
 var _has_last_position: bool = false
-var _airborne_sprint_takeoff_speed: float = 0.0
+var _dash_charges: int = -1
+var _dash_recharge_elapsed: float = 0.0
+var _dash_time_left: float = 0.0
+var _dash_velocity: Vector3 = Vector3.ZERO
+var _dash_saved_vertical_speed: float = 0.0
 
 
 ## Advances locomotion once per physics tick. Input uses X for strafe and negative Y for forward.
-## A jump press requires current floor or coyote support and a non-sprint gait.
+## Jump requires floor or coyote support. Dash requires a movement direction and can start in the air.
 func move(
 		delta: float,
 		movement_input: Vector2,
 		gait: FirstPersonGait.Gait = FirstPersonGait.Gait.RUN,
-		jump_pressed: bool = false
+		jump_pressed: bool = false,
+		dash_pressed: bool = false
 ) -> void:
 	if _moving or not is_finite(delta) or delta <= 0.0 or not is_instance_valid(body) \
 			or settings == null or not body.is_inside_tree():
 		return
 	_moving = true
-	if gait == FirstPersonGait.Gait.SPRINT and get_speed_for_gait(gait) <= 0.0:
-		gait = FirstPersonGait.Gait.RUN
-	_advance_movement(delta, movement_input, gait, jump_pressed)
+	_advance_movement(delta, movement_input, gait, jump_pressed, dash_pressed)
 	_moving = false
 
 
@@ -65,12 +71,10 @@ func get_speed_for_gait(gait: FirstPersonGait.Gait) -> float:
 	match gait:
 		FirstPersonGait.Gait.WALK:
 			multiplier = settings.walk_speed_multiplier
-		FirstPersonGait.Gait.SPRINT:
-			multiplier = settings.sprint_speed_multiplier
 		FirstPersonGait.Gait.CROUCH:
 			multiplier = settings.crouch_speed_multiplier
 		FirstPersonGait.Gait.CROUCH_WALK:
-			multiplier = settings.crouch_speed_multiplier * settings.walk_speed_multiplier
+			multiplier = settings.crouch_walk_speed_multiplier
 	var result := base_speed * multiplier
 	return result if is_finite(result) and result >= 0.0 else 0.0
 
@@ -79,7 +83,8 @@ func _advance_movement(
 		delta: float,
 		movement_input: Vector2,
 		gait: FirstPersonGait.Gait,
-		jump_pressed: bool
+		jump_pressed: bool,
+		dash_pressed: bool
 ) -> void:
 	if not is_finite(movement_input.x) or not is_finite(movement_input.y):
 		movement_input = Vector2.ZERO
@@ -91,7 +96,8 @@ func _advance_movement(
 		_stair_stepper.reset()
 		_stepped_last_tick = false
 		_coyote_time_remaining = 0.0
-		_airborne_sprint_takeoff_speed = 0.0
+		if _dash_time_left > 0.0:
+			_finish_dash(true)
 		terrain_reset.emit()
 	body.floor_max_angle = deg_to_rad(settings.max_slope_angle)
 	body.floor_snap_length = maxf(0.05, settings.max_step_height)
@@ -106,32 +112,26 @@ func _advance_movement(
 	var direction := body.global_basis * Vector3(movement_input.x, 0.0, movement_input.y)
 	direction.y = 0.0
 	direction = direction.limit_length(1.0)
-	var horizontal_velocity := Vector3(body.velocity.x, 0.0, body.velocity.z)
-	var acceleration := settings.ground_acceleration if grounded else settings.air_acceleration
-	if movement_input.is_zero_approx():
-		acceleration = settings.ground_deceleration if grounded else settings.air_deceleration
-	var target_speed := get_speed_for_gait(gait)
-	if grounded:
-		_airborne_sprint_takeoff_speed = 0.0
-	elif target_speed > 0.0:
-		if gait == FirstPersonGait.Gait.SPRINT:
-			target_speed = get_speed_for_gait(FirstPersonGait.Gait.RUN)
-		target_speed = maxf(target_speed, minf(_airborne_sprint_takeoff_speed, horizontal_velocity.length()))
-	horizontal_velocity = horizontal_velocity.move_toward(
-			direction * maxf(target_speed, 0.0), acceleration * delta
-	)
+	_recharge_dash(delta)
+	if dash_pressed and _dash_time_left <= 0.0:
+		_try_start_dash(direction, movement_input, grounded)
+	var dashing := _dash_time_left > 0.0
+	var horizontal_velocity: Vector3
+	if dashing:
+		# Scale the final tick to the remaining burst time.
+		horizontal_velocity = _dash_velocity * minf(1.0, _dash_time_left / delta)
+		body.velocity.y = 0.0
+	else:
+		var acceleration := settings.ground_acceleration if grounded else settings.air_acceleration
+		if movement_input.is_zero_approx():
+			acceleration = settings.ground_deceleration if grounded else settings.air_deceleration
+		var previous_velocity := Vector3(body.velocity.x, 0.0, body.velocity.z)
+		horizontal_velocity = previous_velocity.move_toward(
+				direction * get_speed_for_gait(gait), acceleration * delta
+		)
+		_advance_vertical_velocity(delta, gait, grounded, jump_pressed)
 	body.velocity.x = horizontal_velocity.x
 	body.velocity.z = horizontal_velocity.z
-
-	if grounded and body.velocity.y < 0.0:
-		body.velocity.y = 0.0
-	body.velocity.y -= settings.gravity * delta
-	if jump_pressed and gait != FirstPersonGait.Gait.SPRINT \
-			and (grounded or _coyote_time_remaining > 0.0):
-		var jump_height := _get_jump_height(gait)
-		if is_finite(jump_height) and jump_height > 0.0:
-			body.velocity.y = sqrt(2.0 * settings.gravity * jump_height)
-			_coyote_time_remaining = 0.0
 
 	var rising := body.velocity.y > 0.0
 	_stepped_last_tick = false
@@ -141,9 +141,11 @@ func _advance_movement(
 				body.floor_max_angle, delta
 		)
 	body.move_and_slide()
-	if grounded and gait == FirstPersonGait.Gait.SPRINT \
-			and not body.is_on_floor() and not _stepped_last_tick:
-		_airborne_sprint_takeoff_speed = Vector2(body.velocity.x, body.velocity.z).length()
+	if dashing:
+		_dash_time_left -= delta
+		var hit_wall := body.is_on_wall() and body.get_wall_normal().dot(_dash_velocity) < -0.001
+		if _dash_time_left <= 0.0 or hit_wall:
+			_finish_dash(body.is_on_floor() or _stepped_last_tick)
 	var correction := 0.0
 	if grounded and (body.is_on_floor() or _stepped_last_tick) and not rising:
 		var displacement := body.global_position - start_position
@@ -159,6 +161,58 @@ func _advance_movement(
 	_last_position = body.global_position
 	_has_last_position = true
 	terrain_advanced.emit(delta, correction)
+
+
+func _advance_vertical_velocity(
+		delta: float,
+		gait: FirstPersonGait.Gait,
+		grounded: bool,
+		jump_pressed: bool
+) -> void:
+	if grounded and body.velocity.y < 0.0:
+		body.velocity.y = 0.0
+	body.velocity.y -= settings.gravity * delta
+	if jump_pressed and (grounded or _coyote_time_remaining > 0.0):
+		var jump_height := _get_jump_height(gait)
+		if is_finite(jump_height) and jump_height > 0.0:
+			body.velocity.y = sqrt(2.0 * settings.gravity * jump_height)
+			_coyote_time_remaining = 0.0
+
+
+func _recharge_dash(delta: float) -> void:
+	var capacity := maxi(settings.dash_max_charges, 0)
+	_dash_charges = capacity if _dash_charges < 0 else mini(_dash_charges, capacity)
+	if _dash_charges == capacity:
+		_dash_recharge_elapsed = 0.0
+		return
+	var recharge_time := settings.dash_recharge_time
+	if not is_finite(recharge_time) or recharge_time <= 0.0:
+		return
+	_dash_recharge_elapsed += delta
+	while _dash_charges < capacity and _dash_recharge_elapsed >= recharge_time:
+		_dash_charges += 1
+		_dash_recharge_elapsed -= recharge_time
+	if _dash_charges == capacity:
+		_dash_recharge_elapsed = 0.0
+
+
+func _try_start_dash(direction: Vector3, local_direction: Vector2, grounded: bool) -> void:
+	var speed := settings.dash_speed
+	var duration := settings.dash_duration
+	if direction.is_zero_approx() or _dash_charges <= 0 or not is_finite(speed) or speed <= 0.0 \
+			or not is_finite(duration) or duration <= 0.0:
+		return
+	_dash_charges -= 1
+	_dash_velocity = direction.normalized() * speed
+	_dash_time_left = duration
+	_dash_saved_vertical_speed = 0.0 if grounded else body.velocity.y
+	dash_state_changed.emit(true, local_direction.normalized())
+
+
+func _finish_dash(grounded: bool) -> void:
+	_dash_time_left = 0.0
+	body.velocity = Vector3(0.0, 0.0 if grounded else _dash_saved_vertical_speed, 0.0)
+	dash_state_changed.emit(false, Vector2.ZERO)
 
 
 func _get_jump_height(gait: FirstPersonGait.Gait) -> float:

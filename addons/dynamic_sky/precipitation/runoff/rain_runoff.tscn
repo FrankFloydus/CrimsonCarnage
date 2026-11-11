@@ -1,0 +1,51 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/precipitation/runoff/rain_runoff.gd" id="1_runoff"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/precipitation/runoff/rain_runoff_process.gdshader" id="2_process"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/precipitation/precipitation_draw.gdshader" id="3_draw"]
+[ext_resource type="PackedScene" path="res://addons/dynamic_sky/precipitation/rain_splashes.tscn" id="4_splashes"]
+
+[sub_resource type="Curve3D" id="Curve3D_eave"]
+resource_local_to_scene = true
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, -2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0),
+"tilts": PackedFloat32Array(0, 0)
+}
+point_count = 2
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_runoff_process"]
+shader = ExtResource("2_process")
+shader_parameter/fall_settings = Vector3(0.22, 9.81, 8)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_runoff_draw"]
+shader = ExtResource("3_draw")
+shader_parameter/particle_kind = 0
+shader_parameter/tint = Color(0.65, 0.72, 0.77, 0.42)
+shader_parameter/shutter_seconds = 0.026
+shader_parameter/surface_fade_distance = 0.07
+shader_parameter/near_fade_range = Vector2(0.26, 1.18)
+shader_parameter/far_fade_range = Vector2(16, 27)
+
+[sub_resource type="QuadMesh" id="QuadMesh_runoff"]
+material = SubResource("ShaderMaterial_runoff_draw")
+size = Vector2(0.012, 1)
+
+[node name="RainRunoff" type="Path3D"]
+curve = SubResource("Curve3D_eave")
+script = ExtResource("1_runoff")
+
+[node name="Drops" type="GPUParticles3D" parent="."]
+layers = 524288
+cast_shadow = 0
+emitting = false
+amount = 320
+lifetime = 2.15
+fixed_fps = 60
+visibility_aabb = AABB(-30, -16, -30, 60, 20, 60)
+local_coords = false
+process_material = SubResource("ShaderMaterial_runoff_process")
+draw_pass_1 = SubResource("QuadMesh_runoff")
+
+[node name="RainSplashes" parent="." instance=ExtResource("4_splashes")]
+amount = 160
+visibility_aabb = AABB(-30, -16, -30, 60, 20, 60)

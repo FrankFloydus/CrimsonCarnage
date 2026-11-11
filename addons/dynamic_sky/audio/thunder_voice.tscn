@@ -1,0 +1,23 @@
+[gd_scene format=3]
+
+[ext_resource type="AudioStream" path="res://addons/dynamic_sky/audio/clips/thunder.wav" id="1_thunder"]
+[ext_resource type="AudioStream" path="res://addons/dynamic_sky/audio/clips/thunder_muffled.wav" id="2_thunder_muffled"]
+
+[node name="ThunderVoice" type="Node3D"]
+top_level = true
+
+[node name="Open" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("1_thunder")
+volume_db = -2.0
+unit_size = 210.0
+max_db = 0.0
+attenuation_filter_cutoff_hz = 2700.0
+attenuation_filter_db = -16.0
+
+[node name="Sheltered" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("2_thunder_muffled")
+volume_db = -11.0
+unit_size = 210.0
+max_db = 0.0
+attenuation_filter_cutoff_hz = 1600.0
+attenuation_filter_db = -10.0

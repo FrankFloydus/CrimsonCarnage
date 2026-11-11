@@ -1,0 +1,21 @@
+[gd_scene format=3]
+
+[ext_resource type="Shader" path="res://addons/dynamic_sky/weather/airborne/wind_fog_post_process.gdshader" id="1_shader"]
+[ext_resource type="Texture3D" path="res://addons/dynamic_sky/rendering/cloud_noise.png" id="2_noise"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_wind_fog"]
+resource_local_to_scene = true
+render_priority = 110
+shader = ExtResource("1_shader")
+shader_parameter/density_noise = ExtResource("2_noise")
+
+[sub_resource type="QuadMesh" id="QuadMesh_fullscreen"]
+size = Vector2(2, 2)
+
+[node name="PostProcessWindFog" type="MeshInstance3D"]
+visible = false
+cast_shadow = 0
+extra_cull_margin = 16384.0
+ignore_occlusion_culling = true
+material_override = SubResource("ShaderMaterial_wind_fog")
+mesh = SubResource("QuadMesh_fullscreen")

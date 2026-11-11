@@ -1,0 +1,77 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/audio/weather_audio.gd" id="1_audio"]
+[ext_resource type="AudioStream" path="res://addons/dynamic_sky/audio/clips/rain.wav" id="2_rain"]
+[ext_resource type="AudioStream" path="res://addons/dynamic_sky/audio/clips/rain_muffled.wav" id="3_rain_muffled"]
+[ext_resource type="AudioStream" path="res://addons/dynamic_sky/audio/clips/snow.wav" id="4_snow"]
+[ext_resource type="AudioStream" path="res://addons/dynamic_sky/audio/clips/snow_muffled.wav" id="5_snow_muffled"]
+[ext_resource type="AudioStream" path="res://addons/dynamic_sky/audio/clips/wind.wav" id="6_wind"]
+[ext_resource type="AudioStream" path="res://addons/dynamic_sky/audio/clips/wind_muffled.wav" id="7_wind_muffled"]
+[ext_resource type="AudioStream" path="res://addons/dynamic_sky/audio/clips/dust.wav" id="8_dust"]
+[ext_resource type="AudioStream" path="res://addons/dynamic_sky/audio/clips/dust_muffled.wav" id="9_dust_muffled"]
+
+[node name="WeatherAudio" type="Node3D"]
+script = ExtResource("1_audio")
+
+[node name="Ambience" type="Node3D" parent="."]
+top_level = true
+
+[node name="Rain" type="Node3D" parent="Ambience"]
+position = Vector3(0, 2.4, 0)
+
+[node name="Open" type="AudioStreamPlayer3D" parent="Ambience/Rain"]
+stream = ExtResource("2_rain")
+attenuation_model = 3
+volume_db = -11.0
+panning_strength = 0.35
+
+[node name="Sheltered" type="AudioStreamPlayer3D" parent="Ambience/Rain"]
+stream = ExtResource("3_rain_muffled")
+attenuation_model = 3
+volume_db = -19.0
+panning_strength = 0.35
+
+[node name="Snow" type="Node3D" parent="Ambience"]
+position = Vector3(0, 1.7, 0)
+
+[node name="Open" type="AudioStreamPlayer3D" parent="Ambience/Snow"]
+stream = ExtResource("4_snow")
+attenuation_model = 3
+volume_db = -23.0
+panning_strength = 0.3
+
+[node name="Sheltered" type="AudioStreamPlayer3D" parent="Ambience/Snow"]
+stream = ExtResource("5_snow_muffled")
+attenuation_model = 3
+volume_db = -32.0
+panning_strength = 0.3
+
+[node name="Wind" type="Node3D" parent="Ambience"]
+position = Vector3(0, 1.2, 4.5)
+
+[node name="Open" type="AudioStreamPlayer3D" parent="Ambience/Wind"]
+stream = ExtResource("6_wind")
+attenuation_model = 3
+volume_db = -14.0
+panning_strength = 0.6
+
+[node name="Sheltered" type="AudioStreamPlayer3D" parent="Ambience/Wind"]
+stream = ExtResource("7_wind_muffled")
+attenuation_model = 3
+volume_db = -26.0
+panning_strength = 0.6
+
+[node name="Dust" type="Node3D" parent="Ambience"]
+position = Vector3(0, 0.3, 3.5)
+
+[node name="Open" type="AudioStreamPlayer3D" parent="Ambience/Dust"]
+stream = ExtResource("8_dust")
+attenuation_model = 3
+volume_db = -16.0
+panning_strength = 0.65
+
+[node name="Sheltered" type="AudioStreamPlayer3D" parent="Ambience/Dust"]
+stream = ExtResource("9_dust_muffled")
+attenuation_model = 3
+volume_db = -24.0
+panning_strength = 0.65

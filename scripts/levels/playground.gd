@@ -1,0 +1,68 @@
+extends Node3D
+## Previews the player's screen effects and directional damage HUD.
+
+const DAMAGE_PREVIEW_DISTANCE := 8.0
+
+## Maximum distance from the camera to the mannequin's torso for the lens preview, in meters.
+## Zero disables this preview.
+@export_range(0.0, 10.0, 0.1, "or_greater", "suffix:m") var mannequin_lens_blood_range: float = 3.0
+
+var _lens_played_this_swing: bool = false
+var _vignette_played_this_swing: bool = false
+
+@onready var _mannequin: Node3D = $BloodTestTarget
+@onready var _player: Node3D = $Player
+@onready var _camera: Camera3D = $Player/Look/Camera3D
+@onready var _lens_blood: LensBlood = $Player/ScreenEffects/LensBlood
+@onready var _damage_vignette: DamageVignette = $Player/ScreenEffects/DamageVignette
+@onready var _damage_indicator: DamageIndicator = $Player/HUD/DamageIndicator
+
+
+func _ready() -> void:
+	# WeaponControl belongs to the instanced Player scene.
+	var weapon := _camera.get_node(^"WeaponControl")
+	weapon.swing_started.connect(_on_swing_started)
+	weapon.world_contact.connect(_on_world_contact)
+	weapon.surface_contact.connect(_on_surface_contact)
+
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	var key := event as InputEventKey
+	if key == null or not key.pressed or key.echo:
+		return
+	var code := key.physical_keycode if key.physical_keycode != KEY_NONE else key.keycode
+	if code < KEY_1 or code > KEY_8:
+		return
+
+	var angle := float(code - KEY_1) * PI / 4.0
+	var local_direction := Vector3(sin(angle), 0.0, -cos(angle))
+	var world_offset := _player.global_basis * local_direction * DAMAGE_PREVIEW_DISTANCE
+	_damage_indicator.show_hit(_player.global_position + world_offset)
+	get_viewport().set_input_as_handled()
+
+
+func _on_swing_started() -> void:
+	_lens_played_this_swing = false
+	_vignette_played_this_swing = false
+
+
+func _on_world_contact(_collider: Node3D) -> void:
+	if _vignette_played_this_swing:
+		return
+	_vignette_played_this_swing = true
+	_damage_vignette.pulse()
+
+
+func _on_surface_contact(
+		collider: CollisionObject3D, _point: Vector3, _normal: Vector3, _direction: Vector3
+) -> void:
+	if _lens_played_this_swing or not _mannequin.is_ancestor_of(collider):
+		return
+
+	var torso_position := _mannequin.global_position + Vector3.UP
+	var distance_squared := _camera.global_position.distance_squared_to(torso_position)
+	if distance_squared >= mannequin_lens_blood_range * mannequin_lens_blood_range:
+		return
+
+	_lens_played_this_swing = true
+	_lens_blood.play_splatter()

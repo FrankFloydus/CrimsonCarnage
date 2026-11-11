@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="DynamicSkyWeather" format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="1_weather"]
+
+[resource]
+resource_name = "Sandstorm"
+script = ExtResource("1_weather")
+cloud_coverage = 0.0
+fog_density = 0.031
+fog_amount = 0.1
+dust = 0.97
+wind = Vector2(18, 7)
+gustiness = 0.78
+temperature_offset = 7.0

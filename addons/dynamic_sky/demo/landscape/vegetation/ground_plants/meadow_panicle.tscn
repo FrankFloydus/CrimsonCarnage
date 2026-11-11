@@ -1,0 +1,22 @@
+[gd_scene format=3]
+
+[ext_resource type="Mesh" path="res://addons/dynamic_sky/demo/landscape/vegetation/ground_plants/meadow_panicle.obj" id="mesh"]
+[ext_resource type="Material" path="res://addons/dynamic_sky/demo/landscape/vegetation/ground_plants/grass_material.tres" id="material"]
+[ext_resource type="Script" path="res://addons/dynamic_sky/surfaces/weather_surface.gd" id="weather"]
+[ext_resource type="PackedScene" path="res://addons/dynamic_sky/weather/wind/foliage_wind.tscn" id="wind"]
+
+[node name="MeadowPanicle" type="MeshInstance3D"]
+mesh = ExtResource("mesh")
+material_override = ExtResource("material")
+gi_mode = 2
+visibility_range_end = 55.0
+visibility_range_end_margin = 6.0
+
+[node name="Weather" type="Node" parent="."]
+script = ExtResource("weather")
+snow_seconds = 14.0
+
+[node name="FoliageWind" parent="." instance=ExtResource("wind")]
+flexible_height = 0.78
+bend_per_wind_speed = 0.009
+flutter = 0.15

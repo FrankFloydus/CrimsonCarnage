@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="DynamicSkyWindSettings" format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/weather/wind/wind_settings.gd" id="1_wind"]
+
+[resource]
+resource_name = "Outdoor wind and gusts"
+script = ExtResource("1_wind")

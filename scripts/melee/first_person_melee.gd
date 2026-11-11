@@ -4,6 +4,8 @@ extends Node3D
 
 ## Emitted when a new slash starts.
 signal swing_started
+## Relays the active weapon's overlap with each body in the hit window.
+signal world_contact(collider: Node3D)
 ## Relays the active weapon's first contact with each body in the hit window.
 signal surface_contact(collider: CollisionObject3D, point: Vector3, normal: Vector3, direction: Vector3)
 
@@ -66,6 +68,9 @@ func _ready() -> void:
 		_update_reach_preview()
 		return
 	_excluded = [(owner as CollisionObject3D).get_rid()]
+	long_sweep.world_contact.connect(world_contact.emit)
+	short_sweep.world_contact.connect(world_contact.emit)
+	left_sweep.world_contact.connect(world_contact.emit)
 	long_sweep.surface_contact.connect(surface_contact.emit)
 	short_sweep.surface_contact.connect(surface_contact.emit)
 	left_sweep.surface_contact.connect(surface_contact.emit)

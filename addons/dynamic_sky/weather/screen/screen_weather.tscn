@@ -1,0 +1,27 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/weather/screen/screen_weather.gd" id="1_screen"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/weather/screen/screen_settings.tres" id="2_settings"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/weather/screen/screen_weather.gdshader" id="3_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_lens"]
+resource_local_to_scene = true
+shader = ExtResource("3_shader")
+
+[node name="ScreenWeather" type="CanvasLayer"]
+layer = -5
+script = ExtResource("1_screen")
+settings = ExtResource("2_settings")
+
+[node name="BackBufferCopy" type="BackBufferCopy" parent="."]
+copy_mode = 0
+
+[node name="Lens" type="ColorRect" parent="."]
+visible = false
+material = SubResource("ShaderMaterial_lens")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2

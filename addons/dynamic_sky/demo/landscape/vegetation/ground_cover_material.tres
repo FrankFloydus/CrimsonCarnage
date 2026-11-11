@@ -1,0 +1,8 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://addons/dynamic_sky/demo/landscape/vegetation/ground_cover.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/demo/materials/pbr/alpine_meadow_albedo.webp" id="2_meadow"]
+
+[resource]
+shader = ExtResource("1_shader")
+shader_parameter/meadow_albedo = ExtResource("2_meadow")

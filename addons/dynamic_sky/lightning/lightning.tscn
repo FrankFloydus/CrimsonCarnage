@@ -1,0 +1,25 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/lightning/lightning.gd" id="1_lightning"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/lightning/lightning.gdshader" id="2_bolt"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_bolt"]
+resource_local_to_scene = true
+shader = ExtResource("2_bolt")
+
+[node name="LightningStrikes" type="Node3D"]
+script = ExtResource("1_lightning")
+
+[node name="Bolt" type="MeshInstance3D" parent="."]
+visible = false
+top_level = true
+cast_shadow = 0
+material_override = SubResource("ShaderMaterial_bolt")
+
+[node name="ImpactLight" type="OmniLight3D" parent="."]
+visible = false
+top_level = true
+light_color = Color(0.62, 0.73, 1, 1)
+light_energy = 0.0
+omni_range = 25.0
+omni_attenuation = 1.6

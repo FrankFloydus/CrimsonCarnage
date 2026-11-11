@@ -21,6 +21,10 @@ window/size/window_height_override=1080
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/dynamic_sky/plugin.cfg")
+
 [file_customization]
 
 folder_colors={
@@ -198,7 +202,7 @@ crouch={
 "script": null
 )]
 }
-sprint={
+dash={
 "deadzone": 0.2,
 "events": [Object(InputEventKey,
 "resource_local_to_scene": false,
@@ -214,7 +218,7 @@ sprint={
 "physical_keycode": 4194325,
 "key_label": 0,
 "unicode": 0,
-"location": 0,
+"location": 1,
 "echo": false,
 "script": null
 )]
@@ -275,7 +279,7 @@ melee_long_sword={
 "meta_pressed": false,
 "pressed": false,
 "keycode": 0,
-"physical_keycode": 49,
+"physical_keycode": 57,
 "key_label": 0,
 "unicode": 0,
 "location": 0,
@@ -296,7 +300,7 @@ melee_short_sword={
 "meta_pressed": false,
 "pressed": false,
 "keycode": 0,
-"physical_keycode": 50,
+"physical_keycode": 48,
 "key_label": 0,
 "unicode": 0,
 "location": 0,
@@ -314,3 +318,5 @@ common/physics_interpolation=true
 [rendering]
 
 rendering_device/driver.windows="d3d12"
+viewport/hdr_2d=true
+anti_aliasing/quality/use_debanding=true

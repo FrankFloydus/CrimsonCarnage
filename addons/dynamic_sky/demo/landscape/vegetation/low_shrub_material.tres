@@ -1,0 +1,10 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://addons/dynamic_sky/demo/landscape/vegetation/low_shrub.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/demo/materials/alpine_groundcover_atlas.png" id="2_leaves"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/demo/materials/pbr/spruce_bark_albedo.webp" id="3_bark"]
+
+[resource]
+shader = ExtResource("1_shader")
+shader_parameter/leaf_atlas = ExtResource("2_leaves")
+shader_parameter/bark_albedo = ExtResource("3_bark")

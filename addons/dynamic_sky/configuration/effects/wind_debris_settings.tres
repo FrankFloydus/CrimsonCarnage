@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="DynamicSkyWindDebrisSettings" format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/configuration/effects/wind_debris_settings.gd" id="script"]
+
+[resource]
+resource_local_to_scene = true
+script = ExtResource("script")

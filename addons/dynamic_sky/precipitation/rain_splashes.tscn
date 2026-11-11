@@ -1,0 +1,51 @@
+[gd_scene format=3]
+
+[ext_resource type="Shader" path="res://addons/dynamic_sky/precipitation/rain_splash_process.gdshader" id="1_process"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/precipitation/rain_splash_draw.gdshader" id="2_ripple"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/precipitation/rain_splash_crown.gdshader" id="3_crown"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/precipitation/rain_splash_atlas.png" id="4_atlas"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/precipitation/rain_bounce_droplet.gdshader" id="5_bounce"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_process"]
+shader = ExtResource("1_process")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ripple"]
+shader = ExtResource("2_ripple")
+shader_parameter/tint = Color(0.70, 0.75, 0.78, 0.40)
+
+[sub_resource type="QuadMesh" id="QuadMesh_ripple"]
+material = SubResource("ShaderMaterial_ripple")
+size = Vector2(0.17, 0.17)
+orientation = 1
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_crown"]
+shader = ExtResource("3_crown")
+shader_parameter/splash_atlas = ExtResource("4_atlas")
+shader_parameter/tint = Color(0.80, 0.85, 0.89, 0.40)
+shader_parameter/visible_fraction = 0.36
+
+[sub_resource type="QuadMesh" id="QuadMesh_crown"]
+material = SubResource("ShaderMaterial_crown")
+size = Vector2(0.075, 0.075)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_bounce"]
+shader = ExtResource("5_bounce")
+
+[sub_resource type="QuadMesh" id="QuadMesh_bounce"]
+material = SubResource("ShaderMaterial_bounce")
+size = Vector2(0.0055, 0.0055)
+
+[node name="RainSplashes" type="GPUParticles3D"]
+layers = 524288
+cast_shadow = 0
+emitting = false
+amount = 1600
+lifetime = 0.34
+fixed_fps = 60
+visibility_aabb = AABB(-24, -15, -24, 48, 27, 48)
+local_coords = false
+process_material = SubResource("ShaderMaterial_process")
+draw_passes = 3
+draw_pass_1 = SubResource("QuadMesh_ripple")
+draw_pass_2 = SubResource("QuadMesh_crown")
+draw_pass_3 = SubResource("QuadMesh_bounce")

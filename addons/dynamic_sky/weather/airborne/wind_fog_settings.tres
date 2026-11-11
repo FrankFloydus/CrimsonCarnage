@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="DynamicSkyWindFogSettings" format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/weather/airborne/wind_fog_settings.gd" id="1_settings"]
+
+[resource]
+resource_local_to_scene = true
+resource_name = "Local wind fog"
+script = ExtResource("1_settings")

@@ -1,0 +1,8 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/weather/wind/wind_camera_shake.gd" id="1_shake"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/weather/wind/wind_shake_settings.tres" id="2_settings"]
+
+[node name="WindCameraShake" type="Node3D"]
+script = ExtResource("1_shake")
+settings = ExtResource("2_settings")

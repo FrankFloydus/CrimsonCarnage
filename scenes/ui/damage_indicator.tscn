@@ -1,0 +1,128 @@
+[gd_scene format=3 uid="uid://nq160hlco3ye"]
+
+[ext_resource type="Script" uid="uid://ds1g66p2jcudb" path="res://scripts/ui/damage_indicator.gd" id="1_indicator"]
+[ext_resource type="Texture2D" uid="uid://bl8yhfk4wwkxx" path="res://textures/ui/damage_direction_indicator_a1_worn.png" id="2_worn"]
+[ext_resource type="Shader" uid="uid://ducqopbknae1l" path="res://shaders/ui/damage_indicator.gdshader" id="3_soft_marker"]
+[ext_resource type="Texture2D" uid="uid://dn8aje1k0q3wp" path="res://textures/ui/damage_direction_indicator_a1.png" id="4_original_a1"]
+[ext_resource type="Texture2D" uid="uid://bxpf0sceyk3uh" path="res://textures/ui/damage_direction_indicator.png" id="5_classic"]
+[ext_resource type="Shader" uid="uid://cum6jdenunshx" path="res://shaders/ui/damage_indicator_emission.gdshader" id="6_emission"]
+[ext_resource type="Texture2D" uid="uid://dhgp6fidiq0rq" path="res://textures/ui/damage_direction_indicator_ash_arc.png" id="7_ash_arc"]
+[ext_resource type="Texture2D" uid="uid://bbn227lad7yve" path="res://textures/ui/damage_direction_indicator_split_brush.png" id="8_split_brush"]
+[ext_resource type="Texture2D" uid="uid://dlfmgs46qgult" path="res://textures/ui/damage_direction_indicator_torn_chevron.png" id="9_torn_chevron"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_damage_indicator"]
+resource_local_to_scene = true
+shader = ExtResource("3_soft_marker")
+shader_parameter/crest_opacity = 0.79
+shader_parameter/edge_softness = 4.5
+shader_parameter/feather_opacity = 0.35
+shader_parameter/feather_length = 46.0
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_worn_a1"]
+atlas = ExtResource("2_worn")
+region = Rect2(64, 49, 896, 277)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_original_a1"]
+atlas = ExtResource("4_original_a1")
+region = Rect2(153, 67, 718, 264)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_classic"]
+atlas = ExtResource("5_classic")
+region = Rect2(0, 0, 423, 174)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ash_arc"]
+atlas = ExtResource("7_ash_arc")
+region = Rect2(76, 91, 852, 172)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_split_brush"]
+atlas = ExtResource("8_split_brush")
+region = Rect2(58, 46, 906, 236)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_torn_chevron"]
+atlas = ExtResource("9_torn_chevron")
+region = Rect2(68, 69, 887, 218)
+
+[sub_resource type="Environment" id="Environment_hud_bloom"]
+resource_local_to_scene = true
+background_mode = 3
+glow_enabled = true
+glow_levels/3 = 0.548
+glow_levels/4 = 0.18769
+glow_intensity = 1.0
+glow_blend_mode = 3
+glow_hdr_threshold = 1.19
+glow_hdr_scale = 1.4
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_emission"]
+resource_local_to_scene = true
+shader = ExtResource("6_emission")
+shader_parameter/emission_energy = 2.65
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_bloom_composite"]
+blend_mode = 1
+light_mode = 1
+
+[node name="DamageIndicator" type="Control" unique_id=88246308]
+texture_filter = 4
+material = SubResource("ShaderMaterial_damage_indicator")
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_indicator")
+style_textures = Array[AtlasTexture]([SubResource("AtlasTexture_worn_a1"), SubResource("AtlasTexture_original_a1"), SubResource("AtlasTexture_classic"), SubResource("AtlasTexture_ash_arc"), SubResource("AtlasTexture_split_brush"), SubResource("AtlasTexture_torn_chevron")])
+preview_marker_count = 8
+marker_style = 3
+marker_scale = 0.7
+marker_distance = 292.0
+fade_time = 1.5999999999999999
+hostile_tint = Color(1.1315691, 0.0817827, 0.052001487, 1)
+crest_opacity = 0.79
+edge_softness = 4.5
+feather_opacity = 0.35
+feather_length = 46.0
+emission_energy = 2.65
+glow_intensity = 1.0
+glow_spread = 1.37
+glow_threshold = 1.19
+
+[node name="BloomViewport" type="SubViewport" parent="." unique_id=620057253]
+own_world_3d = true
+use_hdr_2d = true
+gui_disable_input = true
+size = Vector2i(1152, 648)
+render_target_update_mode = 0
+
+[node name="Environment" type="WorldEnvironment" parent="BloomViewport" unique_id=156875877]
+environment = SubResource("Environment_hud_bloom")
+
+[node name="ClearBlack" type="ColorRect" parent="BloomViewport" unique_id=1363269724]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="Emission" type="Node2D" parent="BloomViewport" unique_id=631474358]
+visible = false
+texture_filter = 4
+material = SubResource("ShaderMaterial_emission")
+
+[node name="BloomComposite" type="Control" parent="." unique_id=418202030]
+visible = false
+material = SubResource("CanvasItemMaterial_bloom_composite")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[connection signal="draw" from="BloomViewport/Emission" to="." method="_on_emission_draw"]
+[connection signal="draw" from="BloomComposite" to="." method="_on_bloom_composite_draw"]

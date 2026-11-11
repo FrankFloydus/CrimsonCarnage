@@ -5,3 +5,4 @@
 [resource]
 script = ExtResource("1_settings")
 coyote_time = 0.25
+dash_speed = 50.0

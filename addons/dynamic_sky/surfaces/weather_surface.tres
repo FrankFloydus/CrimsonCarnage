@@ -1,0 +1,14 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://addons/dynamic_sky/surfaces/weather_surface.gdshader" id="1_surface"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/surfaces/textures/snowpack_albedo.webp" id="2_snow_albedo"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/surfaces/textures/snowpack_normal.webp" id="3_snow_normal"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/surfaces/textures/snowpack_orm.webp" id="4_snow_orm"]
+
+[resource]
+resource_name = "Weather Responsive Surface"
+shader = ExtResource("1_surface")
+shader_parameter/use_snow_material = true
+shader_parameter/snow_albedo_texture = ExtResource("2_snow_albedo")
+shader_parameter/snow_normal_texture = ExtResource("3_snow_normal")
+shader_parameter/snow_orm_texture = ExtResource("4_snow_orm")

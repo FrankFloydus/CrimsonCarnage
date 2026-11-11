@@ -1,0 +1,8 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/weather/exposure/weather_exposure.gd" id="1_exposure"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/weather/exposure/exposure_settings.tres" id="2_settings"]
+
+[node name="WeatherExposure" type="Node3D"]
+script = ExtResource("1_exposure")
+settings = ExtResource("2_settings")

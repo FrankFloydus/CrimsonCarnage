@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="DynamicSkyWindShakeSettings" format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/weather/wind/wind_shake_settings.gd" id="1_settings"]
+
+[resource]
+resource_local_to_scene = true
+resource_name = "Outdoor wind camera response"
+script = ExtResource("1_settings")

@@ -1,0 +1,18 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/weather/exposure/water_region.gd" id="1_water"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_footprint"]
+size = Vector3(20, 1, 20)
+
+[node name="WaterRegion" type="Area3D"]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("1_water")
+region = SubResource("BoxShape3D_footprint")
+
+[node name="Region" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_footprint")
+disabled = true

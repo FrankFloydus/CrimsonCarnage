@@ -1,0 +1,6 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://addons/dynamic_sky/rendering/cloud_shadows/cloud_shadow_blit.gdshader" id="1_blit"]
+
+[resource]
+shader = ExtResource("1_blit")
