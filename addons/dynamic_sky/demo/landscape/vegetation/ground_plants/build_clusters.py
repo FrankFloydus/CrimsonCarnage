@@ -14,13 +14,17 @@ FIELD = np.load(AUTHORING / 'terrain_field.npz')
 TRAIL = RegularGridInterpolator((FIELD['zs'], FIELD['xs']), FIELD['trail'])
 BASE = 'res://addons/dynamic_sky/demo/landscape/vegetation/ground_plants/'
 PLANTS = {
-    'lady_fern': ('fern', .82, .007),
-    'young_fern': ('fern', .46, .005),
+    'lady_fern': ('frond', .82, .007),
+    'young_fern': ('frond', .46, .005),
     'bilberry_shrub': ('shrub', .52, .003),
     'wood_sorrel': ('sorrel', .25, .003),
     'fescue_bunch': ('grass', .27, .006),
     'sedge_tussock': ('grass', .59, .007),
     'meadow_panicle': ('grass', .78, .009),
+}
+FERN_MESHES = {
+    'lady_fern': 'lady_fern_frond_near',
+    'young_fern': 'young_fern_frond_near',
 }
 
 
@@ -28,17 +32,18 @@ def build(name, centers, seed, terrace=False):
     rng = np.random.default_rng(seed)
     header = '[gd_scene format=3]\n\n'
     for plant in PLANTS:
-        header += f'[ext_resource type="Mesh" path="{BASE}{plant}.obj" id="{plant}"]\n'
-    header += f'[ext_resource type="Mesh" path="{BASE}lady_fern_mid.obj" id="fern_mid"]\n'
-    header += f'[ext_resource type="Mesh" path="{BASE}young_fern_mid.obj" id="young_mid"]\n'
-    for material in ['fern', 'grass', 'shrub', 'sorrel']:
+        mesh = FERN_MESHES.get(plant, plant)
+        header += f'[ext_resource type="Mesh" path="{BASE}{mesh}.obj" id="{plant}"]\n'
+    header += f'[ext_resource type="Mesh" path="{BASE}lady_fern_frond_mid.obj" id="fern_mid"]\n'
+    header += f'[ext_resource type="Mesh" path="{BASE}young_fern_frond_mid.obj" id="young_mid"]\n'
+    for material in ['frond', 'grass', 'shrub', 'sorrel']:
         header += f'[ext_resource type="Material" path="{BASE}{material}_material.tres" id="{material}"]\n'
     header += '[ext_resource type="Script" path="res://addons/dynamic_sky/surfaces/weather_surface.gd" id="weather"]\n'
     header += '[ext_resource type="PackedScene" path="res://addons/dynamic_sky/weather/wind/foliage_wind.tscn" id="wind"]\n'
     header += '[ext_resource type="Script" path="res://addons/dynamic_sky/demo/landscape/vegetation/forest_patch.gd" id="lod"]\n'
     root_name = ''.join(part.title() for part in name.split('_'))
     resources, nodes = [], [f'[node name="{root_name}" type="Node3D"]\n']
-    counts = {'lady_fern': 1 if terrace else 2, 'young_fern': 2, 'bilberry_shrub': 3,
+    counts = {'lady_fern': 1, 'young_fern': 2, 'bilberry_shrub': 3,
               'wood_sorrel': 9, 'fescue_bunch': 12, 'sedge_tussock': 3, 'meadow_panicle': 3}
     total = 0
     for index, (cx, cz) in enumerate(centers):
@@ -85,5 +90,5 @@ def build(name, centers, seed, terrace=False):
     print(name, total, 'saved plant instances', flush=True)
 
 
-build('ridge_understory', [(11.0,21.6),(21.7,23.8),(12.2,28.0),(24.4,33.0),(13.0,39.0),(26.0,44.5),(10.5,48.0)], 55187)
-build('terrace_understory', [(-15.8,-8.7),(-10.5,-10.4),(-4.6,-10.3),(.8,-6.5),(-16.1,-3.4),(-15.8,3.4)], 71513, True)
+build('ridge_understory', [(11.0,21.6),(21.7,23.8),(12.2,28.0),(24.4,33.0),(13.0,39.0)], 55187)
+build('terrace_understory', [(-15.8,-8.7),(.8,-6.5),(-16.1,-3.4),(-15.8,3.4)], 71513, True)

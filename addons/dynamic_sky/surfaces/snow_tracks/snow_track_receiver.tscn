@@ -1,0 +1,36 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/surfaces/snow_tracks/snow_track_receiver.gd" id="1_receiver"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/surfaces/snow_tracks/snow_track_settings.tres" id="2_settings"]
+[ext_resource type="ShaderMaterial" path="res://addons/dynamic_sky/surfaces/weather_surface.tres" id="3_surface"]
+[ext_resource type="Script" path="res://addons/dynamic_sky/surfaces/weather_surface.gd" id="4_accumulation"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_receiver"]
+size = Vector2(6, 6)
+subdivide_width = 239
+subdivide_depth = 239
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_substrate"]
+size = Vector3(6, 0.2, 6)
+
+[node name="SnowTrackReceiver" type="Node3D" node_paths=PackedStringArray("geometry", "accumulation", "substrate")]
+script = ExtResource("1_receiver")
+geometry = NodePath("Surface")
+accumulation = NodePath("Surface/WeatherResponse")
+substrate = NodePath("Substrate")
+settings = ExtResource("2_settings")
+
+[node name="Surface" type="MeshInstance3D" parent="."]
+material_override = ExtResource("3_surface")
+mesh = SubResource("PlaneMesh_receiver")
+extra_cull_margin = 0.17
+
+[node name="WeatherResponse" type="Node" parent="Surface"]
+script = ExtResource("4_accumulation")
+
+[node name="Substrate" type="StaticBody3D" parent="."]
+collision_mask = 0
+
+[node name="Collider" type="CollisionShape3D" parent="Substrate"]
+position = Vector3(0, -0.1, 0)
+shape = SubResource("BoxShape3D_substrate")

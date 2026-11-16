@@ -1,7 +1,13 @@
 extends Node3D
-## Previews the player's screen effects and directional damage HUD.
+## Previews the player's screen effects, directional damage HUD, and weapon gait styles.
 
 const DAMAGE_PREVIEW_DISTANCE := 8.0
+const BOB_STYLES := [
+	preload("res://data/melee/bob_styles/balanced.tres"),
+	preload("res://data/melee/bob_styles/light_footed.tres"),
+	preload("res://data/melee/bob_styles/long_stride.tres"),
+	preload("res://data/melee/bob_styles/heavy_braced.tres"),
+]
 
 ## Maximum distance from the camera to the mannequin's torso for the lens preview, in meters.
 ## Zero disables this preview.
@@ -13,17 +19,14 @@ var _vignette_played_this_swing: bool = false
 @onready var _mannequin: Node3D = $BloodTestTarget
 @onready var _player: Node3D = $Player
 @onready var _camera: Camera3D = $Player/Look/Camera3D
-@onready var _lens_blood: LensBlood = $Player/ScreenEffects/LensBlood
-@onready var _damage_vignette: DamageVignette = $Player/ScreenEffects/DamageVignette
-@onready var _damage_indicator: DamageIndicator = $Player/HUD/DamageIndicator
+@onready var _weapon := _camera.get_node(^"WeaponControl")
+@onready var _presentation: PlayerPresentation = $Player/PlayerPresentation
 
 
 func _ready() -> void:
-	# WeaponControl belongs to the instanced Player scene.
-	var weapon := _camera.get_node(^"WeaponControl")
-	weapon.swing_started.connect(_on_swing_started)
-	weapon.world_contact.connect(_on_world_contact)
-	weapon.surface_contact.connect(_on_surface_contact)
+	_weapon.swing_started.connect(_on_swing_started)
+	_weapon.world_contact.connect(_on_world_contact)
+	_weapon.surface_contact.connect(_on_surface_contact)
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
@@ -31,13 +34,22 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if key == null or not key.pressed or key.echo:
 		return
 	var code := key.physical_keycode if key.physical_keycode != KEY_NONE else key.keycode
+	if code == KEY_P:
+		_presentation.toggle_painterly_preview()
+		get_viewport().set_input_as_handled()
+		return
+	var style_index := code - KEY_1
+	if key.alt_pressed and style_index >= 0 and style_index < BOB_STYLES.size():
+		_weapon.preview_bob_style(BOB_STYLES[style_index])
+		get_viewport().set_input_as_handled()
+		return
 	if code < KEY_1 or code > KEY_8:
 		return
 
 	var angle := float(code - KEY_1) * PI / 4.0
 	var local_direction := Vector3(sin(angle), 0.0, -cos(angle))
 	var world_offset := _player.global_basis * local_direction * DAMAGE_PREVIEW_DISTANCE
-	_damage_indicator.show_hit(_player.global_position + world_offset)
+	_presentation.show_incoming_hit(_player.global_position + world_offset)
 	get_viewport().set_input_as_handled()
 
 
@@ -50,7 +62,7 @@ func _on_world_contact(_collider: Node3D) -> void:
 	if _vignette_played_this_swing:
 		return
 	_vignette_played_this_swing = true
-	_damage_vignette.pulse()
+	_presentation.pulse_damage_vignette()
 
 
 func _on_surface_contact(
@@ -65,4 +77,4 @@ func _on_surface_contact(
 		return
 
 	_lens_played_this_swing = true
-	_lens_blood.play_splatter()
+	_presentation.play_lens_blood()

@@ -1,0 +1,135 @@
+[gd_resource type="InputLayout" format=3 uid="uid://cbg4h73h2tlu7"]
+
+[sub_resource type="InputAction" id="action_move"]
+display_name = "Move"
+kind = 2
+deadzone = 0.2
+
+[sub_resource type="InputEventKey" id="key_forward"]
+physical_keycode = 87
+
+[sub_resource type="InputSwapAxis" id="axes"]
+
+[sub_resource type="InputInvert" id="invert_y"]
+x = false
+y = true
+
+[sub_resource type="InputBinding" id="bind_forward"]
+id = &"move/forward"
+display_name = "Forward"
+event = SubResource("key_forward")
+allow_extra_modifiers = true
+modifiers = Array[InputModifier]([SubResource("axes"), SubResource("invert_y")])
+
+[sub_resource type="InputEventKey" id="key_backward"]
+physical_keycode = 83
+
+[sub_resource type="InputBinding" id="bind_backward"]
+id = &"move/backward"
+display_name = "Backward"
+event = SubResource("key_backward")
+allow_extra_modifiers = true
+modifiers = Array[InputModifier]([SubResource("axes")])
+
+[sub_resource type="InputEventKey" id="key_left"]
+physical_keycode = 65
+
+[sub_resource type="InputInvert" id="invert_x"]
+
+[sub_resource type="InputBinding" id="bind_left"]
+id = &"move/left"
+display_name = "Strafe Left"
+event = SubResource("key_left")
+allow_extra_modifiers = true
+modifiers = Array[InputModifier]([SubResource("invert_x")])
+
+[sub_resource type="InputEventKey" id="key_right"]
+physical_keycode = 68
+
+[sub_resource type="InputBinding" id="bind_right"]
+id = &"move/right"
+display_name = "Strafe Right"
+event = SubResource("key_right")
+allow_extra_modifiers = true
+
+[sub_resource type="InputActionMapping" id="map_move"]
+id = &"move"
+action = SubResource("action_move")
+bindings = Array[InputBinding]([SubResource("bind_forward"), SubResource("bind_backward"), SubResource("bind_left"), SubResource("bind_right")])
+
+[sub_resource type="InputAction" id="action_jump"]
+display_name = "Jump"
+
+[sub_resource type="InputEventKey" id="key_jump"]
+physical_keycode = 32
+
+[sub_resource type="InputBinding" id="bind_jump"]
+id = &"jump/keyboard"
+display_name = "Jump"
+event = SubResource("key_jump")
+allow_extra_modifiers = true
+
+[sub_resource type="InputActionMapping" id="map_jump"]
+id = &"jump"
+action = SubResource("action_jump")
+bindings = Array[InputBinding]([SubResource("bind_jump")])
+
+[sub_resource type="InputAction" id="action_crouch"]
+display_name = "Crouch"
+
+[sub_resource type="InputEventKey" id="key_crouch"]
+physical_keycode = 67
+
+[sub_resource type="InputBinding" id="bind_crouch"]
+id = &"crouch/keyboard"
+display_name = "Crouch"
+event = SubResource("key_crouch")
+allow_extra_modifiers = true
+
+[sub_resource type="InputActionMapping" id="map_crouch"]
+id = &"crouch"
+action = SubResource("action_crouch")
+bindings = Array[InputBinding]([SubResource("bind_crouch")])
+
+[sub_resource type="InputAction" id="action_walk"]
+display_name = "Walk"
+
+[sub_resource type="InputEventKey" id="key_walk"]
+physical_keycode = 4194326
+
+[sub_resource type="InputBinding" id="bind_walk"]
+id = &"walk/keyboard"
+display_name = "Walk"
+event = SubResource("key_walk")
+allow_extra_modifiers = true
+
+[sub_resource type="InputActionMapping" id="map_walk"]
+id = &"walk"
+action = SubResource("action_walk")
+bindings = Array[InputBinding]([SubResource("bind_walk")])
+
+[sub_resource type="InputAction" id="action_dash"]
+display_name = "Dash"
+
+[sub_resource type="InputEventKey" id="key_dash"]
+physical_keycode = 4194325
+location = 1
+
+[sub_resource type="InputBinding" id="bind_dash"]
+id = &"dash/keyboard"
+display_name = "Dash"
+event = SubResource("key_dash")
+allow_extra_modifiers = true
+
+[sub_resource type="InputActionMapping" id="map_dash"]
+id = &"dash"
+action = SubResource("action_dash")
+bindings = Array[InputBinding]([SubResource("bind_dash")])
+
+[sub_resource type="InputActionMap" id="locomotion"]
+id = &"Locomotion"
+display_name = "Locomotion"
+mappings = Array[InputActionMapping]([SubResource("map_move"), SubResource("map_jump"), SubResource("map_crouch"), SubResource("map_walk"), SubResource("map_dash")])
+
+[resource]
+maps = Array[InputActionMap]([SubResource("locomotion")])

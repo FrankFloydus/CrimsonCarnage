@@ -32,6 +32,7 @@ func update(
 	randomness: float,
 	collision_enabled: bool,
 	motion_multiplier: float = 1.0,
+	contact_enabled: bool = true,
 ) -> void:
 	# Source asynchronous queries publish the preceding frame's batch.
 	if not _pending.is_empty():
@@ -42,7 +43,7 @@ func update(
 			var normal: Vector3 = path[&"normal"]
 			_image.set_pixel(index, 0, Color(start.x, start.y, start.z, path[&"lifetime"]))
 			_image.set_pixel(index, 1, Color(end.x, end.y, end.z, float(path[&"valid"])))
-			_image.set_pixel(index, 2, Color(normal.x, normal.y, normal.z, float(path[&"hit"])))
+			_image.set_pixel(index, 2, Color(normal.x, normal.y, normal.z, float(path[&"contact"])))
 		texture.update(_image)
 		_pending.clear()
 
@@ -53,7 +54,7 @@ func update(
 	for request in requests:
 		var start := _spawn_position(origin, forward)
 		var velocity := _specific_velocity(general_velocity, randomness)
-		_pending.append(_trace_path(space, start, velocity, collision_enabled, _next_path))
+		_pending.append(_trace_path(space, start, velocity, collision_enabled, _next_path, contact_enabled))
 		_next_path = (_next_path + 1) % _settings.cached_path_count
 
 
@@ -89,17 +90,25 @@ func _trace_path(
 	velocity: Vector3,
 	collision_enabled: bool,
 	index: int,
+	contact_enabled: bool = true,
 ) -> Dictionary:
 	var speed := velocity.length()
 	var direction := velocity / maxf(speed, 0.000001)
 	var trace_start := start - direction * _settings.ceiling_check_meters
 	var trace_end := start + velocity * _settings.maximum_lifetime_seconds
 	var hit: Dictionary = {}
+	var query: PhysicsRayQueryParameters3D
 	if collision_enabled:
-		var query := PhysicsRayQueryParameters3D.create(trace_start, trace_end, _settings.collision_mask)
+		query = PhysicsRayQueryParameters3D.create(trace_start, trace_end, _settings.collision_mask)
 		hit = space.intersect_ray(query)
 	var end: Vector3 = hit.get(&"position", trace_end)
 	var valid := hit.is_empty() or trace_start.distance_to(end) > _settings.ceiling_check_meters
+	var contact := contact_enabled and valid and not hit.is_empty()
+	if contact and _settings.ceiling_check_meters > 0.02:
+		# Wind can carry a flake under an open eave. Only exposed surfaces receive contact flakes.
+		query.from = end + Vector3.UP * 0.02
+		query.to = end + Vector3.UP * _settings.ceiling_check_meters
+		contact = space.intersect_ray(query).is_empty()
 	return {
 		&"index": index,
 		&"start": start,
@@ -108,4 +117,5 @@ func _trace_path(
 		&"lifetime": start.distance_to(end) / maxf(speed, 0.000001),
 		&"valid": valid,
 		&"hit": not hit.is_empty(),
+		&"contact": contact,
 	}

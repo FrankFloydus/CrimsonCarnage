@@ -1,6 +1,8 @@
 shader_type canvas_item;
 render_mode unshaded;
 
+uniform vec2 night_grade = vec2(0.0);
+uniform bool night_grade_linear_buffer = false;
 uniform sampler2D scene_color : hint_screen_texture, filter_linear_mipmap, repeat_disable;
 uniform sampler2D frost_texture : filter_linear_mipmap, repeat_enable;
 uniform float wetness = 0.0;
@@ -27,6 +29,10 @@ vec3 hash_cell(vec2 cell) {
 
 vec4 water_beads(vec2 lens, float grid, vec2 travel, float activity, float seed_offset) {
 	vec2 point = lens * grid - travel * grid;
+	// Different neighbor indices can name different drops across a grid boundary.
+	// Differentiate the continuous lens coordinates before selecting a droplet.
+	vec2 point_dx = dFdx(point);
+	vec2 point_dy = dFdy(point);
 	vec2 cell = floor(point);
 	vec2 displacement = vec2(0.0);
 	float coverage = 0.0;
@@ -37,13 +43,21 @@ vec4 water_beads(vec2 lens, float grid, vec2 travel, float activity, float seed_
 			vec3 seed = hash_cell(neighbor + vec2(seed_offset, 13.47));
 			float alive = smoothstep(seed.z * 0.94 - 0.04, seed.z * 0.94 + 0.08, activity);
 			vec2 center = neighbor + mix(vec2(0.22), vec2(0.78), seed.xy);
-			vec2 local = point - center;
+			vec2 scale = vec2(mix(0.86, 1.16, seed.y), mix(0.72, 1.08, seed.x));
+			vec2 local = (point - center) * scale;
 			float radius = mix(0.088, 0.175, seed.x);
-			local.x *= mix(0.86, 1.16, seed.y);
-			local.y *= mix(0.72, 1.08, seed.x);
 			local.x += local.y * local.y * 0.40;
-			float radial = length(local) / radius;
-			float pixel_edge = max(fwidth(radial), 0.015);
+			float local_length = length(local);
+			float radial = local_length / radius;
+			vec2 local_dx = point_dx * scale;
+			vec2 local_dy = point_dy * scale;
+			local_dx.x += 0.8 * local.y * local_dx.y;
+			local_dy.x += 0.8 * local.y * local_dy.y;
+			vec2 radial_gradient = local / (radius * max(local_length, 0.0001));
+			float pixel_edge = clamp(
+				abs(dot(radial_gradient, local_dx)) + abs(dot(radial_gradient, local_dy)),
+				0.015, 0.65
+			);
 			float silhouette = (1.0 - smoothstep(0.95 - pixel_edge, 1.0 + pixel_edge, radial)) * alive;
 			float cap = sqrt(max(1.0 - radial * radial, 0.0));
 			vec2 normal = local / max(radius * max(cap, 0.28), 0.001);
@@ -69,6 +83,36 @@ vec3 index_gradient(vec2 point) {
 	float value = a + (b - a) * weight.x + (c - a) * weight.y + cross_term * weight.x * weight.y;
 	vec2 gradient = derivative * (vec2(b - a, c - a) + cross_term * weight.yx);
 	return vec3(value, gradient);
+}
+
+
+vec3 encode_display_rgb(vec3 linear_color) {
+	vec3 color = max(linear_color, vec3(0.0));
+	return mix(1.055 * pow(color, vec3(1.0 / 2.4)) - 0.055, 12.92 * color,
+		lessThanEqual(color, vec3(0.0031308)));
+}
+
+
+vec3 decode_display_rgb(vec3 display_color) {
+	vec3 color = max(display_color, vec3(0.0));
+	return mix(pow((color + 0.055) / 1.055, vec3(2.4)), color / 12.92,
+		lessThanEqual(color, vec3(0.04045)));
+}
+
+
+vec3 apply_night_grade(vec3 color) {
+	vec3 display_color = night_grade_linear_buffer ? encode_display_rgb(color) : color;
+	float luma = dot(display_color, vec3(0.2126, 0.7152, 0.0722));
+	if (luma >= night_grade.y) {
+		return color;
+	}
+	float gain = mix(0.08, 1.0, smoothstep(0.025, max(night_grade.y, 0.026), luma));
+	float neutral_end = min(0.25, night_grade.y);
+	float neutral_start = min(0.12, 0.5 * neutral_end);
+	float neutral = 0.07 * (1.0 - smoothstep(neutral_start, neutral_end, luma));
+	vec3 graded = mix(display_color, vec3(luma), neutral) * gain;
+	vec3 blended = mix(display_color, graded, night_grade.x);
+	return night_grade_linear_buffer ? decode_display_rgb(blended) : blended;
 }
 
 
@@ -120,6 +164,9 @@ void fragment() {
 	vec2 sample_uv = clamp(SCREEN_UV + offset, SCREEN_PIXEL_SIZE * 0.5, 1.0 - SCREEN_PIXEL_SIZE * 0.5);
 	float blur = max(ice_blur, water_dome * 0.75);
 	vec3 color = textureLod(scene_color, sample_uv, blur).rgb;
+	if (night_grade.x > 0.001) {
+		color = apply_night_grade(color);
+	}
 	if (water_mask > 0.0) {
 		float rim = water_mask * (1.0 - water_dome) * (1.0 - water_dome);
 		float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));

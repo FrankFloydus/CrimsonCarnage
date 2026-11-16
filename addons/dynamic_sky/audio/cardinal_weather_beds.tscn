@@ -1,0 +1,156 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/audio/cardinal_weather_beds.gd" id="1_script"]
+[ext_resource type="AudioStream" path="res://addons/dynamic_sky/audio/clips/rain.wav" id="rain_open"]
+[ext_resource type="AudioStream" path="res://addons/dynamic_sky/audio/clips/rain_muffled.wav" id="rain_sheltered"]
+[ext_resource type="AudioStream" path="res://addons/dynamic_sky/audio/clips/wind_without_whistle.wav" id="wind_open"]
+[ext_resource type="AudioStream" path="res://addons/dynamic_sky/audio/clips/wind_muffled_without_whistle.wav" id="wind_sheltered"]
+
+[ext_resource type="AudioStream" path="res://addons/dynamic_sky/audio/clips/wind_whistle_residual.wav" id="whistle_open"]
+[ext_resource type="AudioStream" path="res://addons/dynamic_sky/audio/clips/wind_whistle_residual_muffled.wav" id="whistle_sheltered"]
+
+[node name="CardinalWeatherBeds" type="Node3D"]
+top_level = true
+script = ExtResource("1_script")
+rain_start_phases = Vector4(0.057143, 0.271429, 0.528571, 0.764286)
+wind_start_phases = Vector4(0.042105, 0.242105, 0.457895, 0.736842)
+
+[node name="CloseRain" type="Node" parent="."]
+
+[node name="Open" type="AudioStreamPlayer" parent="CloseRain"]
+stream = ExtResource("rain_open")
+volume_db = -11.0
+
+[node name="Sheltered" type="AudioStreamPlayer" parent="CloseRain"]
+stream = ExtResource("rain_sheltered")
+volume_db = -19.0
+
+[node name="WindWhistle" type="Node" parent="."]
+
+[node name="Open" type="AudioStreamPlayer" parent="WindWhistle"]
+stream = ExtResource("whistle_open")
+volume_db = 13.0
+
+[node name="Sheltered" type="AudioStreamPlayer" parent="WindWhistle"]
+stream = ExtResource("whistle_sheltered")
+volume_db = -0.9794
+
+[node name="RainEast" type="Node3D" parent="."]
+position = Vector3(4.0, 2.4, 0)
+
+[node name="Open" type="AudioStreamPlayer3D" parent="RainEast"]
+stream = ExtResource("rain_open")
+attenuation_model = 3
+volume_db = -11.0
+panning_strength = 0.35
+
+[node name="Sheltered" type="AudioStreamPlayer3D" parent="RainEast"]
+stream = ExtResource("rain_sheltered")
+attenuation_model = 3
+volume_db = -19.0
+panning_strength = 0.35
+
+[node name="RainWest" type="Node3D" parent="."]
+position = Vector3(-4.0, 2.4, 0)
+
+[node name="Open" type="AudioStreamPlayer3D" parent="RainWest"]
+stream = ExtResource("rain_open")
+attenuation_model = 3
+volume_db = -11.0
+panning_strength = 0.35
+
+[node name="Sheltered" type="AudioStreamPlayer3D" parent="RainWest"]
+stream = ExtResource("rain_sheltered")
+attenuation_model = 3
+volume_db = -19.0
+panning_strength = 0.35
+
+[node name="RainSouth" type="Node3D" parent="."]
+position = Vector3(0, 2.4, 4.0)
+
+[node name="Open" type="AudioStreamPlayer3D" parent="RainSouth"]
+stream = ExtResource("rain_open")
+attenuation_model = 3
+volume_db = -11.0
+panning_strength = 0.35
+
+[node name="Sheltered" type="AudioStreamPlayer3D" parent="RainSouth"]
+stream = ExtResource("rain_sheltered")
+attenuation_model = 3
+volume_db = -19.0
+panning_strength = 0.35
+
+[node name="RainNorth" type="Node3D" parent="."]
+position = Vector3(0, 2.4, -4.0)
+
+[node name="Open" type="AudioStreamPlayer3D" parent="RainNorth"]
+stream = ExtResource("rain_open")
+attenuation_model = 3
+volume_db = -11.0
+panning_strength = 0.35
+
+[node name="Sheltered" type="AudioStreamPlayer3D" parent="RainNorth"]
+stream = ExtResource("rain_sheltered")
+attenuation_model = 3
+volume_db = -19.0
+panning_strength = 0.35
+
+[node name="WindEast" type="Node3D" parent="."]
+position = Vector3(4.5, 1.2, 0)
+
+[node name="Open" type="AudioStreamPlayer3D" parent="WindEast"]
+stream = ExtResource("wind_open")
+attenuation_model = 3
+volume_db = -14.0
+panning_strength = 0.6
+
+[node name="Sheltered" type="AudioStreamPlayer3D" parent="WindEast"]
+stream = ExtResource("wind_sheltered")
+attenuation_model = 3
+volume_db = -26.0
+panning_strength = 0.6
+
+[node name="WindWest" type="Node3D" parent="."]
+position = Vector3(-4.5, 1.2, 0)
+
+[node name="Open" type="AudioStreamPlayer3D" parent="WindWest"]
+stream = ExtResource("wind_open")
+attenuation_model = 3
+volume_db = -14.0
+panning_strength = 0.6
+
+[node name="Sheltered" type="AudioStreamPlayer3D" parent="WindWest"]
+stream = ExtResource("wind_sheltered")
+attenuation_model = 3
+volume_db = -26.0
+panning_strength = 0.6
+
+[node name="WindSouth" type="Node3D" parent="."]
+position = Vector3(0, 1.2, 4.5)
+
+[node name="Open" type="AudioStreamPlayer3D" parent="WindSouth"]
+stream = ExtResource("wind_open")
+attenuation_model = 3
+volume_db = -14.0
+panning_strength = 0.6
+
+[node name="Sheltered" type="AudioStreamPlayer3D" parent="WindSouth"]
+stream = ExtResource("wind_sheltered")
+attenuation_model = 3
+volume_db = -26.0
+panning_strength = 0.6
+
+[node name="WindNorth" type="Node3D" parent="."]
+position = Vector3(0, 1.2, -4.5)
+
+[node name="Open" type="AudioStreamPlayer3D" parent="WindNorth"]
+stream = ExtResource("wind_open")
+attenuation_model = 3
+volume_db = -14.0
+panning_strength = 0.6
+
+[node name="Sheltered" type="AudioStreamPlayer3D" parent="WindNorth"]
+stream = ExtResource("wind_sheltered")
+attenuation_model = 3
+volume_db = -26.0
+panning_strength = 0.6

@@ -5,10 +5,13 @@
 [resource]
 resource_name = "Snow"
 script = ExtResource("1_weather")
-cloud_coverage = 0.54
-fog_density = 0.001
+cloud_coverage = 0.38
+fog_density = 0.000660623
+fog_height_falloff = 0.002252728337
+fog_start_distance = 22.753605037
 fog_amount = 0.5
 snow = 0.6
+snow_coverage_limit = 0.55
 wind = Vector2(2.27684, -0.758947)
 gustiness = 0.15
 temperature_offset = -22.0

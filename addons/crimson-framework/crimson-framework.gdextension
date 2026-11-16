@@ -1,0 +1,26 @@
+; Copyright Francesco Di Blasi 2026 - All Rights Reserved
+
+[configuration]
+
+entry_symbol = "crimson_framework_init"
+compatibility_minimum = "4.7"
+reloadable = false
+
+[libraries]
+
+windows.debug.x86_64.single = "./bin/crimson_framework.windows.template_debug.x86_64.dll"
+windows.release.x86_64.single = "./bin/crimson_framework.windows.template_release.x86_64.dll"
+
+[icons]
+
+VisualScript = "./images/visual_script.png"
+SteamConfig = "./images/bi_steam.png"
+SteamRuntimeNode = "./images/bi_steam.png"
+SteamDedicatedRuntimeNode = "./images/bi_steam.png"
+GameVoice = "./images/bi_steam.png"
+SteamProvider = "./images/bi_steam.png"
+SteamSessionTransport = "./images/bi_steam.png"
+
+[dependencies]
+
+windows.x86_64.crimson_steam = {"./bin/steam_api64.dll": ""}

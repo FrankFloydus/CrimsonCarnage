@@ -15,10 +15,21 @@ The demo surfaces, conifer foliage, snow, and splash artwork were generated with
 | Fresh alpine powder | [snowpack.png](../addons/dynamic_sky/demo/materials/masters/snowpack.png) |
 | Spruce bark | [spruce_bark.png](../addons/dynamic_sky/demo/materials/masters/spruce_bark.png) |
 | Alpine limestone | [alpine_rock.png](../addons/dynamic_sky/demo/materials/masters/alpine_rock.png) |
+| Mountain granodiorite color | [mountain_granodiorite.png](../addons/dynamic_sky/demo/materials/masters/mountain_granodiorite.png) |
+| Mountain structural height | [mountain_granodiorite_height.png](../addons/dynamic_sky/demo/materials/masters/mountain_granodiorite_height.png) |
 | Alpine meadow ground | [alpine_meadow.png](../addons/dynamic_sky/demo/materials/masters/alpine_meadow.png) |
 | Ground-cover foliage with alpha | [alpine_groundcover_atlas.png](../addons/dynamic_sky/demo/materials/alpine_groundcover_atlas.png) |
 | Panning cloud density master | [dynamic_2d_cloud_map.png](../addons/dynamic_sky/rendering/cloud_modes/dynamic_2d_cloud_map.png) |
 | Static cloud dome master | [static_cloud_dome_map.png](../addons/dynamic_sky/rendering/cloud_modes/static_cloud_dome_map.png) |
+| Clear-sky cirrus opacity mask | [clear_cirrus.png](../addons/dynamic_sky/rendering/cloud_modes/clear_cirrus.png) |
+
+## Clear-sky cirrus mask
+
+The built-in ImageGen tool produced the original 1254 × 1254 clear-sky cirrus image. The sky shader samples its red channel as a linear opacity mask. The image imports losslessly with mipmaps. The original generated file was `01a1c71c-3431-7cb0-b745-fe718d6c60be/exec-c9c72ee8-a267-4e33-bcb5-6faae79e5313.png` under the local generated-images directory. [Saved mask](../addons/dynamic_sky/rendering/cloud_modes/clear_cirrus.png) · [Import settings](../addons/dynamic_sky/rendering/cloud_modes/clear_cirrus.png.import)
+
+```text
+Use case: photorealistic-natural. Asset type: original square grayscale linear opacity mask for a clear-sky cirrus layer in a physically lit real-time game sky. Generate a flat square orthographic texture viewed straight on, no perspective, no horizon, no objects, no Sun, no lighting halo. On a true solid black field, place four or five small, widely separated families of delicate atmospheric ice-crystal cirrus, each evolving differently. Real high-altitude cirrus fibratus and tenuous uncinus: soft translucent feathering, broad uneven pale mist patches with a few hairline fraying fibers, naturally stretched and torn by upper winds, nonuniform grain and rough edges. Flow predominantly diagonally from upper left toward lower right but with distinct local angles. Each family has an irregular silhouette and long gradual fade into black, and regions between families are empty black. Coverage about 20 percent. Large asymmetric black gaps and an empty dark margin around all four edges. The wisps should read as actual photographs of thin clouds with the blue sky removed. Maximum brightness light gray with only scattered brighter fibers. Avoid any marble or contour patterns, geometric ribbons, repeated parallel stripes, symmetry, hard edges, billowing cumulus, smoke plumes, curls, visible background noise, checkerboard, labels, text or watermark.
+```
 
 ## Packed air-snow atlas
 
@@ -39,7 +50,9 @@ The built-in ImageGen tool produced 1254 × 1254 material masters. The reproduci
 
 Godot imports the 4K color and ORM maps as BC7 and the tangent normals as BC5. All use mipmaps. The snow set is shared by the reusable surface material. [Demo PBR maps](../addons/dynamic_sky/demo/materials/pbr) · [Snowpack maps](../addons/dynamic_sky/surfaces/textures)
 
-The separate geological bake uses the same alpine-rock master and its albedo alignment. It filters logarithmic luminance at 8, 48, and 256 pixels to estimate broader shelves and fractures over a 32 m tile, with a 0.42 m relief amplitude. It produces an additional 4096 × 4096 normal and nonmetallic ORM pair. Terrain samples that pair at geological scale alongside the fine rock material, and its snow shading retains part of the broad substrate relief. The saved boulder material also uses the pair at its independently authored scale. These maps affect lighting and surface response over the saved geometry. [Geological bake](../addons/dynamic_sky/demo/materials/bake_rock_macro.py) · [Terrain shader](../addons/dynamic_sky/demo/landscape/terrain.gdshader) · [Boulder material](../addons/dynamic_sky/demo/materials/alpine_boulder.tres)
+The earlier alpine-rock geological bake remains available to the saved boulder material at its independently authored scale. It filters logarithmic luminance at 8, 48, and 256 pixels to estimate shelves and fractures over a 32 m tile, with a 0.42 m relief amplitude. Terrain now uses a separate mountain color/structural-height pair, described below. These maps alter shading over the mesh; the mesh supplies the silhouette. [Earlier geological bake](../addons/dynamic_sky/demo/materials/bake_rock_macro.py) · [Boulder material](../addons/dynamic_sky/demo/materials/alpine_boulder.tres)
+
+The mountain granodiorite has two original **1254 × 1254** masters: diffuse color and a separately generated aligned structural height image. The height suppresses mineral flecks so those diffuse colors do not become pits. Its dedicated bake produces 4096 × 4096 albedo, normal, AO, roughness, zero metallic, packed ORM, and unsigned 16-bit height files, plus a macro normal/ORM/height set. Fine scale is 12 m with a 0.16 m full height range; macro scale is 36 m with a 0.45 m range. Seeded grain contributes at most 0.10 mm. The saved terrain uses macro normal strength 0.5 after fixed-camera comparisons. These are derived storage maps and authored physical estimates, not native 4K scans. The current PNG Texture2D importer reduces 16-bit height PNGs to 8-bit; runtime normals are baked from float height data and retain their independent BC5 import. [Material and map roles](../addons/dynamic_sky/demo/materials/mountain_granodiorite.md) · [Exact original prompts](../addons/dynamic_sky/demo/materials/mountain_granodiorite_prompts.txt) · [Bake and output statistics](../addons/dynamic_sky/demo/materials/mountain_granodiorite_bake.json)
 
 The meadow master feeds both the terrain PBR bake and the ground-cover blade material, keeping their color source consistent. The 1254 × 1254 RGBA ground-cover atlas supplies the low-shrub material. Its alpha defines leaf silhouettes on the authored mesh. [Meadow master](../addons/dynamic_sky/demo/materials/masters/alpine_meadow.png) · [Ground-cover material](../addons/dynamic_sky/demo/landscape/vegetation/ground_cover_material.tres) · [Shrub material](../addons/dynamic_sky/demo/landscape/vegetation/low_shrub_material.tres)
 
@@ -164,3 +177,7 @@ Constraints: no baked sunlight or sun disk, no moon, no blue, no trees, no build
 ```
 
 Static clouds read the derived texture's RGB relief channels at three directions spaced 120° apart and its separate alpha silhouette. [Relighting texture](../addons/dynamic_sky/rendering/cloud_modes/static_cloud_dome_lighting.png) · [Static lighting bake](../addons/dynamic_sky/rendering/cloud_modes/bake_static_cloud_lighting.py)
+
+## Airborne mineral dust atlas
+
+The built-in ImageGen tool generated one **1254 × 1254** grayscale master with four independently shaped mineral-dust masks. The source image is saved at [dust_card_sheet.png](../addons/dynamic_sky/weather/sandstorm/textures/dust_card_sheet.png). Godot imports it as a **512 × 512** mipmapped lossless mask. Its green channel represents coverage, with a dark gutter around every cell to keep neighboring masks out of the filtered sample. [Generation prompt](../addons/dynamic_sky/weather/sandstorm/textures/dust_card_sheet_prompt.txt)

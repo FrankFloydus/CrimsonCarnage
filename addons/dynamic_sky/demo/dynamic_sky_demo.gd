@@ -17,6 +17,7 @@ extends Node3D
 
 var _looking: bool = false
 var _previous_msaa: Viewport.MSAA
+var _active_presets: Array[DynamicSkyWeather]
 
 @onready var _sky: DynamicSky = $DynamicSky
 @onready var _camera: Camera3D = $Lookout/Camera3D
@@ -33,6 +34,7 @@ var _previous_msaa: Viewport.MSAA
 @onready var _settings_rows: VBoxContainer = $Controls/Panel/Rows
 @onready var _panel_toggle: Button = $Controls/Panel/Rows/Title
 @onready var _weather_menu: OptionButton = $Controls/Panel/Rows/Weather/WeatherPreset
+@onready var _weather_style_menu: OptionButton = %WeatherStyleSelector
 
 
 func _ready() -> void:
@@ -41,8 +43,9 @@ func _ready() -> void:
 		get_viewport().msaa_3d = scene_msaa
 	_show_time()
 	_on_view_selected(0)
-	_on_cloud_mode_selected(_cloud_mode_selector.selected)
-	_on_color_mode_selected(_color_mode_selector.selected)
+	_cloud_mode_selector.select(_cloud_mode_selector.get_item_index(_sky.get_cloud_mode()))
+	_color_mode_selector.select(_color_mode_selector.get_item_index(_sky.get_color_mode()))
+	_weather_style_menu.select(_weather_style_menu.get_item_index(_sky.weather_style))
 	_populate_weather_menu()
 	_on_panel_toggled(_panel_toggle.button_pressed)
 
@@ -123,18 +126,23 @@ func _on_weather_selected(index: int) -> void:
 	if index < 0 or index >= _weather_menu.item_count:
 		return
 	var preset_index := _weather_menu.get_item_id(index)
-	if preset_index >= 0 and preset_index < _sky.weather_presets.size():
-		_sky.set_weather(_sky.weather_presets[preset_index], weather_transition_seconds)
+	if preset_index >= 0 and preset_index < _active_presets.size():
+		_sky.set_weather(_active_presets[preset_index], weather_transition_seconds)
+
+
+func _on_weather_style_selected(index: int) -> void:
+	_sky.weather_style = _weather_style_menu.get_item_id(index)
+	_populate_weather_menu()
 
 
 func _populate_weather_menu() -> void:
 	_weather_menu.clear()
-	for index in _sky.weather_presets.size():
-		var preset := _sky.weather_presets[index]
-		if preset == null:
-			continue
+	_active_presets = _sky.get_weather_presets()
+	var startup := _sky.get_starting_weather()
+	for index in _active_presets.size():
+		var preset := _active_presets[index]
 		_weather_menu.add_item(preset.resource_name, index)
-		if preset == _sky.start_weather:
+		if preset == startup:
 			_weather_menu.select(_weather_menu.item_count - 1)
 
 

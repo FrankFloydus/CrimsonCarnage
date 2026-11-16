@@ -1,0 +1,106 @@
+<!-- Copyright Francesco Di Blasi 2026 - All Rights Reserved -->
+<class name="CrimsonWeaponAnimationClip" inherits="RefCounted">
+	<brief_description>Detached runtime reader for one weapon animation.</brief_description>
+	<description>Reads authored markers, notify events and float curves from a saved clip. Create a snapshot once when selecting an animation. Reading or mutating a returned record does not change the animation or snapshot.</description>
+	<methods>
+		<method name="from_animation" qualifiers="static">
+			<return type="CrimsonWeaponAnimationClip" />
+			<param index="0" name="animation" type="Animation" />
+			<description>Read an independent snapshot of the clip. Returns null when the animation or its track metadata is invalid.</description>
+		</method>
+		<method name="from_player" qualifiers="static">
+			<return type="CrimsonWeaponAnimationClip" />
+			<param index="0" name="player" type="AnimationPlayer" />
+			<param index="1" name="key" type="StringName" />
+			<description>Look up the qualified [param key] accepted by [method AnimationPlayer.play]. Returns null when the player or animation is missing or when its data is invalid.</description>
+		</method>
+		<method name="get_duration" qualifiers="const">
+			<return type="float" />
+			<description>Return the source duration in seconds, or zero for an empty snapshot.</description>
+		</method>
+		<method name="get_curve_names" qualifiers="const">
+			<return type="PackedStringArray" />
+			<description>Return curve names in authoring order.</description>
+		</method>
+		<method name="get_curve_info" qualifiers="const">
+			<return type="Dictionary" />
+			<param index="0" name="name" type="StringName" />
+			<description>Return a detached curve name, key count, and optional color. An unknown name returns an empty dictionary.</description>
+		</method>
+		<method name="get_curve_keys" qualifiers="const">
+			<return type="Dictionary[]" />
+			<param index="0" name="name" type="StringName" />
+			<description>Return detached key rows including normalized phase, seconds, value, interpolation mode, and tangent attributes. An unknown name returns an empty array.</description>
+		</method>
+		<method name="sample_curve" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="name" type="StringName" />
+			<param index="1" name="seconds" type="float" />
+			<param index="2" name="fallback" type="float" default="0.0" />
+			<description>Evaluate a curve at the given clip time in seconds, clamped to the clip range. Returns [param fallback] if the curve or time is unavailable.</description>
+		</method>
+		<method name="sample_curve_normalized" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="name" type="StringName" />
+			<param index="1" name="phase" type="float" />
+			<param index="2" name="fallback" type="float" default="0.0" />
+			<description>Evaluate at [param phase] clamped to the range from zero to one. Supports constant, linear, cubic, and weighted tangent curves. Returns [param fallback] for a missing curve, an empty curve, or a nonfinite phase.</description>
+		</method>
+		<method name="get_markers" qualifiers="const">
+			<return type="Dictionary[]" />
+			<description>Return detached Tweaker markers in authoring order. These markers are stored separately from Godot native markers.</description>
+		</method>
+		<method name="get_marker" qualifiers="const">
+			<return type="Dictionary" />
+			<param index="0" name="name" type="StringName" />
+			<description>Return the named Tweaker marker or an empty dictionary when it is absent.</description>
+		</method>
+		<method name="get_marker_time" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="name" type="StringName" />
+			<param index="1" name="fallback" type="float" default="-1.0" />
+			<description>Return the named Tweaker marker time in seconds or [param fallback] when it is absent.</description>
+		</method>
+		<method name="get_notify_track_names" qualifiers="const">
+			<return type="PackedStringArray" />
+			<description>Return the notify lane names in their authored order.</description>
+		</method>
+		<method name="get_notifies" qualifiers="const">
+			<return type="Dictionary[]" />
+			<param index="0" name="name" type="StringName" default="&amp;&quot;&quot;" />
+			<description>Return independent one-shot notify records. A nonempty name filters records by exact match.</description>
+		</method>
+		<method name="get_notify_states" qualifiers="const">
+			<return type="Dictionary[]" />
+			<param index="0" name="name" type="StringName" default="&amp;&quot;&quot;" />
+			<description>Return independent notify state records. A nonempty name filters records by exact match.</description>
+		</method>
+		<method name="get_active_notify_states" qualifiers="const">
+			<return type="Dictionary[]" />
+			<param index="0" name="seconds" type="float" />
+			<param index="1" name="kind" type="StringName" default="&amp;&quot;&quot;" />
+			<description>Return states active at [param seconds]. A state includes its start and excludes its end. A nonempty [param kind] filters states by exact kind.</description>
+		</method>
+		<method name="get_events_crossed" qualifiers="const">
+			<return type="Dictionary[]" />
+			<param index="0" name="from_seconds" type="float" />
+			<param index="1" name="to_seconds" type="float" />
+			<param index="2" name="include_start" type="bool" default="false" />
+			<description>Read events crossed over a forward span in seconds. The end is included. The start is included when [param include_start] is true. Times outside the clip are clipped, and backwards or nonfinite spans produce an empty array.</description>
+		</method>
+		<method name="get_loop_events_crossed" qualifiers="const">
+			<return type="Dictionary[]" />
+			<param index="0" name="from_seconds" type="float" />
+			<param index="1" name="to_seconds" type="float" />
+			<param index="2" name="loop_start" type="float" default="0.0" />
+			<param index="3" name="loop_end" type="float" default="-1.0" />
+			<description>Read events from the tail then the head of one loop wrap. Times and loop bounds are in seconds. The starting point on the tail is excluded, and the loop boundaries and head end are included. A [param loop_end] of -1 uses the clip duration. Invalid bounds return an empty array.</description>
+		</method>
+	</methods>
+	<constants>
+		<constant name="STATE_ENDED" value="0" enum="EventType">The notify state ends.</constant>
+		<constant name="STATE_STARTED" value="1" enum="EventType">The notify state begins.</constant>
+		<constant name="NOTIFY" value="2" enum="EventType">An instantaneous notify is crossed.</constant>
+		<constant name="MARKER" value="3" enum="EventType">A named Tweaker marker is crossed.</constant>
+	</constants>
+</class>

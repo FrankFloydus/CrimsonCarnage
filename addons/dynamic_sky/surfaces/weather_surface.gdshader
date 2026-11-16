@@ -3,8 +3,12 @@ shader_type spatial;
 #include "res://addons/dynamic_sky/surfaces/snow_deposition.gdshaderinc"
 #include "res://addons/dynamic_sky/surfaces/surface_shelter.gdshaderinc"
 #include "res://addons/dynamic_sky/surfaces/material_sampling.gdshaderinc"
+#include "res://addons/dynamic_sky/surfaces/snow_tracks/snow_track_geometry.gdshaderinc"
+#include "res://addons/dynamic_sky/surfaces/rain_puddles.gdshaderinc"
 
 // Water, snow, dust, and current rain intensity. Each mesh has an independent state.
+#include "res://addons/dynamic_sky/surfaces/radial_material_field.gdshaderinc"
+
 instance uniform vec4 weather_surface = vec4(0.0);
 
 group_uniforms Base_Material;
@@ -37,6 +41,8 @@ uniform float puddle_roughness : hint_range(0.02, 0.5, 0.005) = 0.065;
 // Favors authored AO crevices and breaks up the puddle boundary with finer variation.
 uniform float puddle_cavity_bias : hint_range(0.0, 0.5, 0.01) = 0.0;
 uniform float ripple_scale : hint_range(1.0, 15.0) = 6.0;
+// Scales the rain impact normal on wet ground outside pools.
+uniform float wet_film_ripple_strength : hint_range(0.0, 1.0, 0.01) = 0.0;
 uniform float coating_scale : hint_range(0.1, 12.0) = 2.5;
 // X/Z center and local half extents of an optional shelter footprint in meters.
 uniform vec4 shelter_bounds = vec4(0.0);
@@ -122,27 +128,32 @@ vec3 triplanar_snow_normal(
 }
 
 
-vec2 ripple_gradient(vec2 point, vec2 offset, float rain) {
-	vec2 cell = floor(point + offset);
-	vec2 random = hash_cell(cell + offset * 17.0);
-	vec2 from_impact = fract(point + offset) - (0.22 + random * 0.56);
-	float radius = length(from_impact);
-	float age = fract(TIME * (1.8 + random.x) + random.y);
-	float phase = radius - age * 0.31;
-	float wave = sin(phase * 185.0) * (1.0 - smoothstep(0.0, 0.08, abs(phase)));
-	float envelope = (1.0 - age) * (1.0 - smoothstep(0.24, 0.34, radius));
-	float density = smoothstep(random.y - 0.2, random.y + 0.2, rain);
-	return from_impact / max(radius, 0.01) * wave * envelope * density;
-}
-
-
 void vertex() {
-	world_position = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	world_normal = normalize(MODEL_NORMAL_MATRIX * NORMAL);
+	if (snow_tracks_enabled && weather_surface.y > 0.0 && world_normal.y > 0.50) {
+		vec2 ground = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xz;
+		float exposure = track_shelter_exposure(ground, shelter_bounds, shelter_yaw_degrees);
+		float cover = weather_surface.y * exposure * smoothstep(0.50, 0.86, world_normal.y);
+		vec3 profile = track_height_and_gradient(VERTEX.xz, cover);
+		float inverse_y_scale = 1.0 / max(length(MODEL_MATRIX[1].xyz), 0.001);
+		VERTEX.y += profile.x * inverse_y_scale;
+		vec3 rest_normal = NORMAL;
+		vec3 track_slope = vec3(profile.y, 0.0, profile.z) * rest_normal.y * inverse_y_scale;
+		vec3 displaced_position = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+		float track_strength = track_normal_strength_for_view(displaced_position, world_normal, MAIN_CAM_INV_VIEW_MATRIX[3].xyz);
+		NORMAL = normalize(rest_normal - track_slope * track_strength);
+		if (dot(TANGENT, TANGENT) > 0.001 && dot(BINORMAL, BINORMAL) > 0.001) {
+			float handedness = sign(dot(cross(rest_normal, TANGENT), BINORMAL));
+			TANGENT = normalize(TANGENT - NORMAL * dot(TANGENT, NORMAL));
+			BINORMAL = normalize(cross(NORMAL, TANGENT)) * handedness;
+		}
+	}
+	world_position = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 }
 
 
 void fragment() {
+	vec4 coated_weather = dynamic_sky_radial_weather_at(world_position, weather_surface);
 	vec2 surface_uv = UV * uv_scale;
 	vec3 base = texture(albedo_texture, surface_uv).rgb * base_color.rgb;
 	vec3 base_orm = use_orm_map
@@ -150,6 +161,7 @@ void fragment() {
 		: vec3(1.0, texture(roughness_texture, surface_uv).r, 0.0);
 	vec3 base_normal = texture(normal_texture, surface_uv).rgb;
 	vec3 up = normalize(world_normal);
+	vec3 shading_up = snow_tracks_enabled ? normalize(mat3(INV_VIEW_MATRIX) * NORMAL) : up;
 	float base_normal_depth = normal_strength;
 	if (use_world_triplanar) {
 		vec3 weights = pow(abs(up), vec3(4.0));
@@ -174,8 +186,8 @@ void fragment() {
 			base_orm.r *= macro_material.orm.r;
 			base_orm.g = mix(base_orm.g, macro_material.orm.g, 0.48);
 		}
-		deviation -= up * dot(deviation, up);
-		vec3 view_normal = normalize(mat3(VIEW_MATRIX) * normalize(up + deviation));
+		deviation -= shading_up * dot(deviation, shading_up);
+		vec3 view_normal = normalize(mat3(VIEW_MATRIX) * normalize(shading_up + deviation));
 		base_normal = vec3(
 			dot(view_normal, TANGENT), dot(view_normal, BINORMAL), dot(view_normal, NORMAL)
 		) * 0.5 + 0.5;
@@ -189,14 +201,15 @@ void fragment() {
 	float final_roughness = base_orm.g * roughness;
 	float final_metallic = base_orm.b;
 	float final_normal_strength = base_normal_depth;
-	float wet = weather_surface.x * exposure * mix(0.37, 1.0, upward);
+	float wet = coated_weather.x * exposure * mix(0.37, 1.0, upward);
 	float puddle = 0.0;
+	float footprint = max(length(dFdx(ground)), length(dFdy(ground)));
 	float sparkle = 0.0;
 
-	if (weather_surface.z > 0.0) {
+	if (coated_weather.z > 0.0) {
 		vec2 coating_uv = (ground + vec2(world_position.y * 0.31, 0.0)) * coating_scale;
 		float patch = noise_2d(coating_uv) * 0.7 + noise_2d(coating_uv * 4.0) * 0.3;
-		float dust = smoothstep(patch - 0.22, patch + 0.34, weather_surface.z * exposure)
+		float dust = smoothstep(patch - 0.22, patch + 0.34, coated_weather.z * exposure)
 			* mix(0.22, 0.92, upward);
 		vec3 dusty_color = dust_color.rgb * mix(0.71, 0.96, patch);
 		color = mix(color, dusty_color, dust);
@@ -204,8 +217,8 @@ void fragment() {
 		final_metallic = mix(final_metallic, 0.0, dust);
 	}
 
-	if (weather_surface.y > 0.0) {
-		float snow = snow_deposition(ground, up.y, weather_surface.y, exposure, snow_drift_scale);
+	if (coated_weather.y > 0.0) {
+		float snow = snow_deposition(ground, up.y, coated_weather.y, exposure, snow_drift_scale);
 		float drift = filtered_noise(ground * 0.39 + vec2(1.4, 6.2));
 		vec3 snowy_color = snow_color.rgb * mix(0.96, 1.02, drift);
 		vec3 snowy_orm = vec3(0.98, 0.82, 0.0);
@@ -220,7 +233,7 @@ void fragment() {
 			vec3 signs = step(vec3(0.0), up) * 2.0 - 1.0;
 			snowy_color *= triplanar_sample(snow_albedo_texture, point, point_dx, point_dy, signs, weights);
 			snowy_orm = triplanar_sample(snow_orm_texture, point, point_dx, point_dy, signs, weights);
-			vec3 snow_world_normal = triplanar_snow_normal(point, point_dx, point_dy, signs, weights, up);
+			vec3 snow_world_normal = triplanar_snow_normal(point, point_dx, point_dy, signs, weights, shading_up);
 			vec3 snow_view_normal = normalize(mat3(VIEW_MATRIX) * snow_world_normal);
 			vec3 snow_tangent_normal = vec3(
 				dot(snow_view_normal, TANGENT),
@@ -239,36 +252,49 @@ void fragment() {
 	}
 
 	if (wet > 0.0) {
-		float low_spots = noise_2d(ground * puddle_scale) * 0.74
-			+ noise_2d(ground * puddle_scale * 3.0) * 0.26;
-		if (puddle_cavity_bias > 0.0) {
-			float cavities = smoothstep(0.025, 0.16, 1.0 - base_orm.r);
-			float edge = filtered_noise(ground * puddle_scale * 7.5 + vec2(2.9, 7.1)) - 0.5;
-			low_spots += puddle_cavity_bias * (cavities * 0.33 + edge * 0.39);
+		vec2 pool = rain_puddle_coverage(ground, puddle_scale, puddle_threshold, puddle_cavity_bias,
+			base_orm.r, wet, up.y, footprint);
+		puddle = pool.x;
+		vec3 impacts = vec3(0.0);
+		float active_rain = coated_weather.w * exposure * smoothstep(0.90, 0.985, up.y);
+		float ripple_detail = rain_puddle_lod(footprint);
+		if (active_rain > 0.01 && ripple_detail > 0.0 && wet > 0.12) {
+			impacts = rain_puddle_impacts(ground, ripple_scale, active_rain, footprint, TIME);
 		}
-		puddle = smoothstep(puddle_threshold, puddle_threshold + 0.23, low_spots)
-			* smoothstep(0.42, 0.96, wet) * upward;
-		color *= mix(1.0, 0.53, wet) * mix(1.0, 0.68, puddle);
+		color *= mix(1.0, 0.53, wet) * mix(1.0, 0.82, pool.y);
 		final_roughness = mix(mix(final_roughness, 0.35, wet), puddle_roughness, puddle);
+		final_roughness = mix(final_roughness, min(final_roughness, 0.04),
+			impacts.y * wet * (1.0 - puddle) * 0.55);
 		final_metallic *= 1.0 - puddle;
-		base_normal = mix(base_normal, vec3(0.5, 0.5, 1.0), puddle * 0.94);
+		float ripple_strength = 0.52 + 0.48 * pool.y;
+		if (puddle > 0.0 && active_rain > 0.01) {
+			float pool_depth = puddle * wet * ripple_strength;
+			final_roughness = rain_puddle_filtered_roughness(final_roughness, pool_depth, ripple_detail,
+				rain_procedural_pool_variance(ripple_scale, active_rain));
+		}
+		vec3 pool_normal_world = normalize(vec3(impacts.x * ripple_strength, 1.0, impacts.z * ripple_strength));
+		vec3 pool_normal_view = mat3(VIEW_MATRIX) * pool_normal_world;
+		vec3 pool_normal_map = vec3(dot(pool_normal_view, TANGENT), dot(pool_normal_view, BINORMAL),
+			dot(pool_normal_view, NORMAL)) * 0.5 + 0.5;
+		base_normal = mix(base_normal, pool_normal_map, puddle);
+		if (wet_film_ripple_strength > 0.0) {
+			float film_weight = wet_film_ripple_strength * wet * (1.0 - puddle);
+			vec3 film_offset = mat3(VIEW_MATRIX) * vec3(impacts.x, 0.0, impacts.z) * film_weight;
+			vec2 tangent_offset = vec2(dot(film_offset, TANGENT), dot(film_offset, BINORMAL));
+			if (dot(tangent_offset, tangent_offset) > 0.0) {
+				vec2 tangent_base = base_normal.xy * 2.0 - 1.0;
+				float normal_z = sqrt(max(0.0, 1.0 - dot(tangent_base, tangent_base)));
+				base_normal = normalize(vec3(tangent_base + tangent_offset, normal_z)) * 0.5 + 0.5;
+			}
+		}
+		final_normal_strength = mix(final_normal_strength, 1.0, puddle);
 	}
 
 	ALBEDO = color;
 	ROUGHNESS = final_roughness;
 	AO = final_ao;
 	METALLIC = final_metallic;
-	SPECULAR = max(mix(0.35, 0.58, puddle), 0.35 + sparkle * 0.25);
+	SPECULAR = max(mix(0.35, sqrt(0.0204 / 0.16), puddle), 0.35 + sparkle * 0.25);
 	NORMAL_MAP = base_normal;
 	NORMAL_MAP_DEPTH = final_normal_strength;
-	if (puddle > 0.0 && weather_surface.w > 0.0) {
-		vec2 ripple_uv = ground * ripple_scale;
-		float detail = 1.0 - smoothstep(0.015, 0.10, max(length(dFdx(ripple_uv)), length(dFdy(ripple_uv))));
-		vec2 ripple = ripple_gradient(ripple_uv, vec2(0.0), weather_surface.w)
-			+ ripple_gradient(ripple_uv, vec2(0.51, 0.37), weather_surface.w);
-		vec3 ripple_world = vec3(ripple.x, 0.0, ripple.y);
-		vec3 ripple_view = mat3(VIEW_MATRIX) * ripple_world;
-		NORMAL_MAP.xy += vec2(dot(ripple_view, TANGENT), dot(ripple_view, BINORMAL))
-			* (0.13 * puddle * detail);
-	}
 }

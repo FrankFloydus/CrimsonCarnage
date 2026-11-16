@@ -1,12 +1,14 @@
-[gd_resource type="Resource" script_class="DynamicSkyWeather" format=3]
+[gd_resource type="Resource" script_class="DynamicSkyWeather" format=3 uid="uid://bthxxcgm0foa5"]
 
-[ext_resource type="Script" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="1_weather"]
+[ext_resource type="Script" uid="uid://c1xk5mfkswtr8" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="1_weather"]
 
 [resource]
 resource_name = "Rain"
 script = ExtResource("1_weather")
 cloud_coverage = 0.91
-fog_density = 0.009
+fog_density = 0.000399256
+fog_height_falloff = 0.002737931363
+fog_start_distance = 50.093017444
 fog_amount = 0.3
 rain = 0.64
 wind = Vector2(6, 2)

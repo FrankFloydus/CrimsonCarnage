@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/surfaces/snow_tracks/snow_track_stamp.gd" id="1_stamp"]
+
+[node name="SnowTrackStamp" type="Marker3D"]
+script = ExtResource("1_stamp")

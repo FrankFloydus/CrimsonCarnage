@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" path="res://addons/dynamic_sky/weather/sandstorm/sandstorm_particles.tscn" id="4_sandstorm"]
 [ext_resource type="Resource" path="res://addons/dynamic_sky/weather/airborne/wind_fog_settings.tres" id="5_wind_fog"]
 [ext_resource type="PackedScene" path="res://addons/dynamic_sky/weather/airborne/wind_fog_post_process.tscn" id="6_post_process"]
+[ext_resource type="PackedScene" path="res://addons/dynamic_sky/weather/sandstorm/source_dust_particles.tscn" id="7_source_dust"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ground_haze"]
 resource_local_to_scene = true
@@ -22,5 +23,7 @@ size = Vector3(170, 26, 170)
 material = SubResource("ShaderMaterial_ground_haze")
 
 [node name="SandstormParticles" parent="." instance=ExtResource("4_sandstorm")]
+
+[node name="SourceDustParticles" parent="." instance=ExtResource("7_source_dust")]
 
 [node name="PostProcessWindFog" parent="." instance=ExtResource("6_post_process")]

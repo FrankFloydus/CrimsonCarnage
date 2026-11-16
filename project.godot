@@ -14,16 +14,19 @@ config/name="Crimson Carnage"
 run/main_scene="res://scenes/levels/playground.tscn"
 config/features=PackedStringArray("4.8", "Forward Plus")
 
+[crimson]
+
+weapon_animation/play_scene="res://scenes/levels/playground.tscn"
+weapon_animation/preview_stage="res://addons/weapon_animation_tweaker/preview_reference.tscn"
+
 [display]
 
-window/size/window_width_override=1920
-window/size/window_height_override=1080
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/dynamic_sky/plugin.cfg")
+enabled=PackedStringArray("res://addons/dynamic_sky/plugin.cfg", "res://addons/post_processing_preview/plugin.cfg", "res://addons/weapon_animation_tweaker/plugin.cfg")
 
 [file_customization]
 

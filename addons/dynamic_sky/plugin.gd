@@ -3,18 +3,22 @@ extends EditorPlugin
 
 const SKY_SCENE_PATH := "res://addons/dynamic_sky/dynamic_sky.tscn"
 const DEMO_SCENE_PATH := "res://addons/dynamic_sky/demo/dynamic_sky_demo.tscn"
+const COMPARISON_SCENE_PATH := "res://addons/dynamic_sky/demo/udw_comparison/udw_demo_map.tscn"
 const ADD_SKY_MENU := "Add Dynamic Sky"
 const OPEN_DEMO_MENU := "Open Dynamic Sky Demo"
+const OPEN_COMPARISON_MENU := "Open UDW Comparison"
 
 
 func _enter_tree() -> void:
 	add_tool_menu_item(ADD_SKY_MENU, _add_dynamic_sky)
 	add_tool_menu_item(OPEN_DEMO_MENU, _open_demo)
+	add_tool_menu_item(OPEN_COMPARISON_MENU, _open_comparison)
 
 
 func _exit_tree() -> void:
 	remove_tool_menu_item(ADD_SKY_MENU)
 	remove_tool_menu_item(OPEN_DEMO_MENU)
+	remove_tool_menu_item(OPEN_COMPARISON_MENU)
 
 
 func _add_dynamic_sky() -> void:
@@ -59,3 +63,7 @@ func _add_dynamic_sky() -> void:
 
 func _open_demo() -> void:
 	EditorInterface.open_scene_from_path(DEMO_SCENE_PATH)
+
+
+func _open_comparison() -> void:
+	EditorInterface.open_scene_from_path(COMPARISON_SCENE_PATH)

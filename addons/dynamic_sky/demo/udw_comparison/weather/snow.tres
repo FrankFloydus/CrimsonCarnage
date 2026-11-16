@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="DynamicSkyWeather" format=3 uid="uid://cpfwc2yu7lbfm"]
+
+[ext_resource type="Script" uid="uid://c1xk5mfkswtr8" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="1_weather"]
+
+[resource]
+resource_name = "Snow"
+script = ExtResource("1_weather")
+cloud_coverage = 0.85
+daylight_cloud_transport = 1.0
+fog_density = 0.0006606229
+fog_height_falloff = 0.002252728337
+fog_start_distance = 22.753605037
+fog_amount = 0.5
+rain = 0.0
+snow = 0.6
+snow_coverage_limit = 1.0
+wind = Vector2(0, 2.4)
+gustiness = 1.0
+temperature_offset = -22.0
+metadata/source_preset = "Snow"
+metadata/source_wind_intensity = 4.0
+metadata/source_thunder_lightning = 0.0
+metadata/source_material_state = Vector3(0.0, 1.0, 0.0)

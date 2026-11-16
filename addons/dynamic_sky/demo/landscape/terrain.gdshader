@@ -3,6 +3,7 @@ shader_type spatial;
 #include "res://addons/dynamic_sky/surfaces/snow_deposition.gdshaderinc"
 #include "res://addons/dynamic_sky/surfaces/surface_shelter.gdshaderinc"
 #include "res://addons/dynamic_sky/surfaces/material_sampling.gdshaderinc"
+#include "res://addons/dynamic_sky/surfaces/radial_material_field.gdshaderinc"
 
 group_uniforms Material_Maps;
 uniform sampler2D scree_albedo : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
@@ -24,13 +25,13 @@ group_uniforms Physical_Scale;
 // Texture repeats per world meter. A meadow repeat covers two meters by default.
 uniform float meadow_texture_scale : hint_range(0.05, 2.0, 0.01) = 0.50;
 uniform float scree_texture_scale : hint_range(0.05, 2.0, 0.01) = 0.25;
-uniform float rock_texture_scale : hint_range(0.05, 2.0, 0.01) = 0.4545;
-uniform float geological_texture_scale : hint_range(0.005, 0.15, 0.001) = 0.03125;
+uniform float rock_texture_scale : hint_range(0.005, 2.0, 0.001) = 0.0833333;
+uniform float geological_texture_scale : hint_range(0.001, 0.15, 0.001) = 0.0277778;
 uniform float snow_texture_scale : hint_range(0.05, 2.0, 0.01) = 0.625;
 // Number of texture repeats in a stochastic triangle before its random offset changes.
 uniform float stochastic_patch_repeats : hint_range(1.0, 6.0, 0.1) = 2.7;
 uniform float detail_normal_strength : hint_range(0.0, 2.0, 0.01) = 0.78;
-uniform float geological_normal_strength : hint_range(0.0, 2.0, 0.01) = 1.0;
+uniform float geological_normal_strength : hint_range(0.0, 2.0, 0.01) = 0.50;
 
 group_uniforms Biomes_And_Weather;
 // The geometry owns meadow R, trail G, drainage B, and forest A masks.
@@ -40,6 +41,8 @@ uniform vec2 rock_slope_degrees = vec2(24.0, 48.0);
 // Altitude interval in world meters where unvegetated alpine ground reveals more bedrock.
 uniform vec2 bedrock_height_range = vec2(180.0, 420.0);
 uniform vec2 natural_snowline = vec2(420.0, 580.0);
+// Inclination from world up where permanent snow thins from ledges to exposed faces.
+uniform vec2 natural_snow_slope_degrees = vec2(28.0, 54.0);
 // Shelter center XZ followed by footprint half extents in its local XZ axes.
 uniform vec4 shelter_bounds = vec4(0.0);
 uniform float shelter_yaw_degrees = 0.0;
@@ -70,6 +73,7 @@ void vertex() {
 }
 
 void fragment() {
+	vec4 coated_weather = dynamic_sky_radial_weather_at(world_position, weather_surface);
 	vec2 ground = world_position.xz;
 	vec3 up = normalize(world_normal);
 	vec3 position_dx = dFdx(world_position);
@@ -77,8 +81,10 @@ void fragment() {
 	vec3 axis_blend = pow(abs(up), vec3(6.0));
 	axis_blend /= max(dot(axis_blend, vec3(1.0)), 0.00001);
 	vec3 signs = step(vec3(0.0), up) * 2.0 - 1.0;
-	float distance_to_eye = length(VERTEX);
-	float distance_blend = smoothstep(32.0, 240.0, distance_to_eye);
+	float footprint = max(length(position_dx), length(position_dy));
+	float distance_blend = smoothstep(0.025, 0.45, footprint);
+	float detail_visibility = 1.0 - smoothstep(0.045, 0.42, footprint);
+	float geological_visibility = 1.0 - smoothstep(0.60, 2.8, footprint);
 	float coarse = value_noise(ground * 0.084);
 	float medium = value_noise(ground * 0.54);
 	float weathering = value_noise(ground * 0.037 + world_position.y * vec2(0.22, 0.047));
@@ -88,7 +94,7 @@ void fragment() {
 	float rock_end = 1.0 - cos(radians(clamp(rock_slope_degrees.y, 0.0, 89.0)));
 	float cliff_exposure = smoothstep(rock_start, max(rock_start + 0.0001, rock_end), slope + (weathering - 0.5) * 0.055);
 	float altitude_rock = smoothstep(bedrock_height_range.x, max(bedrock_height_range.x + 1.0, bedrock_height_range.y), world_position.y);
-	altitude_rock *= use_biome_vertex_colors ? mix(0.72, 0.30, clamp(biome_weights.r, 0.0, 1.0)) : 0.0;
+	altitude_rock *= use_biome_vertex_colors ? mix(0.84, 0.30, clamp(biome_weights.r, 0.0, 1.0)) : 0.0;
 	float exposed = max(cliff_exposure, altitude_rock);
 	float shore = 1.0 - smoothstep(-30.0, -24.0, world_position.y + medium * 2.1);
 	float trail = use_biome_vertex_colors ? smoothstep(0.08, 0.78, biome_weights.g) : 0.0;
@@ -133,22 +139,26 @@ void fragment() {
 			macro_point, position_dx * geological_texture_scale, position_dy * geological_texture_scale,
 			axis_blend, signs, patch, 0.38);
 		TerrainPBR stone = terrain_blend(rock, geology, mix(0.32, 0.76, distance_blend));
-		stone.deviation = rock.deviation * detail_normal_strength * mix(0.65, 0.18, distance_blend)
-			+ geology.deviation * geological_normal_strength * mix(0.90, 1.0, distance_blend);
-		geological_deviation = geology.deviation * geological_normal_strength * exposed;
+		stone.deviation = rock.deviation * detail_normal_strength * 0.55 * detail_visibility
+			+ geology.deviation * geological_normal_strength * geological_visibility;
+		geological_deviation = geology.deviation * geological_normal_strength * exposed * geological_visibility;
 		stone.albedo *= mix(vec3(0.88, 0.89, 0.90), vec3(1.06, 1.02, 0.94), broad_variation);
-		earth = terrain_blend(earth, stone, exposed * (1.0 - drainage * 0.22));
+		float sediment_retention = smoothstep(0.60, 0.91, up.y);
+		earth = terrain_blend(earth, stone, exposed * (1.0 - drainage * sediment_retention * 0.38));
 	}
 	float snowline_variation = (weathering - 0.5) * 96.0 + up.z * 28.0;
+	float snow_slope_start = cos(radians(clamp(natural_snow_slope_degrees.x, 0.0, 89.0)));
+	float snow_slope_end = cos(radians(clamp(natural_snow_slope_degrees.y, 0.0, 89.0)));
+	float natural_snow_retention = smoothstep(snow_slope_end, max(snow_slope_start, snow_slope_end + 0.0001), up.y);
 	float frost = smoothstep(natural_snowline.x, max(natural_snowline.x + 1.0, natural_snowline.y), world_position.y + snowline_variation)
-		* (1.0 - cliff_exposure * 0.84);
+		* natural_snow_retention;
 	float weather_exposure = surface_weather_exposure(ground, shelter_bounds, shelter_yaw_degrees);
-	float dust = smoothstep(0.14, 0.91, weather_surface.z * weather_exposure + (coarse - 0.5) * 0.23) * 0.58;
+	float dust = smoothstep(0.14, 0.91, coated_weather.z * weather_exposure + (coarse - 0.5) * 0.23) * 0.58;
 	earth.albedo = mix(earth.albedo, vec3(0.18, 0.142, 0.097) * (0.78 + medium * 0.35), dust);
 	earth.orm.g = mix(earth.orm.g, 0.94, dust);
 	earth.deviation *= 1.0 - dust * 0.36;
-	float snow = max(snow_deposition(ground, up.y, weather_surface.y, weather_exposure, 0.61), frost);
-	float wet = weather_surface.x * weather_exposure * (1.0 - snow);
+	float snow = max(snow_deposition(ground, up.y, coated_weather.y, weather_exposure, 0.61), frost);
+	float wet = coated_weather.x * weather_exposure * (1.0 - snow);
 	float cavity = 1.0 - earth.orm.r;
 	float puddle_shape = value_noise(ground * 0.23 + vec2(6.2, 4.9));
 	float puddle = wet * wet * smoothstep(0.66, 0.88, puddle_shape + cavity * 0.14)
@@ -167,8 +177,9 @@ void fragment() {
 			world_position * snow_macro_scale + vec3(0.32, 0.17, -0.19), position_dx * snow_macro_scale, position_dy * snow_macro_scale,
 			axis_blend, signs, patch, 0.6);
 		TerrainPBR snow_pack = terrain_blend(snow_detail, snow_drift, distance_blend * 0.68);
-		snow_pack.deviation = snow_detail.deviation * detail_normal_strength * mix(0.58, 0.16, distance_blend)
-			+ snow_drift.deviation * 0.32 + geological_deviation * 0.72;
+		snow_pack.deviation = snow_detail.deviation * detail_normal_strength * 0.58 * detail_visibility
+			+ snow_drift.deviation * 0.07 * geological_visibility
+			+ geological_deviation * mix(0.18, 0.06, snow);
 		snow_pack.albedo *= mix(0.96, 1.015, weathering);
 		result = terrain_blend(earth, snow_pack, snow);
 	}

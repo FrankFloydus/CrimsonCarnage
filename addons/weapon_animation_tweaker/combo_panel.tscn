@@ -1,0 +1,292 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/weapon_animation_tweaker/combo_panel.gd" id="1_panel"]
+[ext_resource type="Theme" path="res://addons/weapon_animation_tweaker/tweaker_theme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://addons/weapon_animation_tweaker/timeline.gd" id="3_timeline"]
+[ext_resource type="Script" path="res://addons/weapon_animation_tweaker/combo_timeline_tracks.gd" id="4_tracks"]
+
+[node name="ComboPanel" type="PanelContainer"]
+size_flags_vertical = 3
+theme = ExtResource("2_theme")
+theme_type_variation = &"TweakerPane"
+script = ExtResource("1_panel")
+
+[node name="Inset" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 9
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 9
+theme_override_constants/margin_bottom = 7
+
+[node name="Layout" type="VBoxContainer" parent="Inset"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="Header" type="HBoxContainer" parent="Inset/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="Inset/Layout/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"TweakerHeading"
+text = "Combo"
+text_overrun_behavior = 3
+
+[node name="ComboFeedback" type="Label" parent="Inset/Layout/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"TweakerMuted"
+text_overrun_behavior = 3
+horizontal_alignment = 2
+
+[node name="OpenCombo" type="Button" parent="Inset/Layout/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Open…"
+tooltip_text = "Open a saved combo resource."
+
+[node name="SaveCombo" type="Button" parent="Inset/Layout/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Save…"
+tooltip_text = "Save the ordered clips and transition settings."
+
+[node name="Toolbar" type="HFlowContainer" parent="Inset/Layout"]
+layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 5
+
+[node name="Playback" type="HBoxContainer" parent="Inset/Layout/Toolbar"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="PlayCombo" type="Button" parent="Inset/Layout/Toolbar/Playback"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Play Combo"
+tooltip_text = "Preview the full sequence in clip order."
+theme_type_variation = &"TweakerPrimaryButton"
+
+[node name="PlayJoin" type="Button" parent="Inset/Layout/Toolbar/Playback"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Loop Join"
+tooltip_text = "Repeat the selected transition."
+
+[node name="ShowSequence" type="Button" parent="Inset/Layout/Toolbar/Playback"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "Sequence View"
+tooltip_text = "Return to the full sequence timeline."
+
+[node name="TimeReadout" type="Label" parent="Inset/Layout/Toolbar/Playback"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
+theme_type_variation = &"TweakerTimeReadout"
+horizontal_alignment = 1
+
+[node name="LoopCombo" type="CheckButton" parent="Inset/Layout/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Close Loop"
+tooltip_text = "Include the transition from the final clip back to the first."
+accessibility_name = "Close combo loop"
+
+[node name="ClipActions" type="HBoxContainer" parent="Inset/Layout/Toolbar"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="ClipPicker" type="OptionButton" parent="Inset/Layout/Toolbar/ClipActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(154, 0)
+layout_mode = 2
+fit_to_longest_item = false
+text_overrun_behavior = 5
+tooltip_text = "Choose a clip from the current AnimationPlayer."
+accessibility_name = "Clip to add to the combo"
+theme_type_variation = &"TweakerClipPicker"
+
+[node name="AddClip" type="Button" parent="Inset/Layout/Toolbar/ClipActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Add Clip"
+
+[node name="Order" type="HBoxContainer" parent="Inset/Layout/Toolbar"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="MoveClipUp" type="Button" parent="Inset/Layout/Toolbar/Order"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "←"
+tooltip_text = "Move the selected clip earlier in the sequence."
+accessibility_name = "Move clip earlier"
+
+[node name="MoveClipDown" type="Button" parent="Inset/Layout/Toolbar/Order"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "→"
+tooltip_text = "Move the selected clip later in the sequence."
+accessibility_name = "Move clip later"
+
+[node name="RemoveClip" type="Button" parent="Inset/Layout/Toolbar/Order"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Remove"
+tooltip_text = "Remove the selected clip from the combo."
+accessibility_name = "Remove selected clip"
+
+[node name="RulerActions" type="HBoxContainer" parent="Inset/Layout/Toolbar"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="ComboZoomOut" type="Button" parent="Inset/Layout/Toolbar/RulerActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "−"
+tooltip_text = "Zoom out around the playhead."
+accessibility_name = "Zoom timeline out"
+
+[node name="ComboZoomIn" type="Button" parent="Inset/Layout/Toolbar/RulerActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "+"
+tooltip_text = "Zoom in around the playhead."
+accessibility_name = "Zoom timeline in"
+
+[node name="ComboFit" type="Button" parent="Inset/Layout/Toolbar/RulerActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Fit"
+tooltip_text = "Fit the whole timeline."
+
+[node name="Timeline" type="VBoxContainer" parent="Inset/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+
+[node name="ComboTime" type="Range" parent="Inset/Layout/Timeline"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 2
+clip_contents = true
+tooltip_text = "Scrub the preview here. Scroll to zoom or middle-drag to pan."
+accessibility_name = "Combo preview time"
+step = 0.0
+script = ExtResource("3_timeline")
+theme_type_variation = &"WeaponTimeline"
+
+[node name="ComboTracks" type="Control" parent="Inset/Layout/Timeline"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+clip_contents = true
+accessibility_name = "Combo clip and transition tracks"
+script = ExtResource("4_tracks")
+
+[node name="TransitionInspector" type="HFlowContainer" parent="Inset/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 5
+
+[node name="Outgoing" type="VBoxContainer" parent="Inset/Layout/TransitionInspector"]
+custom_minimum_size = Vector2(184, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 3
+
+[node name="OutgoingClip" type="Label" parent="Inset/Layout/TransitionInspector/Outgoing"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"TweakerSubheading"
+text = "Exit"
+text_overrun_behavior = 3
+
+[node name="ExitSettings" type="HBoxContainer" parent="Inset/Layout/TransitionInspector/Outgoing"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="ExitMarker" type="OptionButton" parent="Inset/Layout/TransitionInspector/Outgoing/ExitSettings"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+fit_to_longest_item = false
+text_overrun_behavior = 5
+accessibility_name = "Outgoing clip exit marker"
+
+[node name="ExitTime" type="SpinBox" parent="Inset/Layout/TransitionInspector/Outgoing/ExitSettings"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(82, 0)
+layout_mode = 2
+step = 0.001
+suffix = "s"
+accessibility_name = "Outgoing clip exit time in seconds"
+
+[node name="Incoming" type="VBoxContainer" parent="Inset/Layout/TransitionInspector"]
+custom_minimum_size = Vector2(184, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 3
+
+[node name="IncomingClip" type="Label" parent="Inset/Layout/TransitionInspector/Incoming"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"TweakerSubheading"
+text = "Entry"
+text_overrun_behavior = 3
+
+[node name="EntrySettings" type="HBoxContainer" parent="Inset/Layout/TransitionInspector/Incoming"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="EntryMarker" type="OptionButton" parent="Inset/Layout/TransitionInspector/Incoming/EntrySettings"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+fit_to_longest_item = false
+text_overrun_behavior = 5
+accessibility_name = "Incoming clip entry marker"
+
+[node name="EntryTime" type="SpinBox" parent="Inset/Layout/TransitionInspector/Incoming/EntrySettings"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(82, 0)
+layout_mode = 2
+step = 0.001
+suffix = "s"
+accessibility_name = "Incoming clip entry time in seconds"
+
+[node name="BlendSettings" type="VBoxContainer" parent="Inset/Layout/TransitionInspector"]
+custom_minimum_size = Vector2(92, 0)
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="BlendLabel" type="Label" parent="Inset/Layout/TransitionInspector/BlendSettings"]
+layout_mode = 2
+theme_type_variation = &"TweakerSubheading"
+text = "Blend duration"
+
+[node name="BlendDuration" type="SpinBox" parent="Inset/Layout/TransitionInspector/BlendSettings"]
+unique_name_in_owner = true
+layout_mode = 2
+step = 0.001
+max_value = 60.0
+suffix = "s"
+accessibility_name = "Blend duration in seconds"
+
+[node name="ComboFileDialog" type="FileDialog" parent="."]
+unique_name_in_owner = true
+visible = false
+min_size = Vector2i(500, 360)
+size = Vector2i(640, 440)
+transient = true
+exclusive = true
+filters = PackedStringArray("*.tres ; Combo resource")

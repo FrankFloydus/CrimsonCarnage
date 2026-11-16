@@ -1,0 +1,78 @@
+[gd_resource type="Resource" script_class="WeaponBobStyle" format=3 uid="uid://dkwwtewr2t2va"]
+
+[ext_resource type="Script" uid="uid://vunpi4kpp3o5" path="res://scripts/melee/weapon_bob_style.gd" id="1_style"]
+[ext_resource type="Script" uid="uid://hkxogmfxx627" path="res://scripts/melee/weapon_gait_motion.gd" id="2_motion"]
+
+[sub_resource type="Curve" id="Curve_pivot_motion"]
+resource_name = "Transfer Across the Stance"
+_limits = [-1.0, 1.0, 0.0, 1.0]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.38, 1), 0.0, 0.0, 0, 0, Vector2(0.62, 0.78), -1.7, -1.7, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="Resource" id="Motion_pivot"]
+resource_name = "Braced Pivot"
+script = ExtResource("2_motion")
+duration = 0.55
+envelope = SubResource("Curve_pivot_motion")
+position = Vector3(-0.019, 0, -0.004)
+rotation_degrees = Vector3(-0.3, 3.1, -1.3)
+pivot_hand_depth = -0.019
+
+[sub_resource type="Curve" id="Curve_run_step"]
+resource_name = "Run Step"
+_limits = [-1.0, 1.0, 0.0, 1.0]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.26, -0.82), 0.0, 0.0, 0, 0, Vector2(0.46, -0.68), 1.2, 1.2, 0, 0, Vector2(0.87, 0), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 5
+
+[sub_resource type="Curve" id="Curve_start_motion"]
+resource_name = "Load and Push Off"
+_limits = [-1.0, 1.0, 0.0, 1.0]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.36, 1), 0.0, 0.0, 0, 0, Vector2(0.57, 0.8), -1.5, -1.5, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="Resource" id="Motion_start"]
+resource_name = "Braced First Step"
+script = ExtResource("2_motion")
+duration = 0.5
+envelope = SubResource("Curve_start_motion")
+position = Vector3(0, 0, 0.018)
+rotation_degrees = Vector3(1.8, 0, 0)
+
+[sub_resource type="Curve" id="Curve_stop_motion"]
+resource_name = "Brake and Settle"
+_limits = [-1.0, 1.0, 0.0, 1.0]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.22, 1), 0.0, 0.0, 0, 0, Vector2(0.53, 0.68), -1.8, -1.8, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="Resource" id="Motion_stop"]
+resource_name = "Braced Stop"
+script = ExtResource("2_motion")
+duration = 0.55
+envelope = SubResource("Curve_stop_motion")
+position = Vector3(0, 0, -0.021)
+rotation_degrees = Vector3(-1.65, 0, 0)
+stop_weight_shift = 0.009
+
+[sub_resource type="Curve" id="Curve_walk_step"]
+resource_name = "Walk Step"
+_limits = [-1.0, 1.0, 0.0, 1.0]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.25, -0.7), 0.0, 0.0, 0, 0, Vector2(0.47, -0.59), 1.0, 1.0, 0, 0, Vector2(0.92, 0), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 5
+
+[resource]
+resource_name = "Heavy Braced"
+script = ExtResource("1_style")
+cadence_scale = 0.91
+travel_scale = Vector3(1.7, 0.65, 1.85)
+rotation_scale = Vector2(0.65, 1.28)
+wrist_delay = 0.16
+walk_step = SubResource("Curve_walk_step")
+run_step = SubResource("Curve_run_step")
+carry_position = Vector3(0.044, -0.033, -0.042)
+carry_rotation_degrees = Vector3(1.1, 1.5, -2.3)
+plant_travel = 0.003
+shoulder_yaw = 2.0
+movement_response_scale = 1.4
+start_motion = SubResource("Motion_start")
+pivot_motion = SubResource("Motion_pivot")
+stop_motion = SubResource("Motion_stop")

@@ -1,0 +1,70 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/demo/snow_tracks_demo.gd" id="1_demo"]
+[ext_resource type="PackedScene" path="res://addons/dynamic_sky/dynamic_sky.tscn" id="2_sky"]
+[ext_resource type="Script" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="3_weather"]
+[ext_resource type="PackedScene" path="res://addons/dynamic_sky/surfaces/snow_tracks/snow_track_receiver.tscn" id="4_receiver"]
+[ext_resource type="PackedScene" path="res://addons/dynamic_sky/surfaces/snow_tracks/snow_track_stamp.tscn" id="5_stamp"]
+
+[sub_resource type="Resource" id="Resource_cold_clear"]
+resource_name = "Cold Clear"
+script = ExtResource("3_weather")
+fog_density = 0.000264249
+temperature_offset = -34.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sphere"]
+albedo_color = Color(0.14, 0.17, 0.2, 1)
+metallic = 0.56
+roughness = 0.45
+
+[sub_resource type="SphereMesh" id="SphereMesh_marker"]
+material = SubResource("StandardMaterial3D_sphere")
+radius = 0.2
+height = 0.4
+radial_segments = 48
+rings = 24
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ground"]
+albedo_color = Color(0.28, 0.30, 0.34, 1)
+roughness = 0.95
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_surround"]
+material = SubResource("StandardMaterial3D_ground")
+size = Vector2(80, 80)
+
+[node name="SnowTracksDemo" type="Node3D"]
+script = ExtResource("1_demo")
+
+[node name="DynamicSky" parent="." instance=ExtResource("2_sky")]
+time_of_day = 8.4
+day_length_seconds = 0.0
+use_system_time = false
+start_weather = SubResource("Resource_cold_clear")
+
+[node name="SnowTrackReceiver" parent="." instance=ExtResource("4_receiver")]
+
+[node name="RollingSphere" type="Node3D" parent="."]
+position = Vector3(2, 0.228, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="RollingSphere"]
+mesh = SubResource("SphereMesh_marker")
+
+[node name="SnowTrackStamp" parent="RollingSphere" node_paths=PackedStringArray("receiver") instance=ExtResource("5_stamp")]
+position = Vector3(0, -0.2, 0)
+receiver = NodePath("../../SnowTrackReceiver")
+continuous_contact = true
+
+[node name="SubstrateBackdrop" type="MeshInstance3D" parent="."]
+position = Vector3(0, -0.018, 0)
+mesh = SubResource("PlaneMesh_surround")
+
+[node name="Overview" type="Camera3D" parent="."]
+position = Vector3(4.2, 3.4, 5.8)
+rotation = Vector3(-0.430, 0.627, 0)
+current = true
+fov = 49.0
+
+[node name="Grazing" type="Camera3D" parent="."]
+position = Vector3(0.25, 0.53, 2.94)
+rotation = Vector3(-0.237, 0.138, 0)
+fov = 58.0

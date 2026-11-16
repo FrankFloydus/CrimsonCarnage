@@ -1,0 +1,56 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/precipitation/stylized/stylized_precipitation.gd" id="1"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/precipitation/stylized/stylized_particle_process.gdshader" id="2"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/precipitation/stylized/stylized_particle_draw.gdshader" id="3"]
+
+[sub_resource type="ShaderMaterial" id="RainProcess"]
+resource_local_to_scene = true
+shader = ExtResource("2")
+
+[sub_resource type="ShaderMaterial" id="SnowProcess"]
+resource_local_to_scene = true
+shader = ExtResource("2")
+shader_parameter/snowfall = true
+
+[sub_resource type="ShaderMaterial" id="RainDraw"]
+resource_local_to_scene = true
+shader = ExtResource("3")
+shader_parameter/particle_tint = Color(0.67, 0.77, 0.93, 1)
+shader_parameter/particle_opacity = 0.56
+shader_parameter/particle_size = Vector2(0.028, 0.31)
+
+[sub_resource type="ShaderMaterial" id="SnowDraw"]
+resource_local_to_scene = true
+shader = ExtResource("3")
+shader_parameter/snowfall = true
+shader_parameter/particle_tint = Color(0.92, 0.95, 1, 1)
+shader_parameter/particle_opacity = 0.76
+shader_parameter/particle_size = Vector2(0.17, 0.17)
+
+[sub_resource type="QuadMesh" id="ParticleQuad"]
+size = Vector2(1, 1)
+
+[node name="StylizedPrecipitation" type="Node3D"]
+visible = false
+script = ExtResource("1")
+
+[node name="Rain" type="GPUParticles3D" parent="."]
+cast_shadow = 0
+material_override = SubResource("RainDraw")
+emitting = false
+amount = 4480
+lifetime = 1.65
+visibility_aabb = AABB(-30, -28, -30, 60, 54, 60)
+process_material = SubResource("RainProcess")
+draw_pass_1 = SubResource("ParticleQuad")
+
+[node name="Snow" type="GPUParticles3D" parent="."]
+cast_shadow = 0
+material_override = SubResource("SnowDraw")
+emitting = false
+amount = 3650
+lifetime = 6.2
+visibility_aabb = AABB(-36, -30, -36, 72, 54, 72)
+process_material = SubResource("SnowProcess")
+draw_pass_1 = SubResource("ParticleQuad")

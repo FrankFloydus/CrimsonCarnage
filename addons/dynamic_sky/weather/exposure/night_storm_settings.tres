@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="DynamicSkyNightStormSettings" format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/weather/exposure/night_storm_settings.gd" id="1_storm"]
+
+[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_storm"]
+resource_local_to_scene = true
+resource_name = "Wide Night Storm Exposure"
+auto_exposure_enabled = true
+auto_exposure_scale = 0.17
+auto_exposure_use_ev_adaptation = true
+auto_exposure_bright_scene_speed = 1.0
+auto_exposure_dark_scene_speed = 2.0
+auto_exposure_min_sensitivity = 11.333333
+auto_exposure_max_sensitivity = 800.0
+
+[resource]
+resource_local_to_scene = true
+script = ExtResource("1_storm")
+camera_attributes = SubResource("CameraAttributesPractical_storm")

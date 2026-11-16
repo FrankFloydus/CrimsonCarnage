@@ -1,0 +1,50 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://addons/dynamic_sky/precipitation/runoff/rain_runoff.tscn" id="runoff"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/precipitation/runoff/rain_runoff_process.gdshader" id="drop_motion"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/precipitation/rain/rain_draw.gdshader" id="drop_draw"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/precipitation/rain_splash_process.gdshader" id="splash_motion"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/precipitation/rain_splash_crown.gdshader" id="splash_draw"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/precipitation/rain_splash_atlas.png" id="splash_atlas"]
+
+[sub_resource type="ShaderMaterial" id="DropMotion"]
+resource_local_to_scene = true
+shader = ExtResource("drop_motion")
+shader_parameter/fall_settings = Vector3(-0.26, 9.8, 8)
+shader_parameter/sprite_size_range = Vector2(0.8333333, 1.1666667)
+
+[sub_resource type="ShaderMaterial" id="DropOptics"]
+shader = ExtResource("drop_draw")
+shader_parameter/view_depth_range = Vector4(0.2, 0.75, 24, 30)
+
+[sub_resource type="QuadMesh" id="DropMesh"]
+material = SubResource("DropOptics")
+size = Vector2(0.006, 0.006)
+
+[sub_resource type="ShaderMaterial" id="SplashMotion"]
+resource_local_to_scene = true
+shader = ExtResource("splash_motion")
+shader_parameter/external_impacts = true
+shader_parameter/impact_lifetime = 0.2
+
+[sub_resource type="ShaderMaterial" id="SplashOptics"]
+shader = ExtResource("splash_draw")
+shader_parameter/splash_atlas = ExtResource("splash_atlas")
+shader_parameter/tint = Color(0.77, 0.82, 0.88, 0.38)
+shader_parameter/visible_fraction = 0.86
+
+[sub_resource type="QuadMesh" id="SplashMesh"]
+material = SubResource("SplashOptics")
+size = Vector2(0.075, 0.034)
+
+[node name="RainDripSpline" instance=ExtResource("runoff")]
+
+[node name="Drops" parent="." index="0"]
+process_material = SubResource("DropMotion")
+draw_pass_1 = SubResource("DropMesh")
+
+[node name="RainSplashes" parent="." index="1"]
+lifetime = 0.2
+process_material = SubResource("SplashMotion")
+draw_passes = 1
+draw_pass_1 = SubResource("SplashMesh")

@@ -4,6 +4,7 @@
 [ext_resource type="Shader" uid="uid://di76ut38qwnkc" path="res://addons/dynamic_sky/rendering/dynamic_sky.gdshader" id="2_shader"]
 [ext_resource type="Script" uid="uid://c1xk5mfkswtr8" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="3_otm1v"]
 [ext_resource type="PackedScene" path="res://addons/dynamic_sky/precipitation/precipitation.tscn" id="3_precipitation"]
+[ext_resource type="PackedScene" path="res://addons/dynamic_sky/precipitation/stylized/stylized_precipitation.tscn" id="stylized_precipitation"]
 [ext_resource type="Resource" uid="uid://bmt7ebvnv2sd1" path="res://addons/dynamic_sky/presets/clear.tres" id="4_clear"]
 [ext_resource type="Resource" path="res://addons/dynamic_sky/presets/partly_cloudy.tres" id="4_laj2a"]
 [ext_resource type="PackedScene" path="res://addons/dynamic_sky/lightning/lightning.tscn" id="5_lightning"]
@@ -17,12 +18,15 @@
 [ext_resource type="Resource" path="res://addons/dynamic_sky/presets/rain.tres" id="9_af33j"]
 [ext_resource type="CompressedTexture3D" uid="uid://dtc75rrue2tif" path="res://addons/dynamic_sky/rendering/cloud_noise.png" id="9_cloud_noise"]
 [ext_resource type="Texture2D" uid="uid://ouigrcst8ni5" path="res://addons/dynamic_sky/rendering/cloud_weather.png" id="10_cloud_weather"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/rendering/cloud_modes/clear_cirrus.png" id="clear_cirrus"]
 [ext_resource type="Resource" path="res://addons/dynamic_sky/presets/storm.tres" id="10_ec45c"]
 [ext_resource type="PackedScene" path="res://addons/dynamic_sky/rendering/cloud_shadows/cloud_shadows.tscn" id="11_cloud_shadows"]
 [ext_resource type="Resource" path="res://addons/dynamic_sky/presets/light_snow.tres" id="11_djdwj"]
 [ext_resource type="PackedScene" path="res://addons/dynamic_sky/weather/airborne/airborne_weather.tscn" id="12_airborne"]
 [ext_resource type="Resource" uid="uid://ccw5jf84bp1ku" path="res://addons/dynamic_sky/presets/snow.tres" id="12_pin6p"]
 [ext_resource type="CompressedTexture3D" uid="uid://c0ycajjqsal2o" path="res://addons/dynamic_sky/rendering/cloud_formation.png" id="13_cloud_formation"]
+[ext_resource type="CompressedTexture3D" uid="uid://w6s6sjk5xsqe" path="res://addons/dynamic_sky/rendering/cloud_erosion_volume.png" id="cloud_erosion"]
+[ext_resource type="Texture2D" uid="uid://bigdef16g0obs" path="res://addons/dynamic_sky/rendering/cloud_profile.png" id="cloud_profile"]
 [ext_resource type="Resource" path="res://addons/dynamic_sky/presets/blizzard.tres" id="13_ug4vc"]
 [ext_resource type="PackedScene" path="res://addons/dynamic_sky/weather/wind_debris/wind_debris.tscn" id="13_wind_debris"]
 [ext_resource type="Resource" path="res://addons/dynamic_sky/presets/calm_dust.tres" id="14_qwul5"]
@@ -44,6 +48,10 @@
 [ext_resource type="Resource" path="res://addons/dynamic_sky/weather/airborne/wind_fog_settings.tres" id="authoring_wind_fog_settings"]
 [ext_resource type="Resource" path="res://addons/dynamic_sky/weather/wind/wind_shake_settings.tres" id="authoring_wind_shake_settings"]
 [ext_resource type="Resource" path="res://addons/dynamic_sky/weather/screen/screen_settings.tres" id="authoring_screen_settings"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/surfaces/material_weather_settings.tres" id="authoring_material_weather"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/precipitation/rain/rain_settings.tres" id="authoring_rain"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/configuration/effects/cloud_shadow_settings.tres" id="authoring_cloud_shadow"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/weather/radial_storm_spawning.tres" id="radial_storm_spawning"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_sky"]
 resource_local_to_scene = true
@@ -74,7 +82,11 @@ shader_parameter/cloud_shadow = Color(0.34, 0.4, 0.48, 1)
 shader_parameter/cloud_steps = 64
 shader_parameter/high_cloud_scale = 3.0
 shader_parameter/high_cloud_amount = 0.0
+shader_parameter/clear_wisp_texture = ExtResource("clear_cirrus")
+shader_parameter/clear_wisp_amount = 0.22
 shader_parameter/cloud_formation = ExtResource("13_cloud_formation")
+shader_parameter/cloud_erosion_volume = ExtResource("cloud_erosion")
+shader_parameter/cloud_profile = ExtResource("cloud_profile")
 shader_parameter/cloud_noise = ExtResource("9_cloud_noise")
 shader_parameter/cloud_weather = ExtResource("10_cloud_weather")
 shader_parameter/cloud_coverage = 0.0
@@ -83,6 +95,7 @@ shader_parameter/cloud_base_km = 0.6
 shader_parameter/cloud_thickness_km = 0.7
 shader_parameter/cloud_extinction = 10.0
 shader_parameter/low_cloud_scale = 2.4
+shader_parameter/cloud_formation_texture_scale = 0.75
 shader_parameter/aurora_intensity = 0.0
 shader_parameter/aurora_azimuth_degrees = 0.0
 shader_parameter/aurora_distance_km = 480.0
@@ -152,6 +165,8 @@ ssr_enabled = true
 ssao_enabled = true
 ssil_enabled = true
 sdfgi_enabled = true
+sdfgi_contact_refinement_radius = 0.9
+sdfgi_world_space_irradiance = true
 glow_enabled = true
 glow_intensity = 0.23
 fog_enabled = true
@@ -173,7 +188,12 @@ _inspector_override_nodes = Array[NodePath]([NodePath("WorldEnvironment")])
 script = ExtResource("1_sky")
 start_weather = ExtResource("4_clear")
 weather_presets = Array[ExtResource("3_otm1v")]([ExtResource("4_clear"), ExtResource("4_laj2a"), ExtResource("5_pnr7m"), ExtResource("6_qm54g"), ExtResource("7_qnkwh"), ExtResource("8_spfla"), ExtResource("9_af33j"), ExtResource("10_ec45c"), ExtResource("11_djdwj"), ExtResource("12_pin6p"), ExtResource("13_ug4vc"), ExtResource("14_qwul5"), ExtResource("15_psm5t")])
+drive_height_fog_from_weather = true
 rainbow_settings = ExtResource("rainbow_defaults")
+rain_settings = ExtResource("authoring_rain")
+cloud_shadow_settings = ExtResource("authoring_cloud_shadow")
+radial_storm_spawning = ExtResource("radial_storm_spawning")
+material_weather_settings = ExtResource("authoring_material_weather")
 screen_settings = ExtResource("authoring_screen_settings")
 wind_shake_settings = ExtResource("authoring_wind_shake_settings")
 wind_fog_settings = ExtResource("authoring_wind_fog_settings")
@@ -196,7 +216,7 @@ sky_mode = 1
 
 [node name="Moon" type="DirectionalLight3D" parent="." unique_id=1070462989]
 transform = Transform3D(-0.7047844, 0.50326824, 0.5, 0, 0.70479953, -0.7094065, -0.7094215, -0.49997863, -0.49673176, 0, 0, 0)
-light_color = Color(0.55, 0.68, 1, 1)
+light_color = Color(0.69846177, 0.77201432, 0.93793751, 1)
 light_energy = 0.0
 shadow_enabled = true
 sky_mode = 1
@@ -228,3 +248,5 @@ enabled = true
 process_priority = 100
 
 [node name="WeatherExposure" parent="." unique_id=218389024 instance=ExtResource("21_exposure")]
+
+[node name="StylizedPrecipitation" parent="." instance=ExtResource("stylized_precipitation")]

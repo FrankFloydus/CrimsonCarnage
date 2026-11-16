@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="WeaponAnimationCombo" format=3]
+
+[ext_resource type="Script" path="res://addons/weapon_animation_tweaker/weapon_animation_combo.gd" id="1_combo"]
+
+[resource]
+script = ExtResource("1_combo")
+display_name = "Kerillian 1H Sword Light Chain"
+clip_keys = Array[StringName]([&"warhammer_1h_sword/heavy_swing_charge_down", &"warhammer_1h_sword/swing_left_diagonal", &"warhammer_1h_sword/heavy_swing_charge_right_diagonal_pose", &"warhammer_1h_sword/swing_right_diagonal", &"warhammer_1h_sword/heavy_swing_charge_left", &"warhammer_1h_sword/swing_stab_01"])
+joins = Array[Dictionary]([{
+"blend_duration": 0.15,
+"entry_marker": &"ComboEntry",
+"exit_marker": &"ComboExit"
+}, {
+"blend_duration": 0.2,
+"entry_marker": &"ComboEntry",
+"exit_marker": &"ComboExit"
+}, {
+"blend_duration": 0.15,
+"entry_marker": &"ComboEntry",
+"exit_marker": &"ComboExit"
+}, {
+"blend_duration": 0.2,
+"entry_marker": &"ComboEntry",
+"exit_marker": &"ComboExit"
+}, {
+"blend_duration": 0.15,
+"entry_marker": &"ComboEntry",
+"exit_marker": &"ComboExit"
+}, {
+"blend_duration": 0.2,
+"entry_marker": &"ComboEntry",
+"exit_marker": &"ComboExit"
+}])
+loop = true

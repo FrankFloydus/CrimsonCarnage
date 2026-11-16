@@ -1,0 +1,28 @@
+<!-- Copyright Francesco Di Blasi 2026 - All Rights Reserved -->
+<class name="CrimsonWeaponAnimationTracks" inherits="Resource">
+	<brief_description>Editable marker, notify and curve data owned by an Animation.</brief_description>
+	<description>Tracks preserve the existing weapon Tweaker metadata format. Use [method from_animation] to inspect or edit a detached draft and [method write_to] to validate and store it.</description>
+	<methods>
+		<method name="from_animation" qualifiers="static">
+			<return type="CrimsonWeaponAnimationTracks" />
+			<param index="0" name="animation" type="Animation" />
+			<description>Read a detached draft from the clip. An animation without metadata starts with empty tracks. An invalid clip or invalid metadata returns null.</description>
+		</method>
+		<method name="write_to" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="animation" type="Animation" />
+			<description>Save a detached track copy on the animation. Validating against the animation's duration is part of writing. Invalid data returns false and leaves the animation unchanged. Empty tracks remove the metadata.</description>
+		</method>
+		<method name="is_valid" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="duration" type="float" />
+			<description>Check that the metadata version, records, and timeline bounds are valid for the given positive duration in seconds.</description>
+		</method>
+	</methods>
+	<members>
+		<member name="version" type="int" setter="set_version" getter="get_version" default="1">Serialization schema version. Readers reject rows from unrecognized versions.</member>
+		<member name="markers" type="Dictionary[]" setter="set_markers" getter="get_markers" default="[]">Ordered marker rows with a unique nonempty name, time in seconds and optional color.</member>
+		<member name="notify_tracks" type="Dictionary[]" setter="set_notify_tracks" getter="get_notify_tracks" default="[]">Ordered named notify lanes. Each lane contains [code]notifies[/code] rows with a name, start [code]time[/code], optional [code]kind[/code] and [code]color[/code], and [code]end_time[/code]. Use -1 as the end time for an instantaneous notify.</member>
+		<member name="curve_tracks" type="Dictionary[]" setter="set_curve_tracks" getter="get_curve_tracks" default="[]">Ordered uniquely named curve lanes. Each contains [code]curve[/code] keys with normalized phases, interpolation modes, and incoming and outgoing tangent data. Native [Curve] resources with a domain from zero to one are also accepted.</member>
+	</members>
+</class>

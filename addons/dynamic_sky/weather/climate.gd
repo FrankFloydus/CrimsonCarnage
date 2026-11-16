@@ -30,10 +30,10 @@ func sample_interval(random: RandomNumberGenerator) -> float:
 	return random.randf_range(low, maxf(maximum_interval, low))
 
 
-func sample_weather(season_index: int, random: RandomNumberGenerator) -> DynamicSkyWeather:
+func sample_weather(season_index: int, random: RandomNumberGenerator, accepts: Callable = Callable()) -> DynamicSkyWeather:
 	var total := 0.0
 	for entry in probabilities:
-		if entry != null and entry.weather != null:
+		if entry != null and entry.weather != null and (not accepts.is_valid() or accepts.call(entry.weather)):
 			total += entry.weight_for(season_index)
 	if total <= 0.0:
 		return null
@@ -41,7 +41,7 @@ func sample_weather(season_index: int, random: RandomNumberGenerator) -> Dynamic
 	var remaining := random.randf() * total
 	var last_weather: DynamicSkyWeather
 	for entry in probabilities:
-		if entry == null or entry.weather == null:
+		if entry == null or entry.weather == null or (accepts.is_valid() and not accepts.call(entry.weather)):
 			continue
 		var weight := entry.weight_for(season_index)
 		if weight == 0.0:

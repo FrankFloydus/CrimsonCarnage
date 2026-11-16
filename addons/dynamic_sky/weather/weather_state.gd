@@ -2,6 +2,12 @@
 extends RefCounted
 ## Blends the global profile and resolves prioritized spatial overrides.
 
+const RadialStorm = preload("res://addons/dynamic_sky/weather/radial_storm.gd")
+const StylizedWeather = preload("res://addons/dynamic_sky/weather/stylized_weather.gd")
+const PRECIPITATION_CHANNELS := [&"rain", &"snow", &"lightning_rate", &"sheet_lightning_rate"]
+
+const SOURCE_FULL_WIND_SPEED := 15.0
+
 var current: Dictionary[StringName, Variant]
 var view: Dictionary[StringName, Variant]
 var _zones: Array[DynamicSkyWeatherZone]
@@ -10,6 +16,11 @@ var _transition_to: Dictionary[StringName, Variant]
 var _transition_profile: DynamicSkyWeather
 var _transition_elapsed: float = 0.0
 var _transition_seconds: float = 0.0
+
+
+## Converts resolved base wind in m/s to the source's zero-to-ten strength.
+static func source_wind_strength(base_wind: Vector2) -> float:
+	return 10.0 * sqrt(clampf(base_wind.length() / SOURCE_FULL_WIND_SPEED, 0.0, 1.0))
 
 
 func apply(profile: DynamicSkyWeather) -> void:
@@ -98,24 +109,56 @@ func restore_from(snapshot: DynamicSkySnapshot) -> bool:
 	return true
 
 
-func refresh_view(world: World3D, tree: SceneTree, camera: Camera3D) -> void:
+func refresh_view(
+	world: World3D, tree: SceneTree, camera: Camera3D, preserve_radial_cloud_coverage: bool = false,
+) -> void:
 	collect_zones(world, tree)
-	view = current if camera == null else sample_at(camera.global_position)
+	view = current if camera == null else sample_at(camera.global_position, preserve_radial_cloud_coverage)
 
 
 func collect_zones(world: World3D, tree: SceneTree) -> void:
 	_zones.clear()
+	var stylized := current.has(&"sky_zenith_tint")
 	for zone: DynamicSkyWeatherZone in tree.get_nodes_in_group(DynamicSkyWeatherZone.GROUP):
-		if zone.get_world_3d() == world and zone.enabled:
+		if (
+			zone.get_world_3d() == world and zone.enabled and zone.weather != null
+			and (zone.weather is StylizedWeather) == stylized
+			and (not stylized or not zone is RadialStorm)
+		):
 			_zones.append(zone)
 	_zones.sort_custom(_zone_has_lower_priority)
 
 
-func sample_at(world_position: Vector3) -> Dictionary[StringName, Variant]:
+## Returns live radial storms in the same priority order as local weather sampling.
+func get_radial_storms() -> Array[RadialStorm]:
+	var storms: Array[RadialStorm] = []
+	for zone in _zones:
+		if not is_instance_valid(zone):
+			continue
+		var storm := zone as RadialStorm
+		if storm != null and storm.get_effective_alpha() > 0.0:
+			storms.append(storm)
+	return storms
+
+
+## Blends local zones. Volumetric cloud rendering applies radial coverage separately at world positions.
+## Surface callers can also request the linear rain and snow inputs used for material accumulation.
+func sample_at(
+	world_position: Vector3, preserve_radial_cloud_coverage: bool = false, include_surface_precipitation: bool = false,
+	exclude_radial_storms: bool = false,
+) -> Dictionary[StringName, Variant]:
+	if current.is_empty():
+		return current
 	var resolved := current
 	var has_override := false
+	var surface_precipitation := Vector2.ZERO
+	if include_surface_precipitation:
+		surface_precipitation = Vector2(current[&"rain"], current[&"snow"])
 	for zone in _zones:
 		if not is_instance_valid(zone) or not zone.is_inside_tree():
+			continue
+		var storm := zone as RadialStorm
+		if exclude_radial_storms and storm != null:
 			continue
 		var weight := zone.get_weather_weight(world_position)
 		if weight == 0.0:
@@ -124,8 +167,18 @@ func sample_at(world_position: Vector3) -> Dictionary[StringName, Variant]:
 			resolved = current.duplicate()
 			has_override = true
 		var target := zone.weather.sample()
+		var keep_coverage := preserve_radial_cloud_coverage and storm != null
+		var precipitation_weight := weight
+		if storm != null:
+			precipitation_weight = storm.get_precipitation_weight(weight, resolved, target)
+		if include_surface_precipitation:
+			surface_precipitation = surface_precipitation.lerp(Vector2(target[&"rain"], target[&"snow"]), weight)
 		for channel in resolved:
-			resolved[channel] = lerp(resolved[channel], target[channel], weight)
+			if not keep_coverage or channel != &"cloud_coverage":
+				var channel_weight := precipitation_weight if channel in PRECIPITATION_CHANNELS else weight
+				resolved[channel] = lerp(resolved[channel], target[channel], channel_weight)
+	if include_surface_precipitation and has_override:
+		resolved[&"surface_precipitation"] = surface_precipitation
 	return resolved
 
 
@@ -136,7 +189,7 @@ func _zone_has_lower_priority(first: DynamicSkyWeatherZone, second: DynamicSkyWe
 
 
 func _make_profile(channels: Dictionary[StringName, Variant], profile_name: String = "") -> DynamicSkyWeather:
-	var profile := DynamicSkyWeather.new()
+	var profile: DynamicSkyWeather = StylizedWeather.new() if channels.has(&"sky_zenith_tint") else DynamicSkyWeather.new()
 	profile.resource_name = profile_name
 	for channel in channels:
 		profile.set(channel, channels[channel])
@@ -148,5 +201,7 @@ func _has_finite_channels(channels: Dictionary[StringName, Variant]) -> bool:
 		if value is float and not is_finite(value):
 			return false
 		if value is Vector2 and not value.is_finite():
+			return false
+		if value is Color and not Vector4(value.r, value.g, value.b, value.a).is_finite():
 			return false
 	return true

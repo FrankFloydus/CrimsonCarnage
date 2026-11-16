@@ -1,11 +1,17 @@
 [gd_resource type="ShaderMaterial" format=3 uid="uid://b2islhbhxuylt"]
 
 [ext_resource type="Shader" uid="uid://dfa5ek1bpnxqq" path="res://shaders/prototype/prototype_grid.gdshader" id="1_grid"]
+[ext_resource type="Texture2D" uid="uid://bvdu32rttll7q" path="res://textures/prototype/grid_worn_concrete_roughness.webp" id="2_roughness"]
+[ext_resource type="Texture2D" uid="uid://6ap5t5qxxu83" path="res://textures/prototype/grid_worn_concrete_normal.webp" id="3_normal"]
 
 [resource]
 resource_name = "Prototype Grid"
 render_priority = 0
 shader = ExtResource("1_grid")
+shader_parameter/dynamic_sky_weather_enabled = true
+shader_parameter/dynamic_sky_wet_roughness = 0.22
+shader_parameter/dynamic_sky_snow_scale = 0.625
+shader_parameter/dynamic_sky_dust_color = Color(0.67, 0.49, 0.29, 1)
 shader_parameter/base_color = Color(0.43, 0.43, 0.43, 1)
 shader_parameter/minor_spacing = 0.25
 shader_parameter/minor_thickness = 0.009
@@ -14,5 +20,13 @@ shader_parameter/major_spacing = 1.0
 shader_parameter/major_thickness = 0.014
 shader_parameter/major_color = Color(0.075, 0.075, 0.075, 1)
 shader_parameter/roughness = 0.85
-shader_parameter/use_roughness_map = false
-shader_parameter/roughness_map_scale = 1.0
+shader_parameter/use_roughness_map = true
+shader_parameter/roughness_map = ExtResource("2_roughness")
+shader_parameter/roughness_map_scale = 0.5555556
+shader_parameter/use_normal_map = true
+shader_parameter/normal_map = ExtResource("3_normal")
+shader_parameter/normal_strength = 0.8
+shader_parameter/normal_map_scale = 0.5555556
+shader_parameter/metallic = 0.0
+shader_parameter/use_metallic_map = false
+shader_parameter/metallic_map_scale = 1.0

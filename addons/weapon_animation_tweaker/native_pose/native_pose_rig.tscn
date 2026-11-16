@@ -1,0 +1,507 @@
+[gd_scene format=3]
+
+[node name="NativePoseRig" type="Node3D"]
+
+[node name="root_point" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 0
+
+[node name="j_aim_target" type="Node3D" parent="root_point"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -6)
+metadata/native_pose_index = 1
+
+[node name="j_aim" type="Node3D" parent="root_point"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 2
+
+[node name="lantern_attach" type="Node3D" parent="root_point/j_aim"]
+transform = Transform3D(0.99864, 0, 0.0521364, 0, 1, 0, -0.0521364, 0, 0.99864, 0.220617, 0, 0)
+metadata/native_pose_index = 3
+
+[node name="j_spine2" type="Node3D" parent="root_point/j_aim"]
+transform = Transform3D(0, -1, 0, 0.97332299, 0, -0.22944, 0.22944, 0, 0.97332299, 0, 1.25713003, -0.0239959)
+metadata/native_pose_index = 4
+
+[node name="j_rightshoulder" type="Node3D" parent="root_point/j_aim/j_spine2"]
+transform = Transform3D(-0.0465776, 0.96524291, 0.25717199, -0.94129205, -0.12858701, 0.31214398, 0.33436403, -0.22753499, 0.91456506, 0.14008002, 0, -0.0243823)
+metadata/native_pose_index = 5
+
+[node name="j_rightarm" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder"]
+transform = Transform3D(0.61704903, 0.56299797, 0.54980402, -0.584915, 0.79552502, -0.15816101, -0.52642699, -0.22399503, 0.82018299, 0.20756901, 0, 0)
+metadata/native_pose_index = 6
+
+[node name="j_rightforearm" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm"]
+transform = Transform3D(0.60001808, 0, 0.79998593, 0, 1, 1e-08, -0.79998591, 0, 0.60001813, 0.26979496, 5.66e-06, -1.18e-06)
+metadata/native_pose_index = 7
+
+[node name="j_rightweaponattach" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm"]
+transform = Transform3D(0.9988531, -0.038554, 0.02838072, 0.03784108, 0.99896507, 0.02524247, -0.02932459, -0.0241396, 0.99927796, 0.253589, -4.84e-06, 4.63e-06)
+metadata/native_pose_index = 8
+
+[node name="j_rightweaponcomponent9" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 9
+
+[node name="j_rightweaponcomponent8" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 10
+
+[node name="j_rightweaponcomponent7" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 11
+
+[node name="j_rightweaponcomponent6" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 12
+
+[node name="j_rightweaponcomponent5" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 13
+
+[node name="j_rightweaponcomponent40" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 14
+
+[node name="j_rightweaponcomponent4" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 15
+
+[node name="j_rightweaponcomponent39" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 16
+
+[node name="j_rightweaponcomponent38" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 17
+
+[node name="j_rightweaponcomponent37" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 18
+
+[node name="j_rightweaponcomponent36" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 19
+
+[node name="j_rightweaponcomponent35" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 20
+
+[node name="j_rightweaponcomponent34" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 21
+
+[node name="j_rightweaponcomponent33" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 22
+
+[node name="j_rightweaponcomponent32" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 23
+
+[node name="j_rightweaponcomponent31" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 24
+
+[node name="j_rightweaponcomponent30" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 25
+
+[node name="j_rightweaponcomponent3" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 26
+
+[node name="j_rightweaponcomponent29" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 27
+
+[node name="j_rightweaponcomponent28" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 28
+
+[node name="j_rightweaponcomponent27" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 29
+
+[node name="j_rightweaponcomponent26" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 30
+
+[node name="j_rightweaponcomponent25" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 31
+
+[node name="j_rightweaponcomponent24" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 32
+
+[node name="j_rightweaponcomponent23" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 33
+
+[node name="j_rightweaponcomponent22" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 34
+
+[node name="j_rightweaponcomponent21" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 35
+
+[node name="j_rightweaponcomponent20" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 36
+
+[node name="j_rightweaponcomponent2" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 37
+
+[node name="j_rightweaponcomponent19" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 38
+
+[node name="j_rightweaponcomponent18" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 39
+
+[node name="j_rightweaponcomponent17" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 40
+
+[node name="j_rightweaponcomponent16" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 41
+
+[node name="j_rightweaponcomponent15" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 42
+
+[node name="j_rightweaponcomponent14" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 43
+
+[node name="j_rightweaponcomponent13" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 44
+
+[node name="j_rightweaponcomponent12" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 45
+
+[node name="j_rightweaponcomponent11" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 46
+
+[node name="j_rightweaponcomponent10" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 47
+
+[node name="j_rightweaponcomponent1" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 48
+
+[node name="j_link_01_parent" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach"]
+transform = Transform3D(-2.5e-07, -0.99999999, -2.073e-05, 0.99993205, -4.9e-07, 0.01162901, -0.01162904, -2.074e-05, 0.99993207, 0.00199699, 0.27918604, 0.00020452)
+metadata/native_pose_index = 49
+
+[node name="j_link_01" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach/j_link_01_parent"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 50
+
+[node name="j_link_02_parent" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach/j_link_01_parent/j_link_01"]
+transform = Transform3D(0.99972998, 9.6e-07, -0.02325471, -9.6e-07, 1, 1e-08, 0.02325471, 2e-08, 0.99972999, 0.03710351, 2e-08, -4e-08)
+metadata/native_pose_index = 51
+
+[node name="j_link_02" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach/j_link_01_parent/j_link_01/j_link_02_parent"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 52
+
+[node name="j_link_03_parent" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach/j_link_01_parent/j_link_01/j_link_02_parent/j_link_02"]
+transform = Transform3D(0.99993208, -4.9e-07, 0.01162773, 4.9e-07, 1, -1e-08, -0.01162776, 1e-08, 0.99993208, 0.03710342, 6e-08, -4e-08)
+metadata/native_pose_index = 53
+
+[node name="j_link_03" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach/j_link_01_parent/j_link_01/j_link_02_parent/j_link_02/j_link_03_parent"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 54
+
+[node name="j_link_04_parent" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach/j_link_01_parent/j_link_01/j_link_02_parent/j_link_02/j_link_03_parent/j_link_03"]
+transform = Transform3D(1, 0, -1e-08, 0, 0.99999999, -2.299e-05, 0, 2.299e-05, 1, 0.03796381, -3e-08, -4e-08)
+metadata/native_pose_index = 55
+
+[node name="j_link_04" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach/j_link_01_parent/j_link_01/j_link_02_parent/j_link_02/j_link_03_parent/j_link_03/j_link_04_parent"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 56
+
+[node name="j_link_05_parent" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach/j_link_01_parent/j_link_01/j_link_02_parent/j_link_02/j_link_03_parent/j_link_03/j_link_04_parent/j_link_04"]
+transform = Transform3D(1.00000001, -1e-08, 2.5e-07, 1e-08, 1.00000001, -2e-07, -2.6e-07, 1.8e-07, 1.00000004, 0.03710088, 2e-08, 2e-08)
+metadata/native_pose_index = 57
+
+[node name="j_link_05" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach/j_link_01_parent/j_link_01/j_link_02_parent/j_link_02/j_link_03_parent/j_link_03/j_link_04_parent/j_link_04/j_link_05_parent"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 58
+
+[node name="j_link_06_parent" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach/j_link_01_parent/j_link_01/j_link_02_parent/j_link_02/j_link_03_parent/j_link_03/j_link_04_parent/j_link_04/j_link_05_parent/j_link_05"]
+transform = Transform3D(1, 0, -9.7e-07, 1e-08, 0.99999999, -4e-08, 9.3e-07, 2e-08, 0.99999999, 0.03796381, 0, -2e-08)
+metadata/native_pose_index = 59
+
+[node name="j_link_06" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach/j_link_01_parent/j_link_01/j_link_02_parent/j_link_02/j_link_03_parent/j_link_03/j_link_04_parent/j_link_04/j_link_05_parent/j_link_05/j_link_06_parent"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 60
+
+[node name="j_link_07_parent" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach/j_link_01_parent/j_link_01/j_link_02_parent/j_link_02/j_link_03_parent/j_link_03/j_link_04_parent/j_link_04/j_link_05_parent/j_link_05/j_link_06_parent/j_link_06"]
+transform = Transform3D(0.99993995, 0, -0.01098751, 0, 1, 2e-08, 0.01098749, 0, 0.99993999, 0.03666933, -8e-08, -1.1e-07)
+metadata/native_pose_index = 61
+
+[node name="j_link_07" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach/j_link_01_parent/j_link_01/j_link_02_parent/j_link_02/j_link_03_parent/j_link_03/j_link_04_parent/j_link_04/j_link_05_parent/j_link_05/j_link_06_parent/j_link_06/j_link_07_parent"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 62
+
+[node name="j_link_08_parent" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach/j_link_01_parent/j_link_01/j_link_02_parent/j_link_02/j_link_03_parent/j_link_03/j_link_04_parent/j_link_04/j_link_05_parent/j_link_05/j_link_06_parent/j_link_06/j_link_07_parent/j_link_07"]
+transform = Transform3D(0.99974406, 0, 0.02261901, 0, 1, 2e-08, -0.02261901, 0, 0.99974408, 0.03926908, 1e-08, 1e-08)
+metadata/native_pose_index = 63
+
+[node name="j_link_08" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach/j_link_01_parent/j_link_01/j_link_02_parent/j_link_02/j_link_03_parent/j_link_03/j_link_04_parent/j_link_04/j_link_05_parent/j_link_05/j_link_06_parent/j_link_06/j_link_07_parent/j_link_07/j_link_08_parent"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4e-08, 1e-08, -4e-08)
+metadata/native_pose_index = 64
+
+[node name="j_link_09_parent" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach/j_link_01_parent/j_link_01/j_link_02_parent/j_link_02/j_link_03_parent/j_link_03/j_link_04_parent/j_link_04/j_link_05_parent/j_link_05/j_link_06_parent/j_link_06/j_link_07_parent/j_link_07/j_link_08_parent/j_link_08"]
+transform = Transform3D(0.99993205, 0, -0.0116365, -2e-08, 1, -1e-08, 0.01163655, 0, 0.99993205, 0.03710469, -1e-08, -3e-08)
+metadata/native_pose_index = 65
+
+[node name="j_link_09" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach/j_link_01_parent/j_link_01/j_link_02_parent/j_link_02/j_link_03_parent/j_link_03/j_link_04_parent/j_link_04/j_link_05_parent/j_link_05/j_link_06_parent/j_link_06/j_link_07_parent/j_link_07/j_link_08_parent/j_link_08/j_link_09_parent"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 66
+
+[node name="j_link_10_parent" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach/j_link_01_parent/j_link_01/j_link_02_parent/j_link_02/j_link_03_parent/j_link_03/j_link_04_parent/j_link_04/j_link_05_parent/j_link_05/j_link_06_parent/j_link_06/j_link_07_parent/j_link_07/j_link_08_parent/j_link_08/j_link_09_parent/j_link_09"]
+transform = Transform3D(0.99999997, 0, 4.3e-06, 0, 1, 0, -4.29e-06, 0, 1.00000001, 0.03579686, 0, 3e-08)
+metadata/native_pose_index = 67
+
+[node name="j_link_10" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm/j_rightweaponattach/j_link_01_parent/j_link_01/j_link_02_parent/j_link_02/j_link_03_parent/j_link_03/j_link_04_parent/j_link_04/j_link_05_parent/j_link_05/j_link_06_parent/j_link_06/j_link_07_parent/j_link_07/j_link_08_parent/j_link_08/j_link_09_parent/j_link_09/j_link_10_parent"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 68
+
+[node name="j_rightforearmroll" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm/j_rightforearm"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.13999999, 2e-08, -1e-08)
+metadata/native_pose_index = 69
+
+[node name="j_rightarmroll" type="Node3D" parent="root_point/j_aim/j_spine2/j_rightshoulder/j_rightarm"]
+transform = Transform3D(1, 1e-08, 0, 0, 1, 4e-08, 0, -3e-08, 1, 0.13229901, 4.56e-06, -1.09e-06)
+metadata/native_pose_index = 70
+
+[node name="j_leftshoulder" type="Node3D" parent="root_point/j_aim/j_spine2"]
+transform = Transform3D(-0.04654, -0.96524794, 0.25715999, 0.94129694, -0.128547, -0.31214699, 0.334356, 0.22753601, 0.91456703, 0.14007501, 0, -0.0243812)
+metadata/native_pose_index = 71
+
+[node name="j_leftarm" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder"]
+transform = Transform3D(0.61702508, 0.56302805, -0.54979902, 0.58494599, -0.79550001, -0.15817202, -0.52641996, -0.22400599, -0.82018505, 0.20756801, 0, 0)
+metadata/native_pose_index = 72
+
+[node name="j_leftforearm" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm"]
+transform = Transform3D(0.6000181, 0, -0.79998597, 2e-08, 1, 4e-08, 0.79998598, 0, 0.6000181, 0.2698, 3e-08, 0)
+metadata/native_pose_index = 73
+
+[node name="j_leftweaponattach" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm"]
+transform = Transform3D(0.99885309, -0.038554, -0.02838073, 0.03784108, 0.99896503, -0.02524249, 0.02932458, 0.0241396, 0.99927794, 0.25358697, 1e-08, 1e-08)
+metadata/native_pose_index = 74
+
+[node name="j_leftweaponcomponent9" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 75
+
+[node name="j_leftweaponcomponent8" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 76
+
+[node name="j_leftweaponcomponent7" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 77
+
+[node name="j_leftweaponcomponent6" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 78
+
+[node name="j_leftweaponcomponent5" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 79
+
+[node name="j_leftweaponcomponent40" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 80
+
+[node name="j_leftweaponcomponent4" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 81
+
+[node name="j_leftweaponcomponent39" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 82
+
+[node name="j_leftweaponcomponent38" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 83
+
+[node name="j_leftweaponcomponent37" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 84
+
+[node name="j_leftweaponcomponent36" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 85
+
+[node name="j_leftweaponcomponent35" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 86
+
+[node name="j_leftweaponcomponent34" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 87
+
+[node name="j_leftweaponcomponent33" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 88
+
+[node name="j_leftweaponcomponent32" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 89
+
+[node name="j_leftweaponcomponent31" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 90
+
+[node name="j_leftweaponcomponent30" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 91
+
+[node name="j_leftweaponcomponent3" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 92
+
+[node name="j_leftweaponcomponent29" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 93
+
+[node name="j_leftweaponcomponent28" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 94
+
+[node name="j_leftweaponcomponent27" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 95
+
+[node name="j_leftweaponcomponent26" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 96
+
+[node name="j_leftweaponcomponent25" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 97
+
+[node name="j_leftweaponcomponent24" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 98
+
+[node name="j_leftweaponcomponent23" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 99
+
+[node name="j_leftweaponcomponent22" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 100
+
+[node name="j_leftweaponcomponent21" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 101
+
+[node name="j_leftweaponcomponent20" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 102
+
+[node name="j_leftweaponcomponent2" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 103
+
+[node name="j_leftweaponcomponent19" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 104
+
+[node name="j_leftweaponcomponent18" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 105
+
+[node name="j_leftweaponcomponent17" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 106
+
+[node name="j_leftweaponcomponent16" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 107
+
+[node name="j_leftweaponcomponent15" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 108
+
+[node name="j_leftweaponcomponent14" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 109
+
+[node name="j_leftweaponcomponent13" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 110
+
+[node name="j_leftweaponcomponent12" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 111
+
+[node name="j_leftweaponcomponent11" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 112
+
+[node name="j_leftweaponcomponent10" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 113
+
+[node name="j_leftweaponcomponent1" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm/j_leftweaponattach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 114
+
+[node name="j_leftforearmroll" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm/j_leftforearm"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.14000001, -3e-08, -3e-08)
+metadata/native_pose_index = 115
+
+[node name="j_leftarmroll" type="Node3D" parent="root_point/j_aim/j_spine2/j_leftshoulder/j_leftarm"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.13230299, 0, 0)
+metadata/native_pose_index = 116
+
+[node name="damage_attach" type="Node3D" parent="root_point/j_aim"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 117
+
+[node name="a_effects_plane_temp2" type="Node3D" parent="root_point/j_aim"]
+transform = Transform3D(0, -1, 0, 0.97332299, 0, -0.22944, 0.22944, 0, 0.97332299, 0, 1.25713003, -0.0239959)
+metadata/native_pose_index = 118
+
+[node name="a_effects_plane_temp1" type="Node3D" parent="root_point/j_aim"]
+transform = Transform3D(0, -1, 0, 0.97332299, 0, -0.22944, 0.22944, 0, 0.97332299, 0, 1.25713003, -0.0239959)
+metadata/native_pose_index = 119
+
+[node name="a_effects_plane_offhand_temp2" type="Node3D" parent="root_point/j_aim"]
+transform = Transform3D(0, -1, 0, 0.97332299, 0, -0.22944, 0.22944, 0, 0.97332299, 0, 1.25713003, -0.0239959)
+metadata/native_pose_index = 120
+
+[node name="a_effects_plane_offhand_temp1" type="Node3D" parent="root_point/j_aim"]
+transform = Transform3D(0, -1, 0, 0.97332299, 0, -0.22944, 0.22944, 0, 0.97332299, 0, 1.25713003, -0.0239959)
+metadata/native_pose_index = 121
+
+[node name="a_effects_plane_offhand" type="Node3D" parent="root_point/j_aim"]
+transform = Transform3D(0, -1, 0, 0.97332299, 0, -0.22944, 0.22944, 0, 0.97332299, 0, 1.25713003, -0.0239959)
+metadata/native_pose_index = 122
+
+[node name="a_effects_plane" type="Node3D" parent="root_point/j_aim"]
+transform = Transform3D(0, -1, 0, 0.97332299, 0, -0.22944, 0.22944, 0, 0.97332299, 0, 1.25713003, -0.0239959)
+metadata/native_pose_index = 123
+
+[node name="camera_node" type="Node3D" parent="root_point"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/native_pose_index = 124
+
+[node name="light_locator" type="Node3D" parent="root_point/camera_node"]
+transform = Transform3D(1, 0, 0, 0, 0.98480797, 0.173648, 0, -0.173648, 0.98480797, 0, 1.57119, 0)
+metadata/native_pose_index = 125

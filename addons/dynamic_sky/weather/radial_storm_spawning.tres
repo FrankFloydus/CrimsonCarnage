@@ -1,0 +1,61 @@
+[gd_resource type="Resource" script_class="DynamicSkyRadialStormSpawning" format=3 uid="uid://ds14htg5g2bm7"]
+
+[ext_resource type="Script" uid="uid://dcipgq8ksph12" path="res://addons/dynamic_sky/weather/radial_storm_spawning.gd" id="1_spawning"]
+[ext_resource type="Script" uid="uid://bfi3pgtnw2qc0" path="res://addons/dynamic_sky/weather/weather_probability.gd" id="2_probability"]
+[ext_resource type="Script" uid="uid://c1xk5mfkswtr8" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="3_weather"]
+
+[sub_resource type="Resource" id="Resource_storm_weather"]
+resource_local_to_scene = true
+resource_name = "Radial Thunderstorm"
+script = ExtResource("3_weather")
+cloud_coverage = 0.8
+fog_density = 0.0012179784
+fog_height_falloff = 0.001888826067
+fog_start_distance = 3.319276139
+fog_amount = 0.65
+rain = 1.0
+snow_coverage_limit = 0.0
+wind = Vector2(0, 15)
+gustiness = 1.0
+lightning_rate = 11.0
+sheet_lightning_rate = 3.5
+temperature_offset = -7.0
+metadata/source_preset = "Rain_Thunderstorm"
+metadata/source_wind_intensity = 10.0
+metadata/source_thunder_lightning = 10.0
+metadata/source_material_state = Vector3(1, 0, 0)
+
+[sub_resource type="Resource" id="Resource_storm_probability"]
+resource_local_to_scene = true
+script = ExtResource("2_probability")
+weather = SubResource("Resource_storm_weather")
+seasonal_weights = Vector4(1, 1, 1, 0)
+
+[sub_resource type="Resource" id="Resource_blizzard_weather"]
+resource_local_to_scene = true
+resource_name = "Radial Blizzard"
+script = ExtResource("3_weather")
+cloud_coverage = 1.0
+fog_density = 0.0051648699
+fog_height_falloff = 0.001039720771
+fog_amount = 1.0
+snow = 1.0
+wind = Vector2(0, 15)
+gustiness = 1.0
+temperature_offset = -34.0
+metadata/source_preset = "Snow_Blizzard"
+metadata/source_wind_intensity = 10.0
+metadata/source_thunder_lightning = 0.0
+metadata/source_material_state = Vector3(0, 1, 0)
+
+[sub_resource type="Resource" id="Resource_blizzard_probability"]
+resource_local_to_scene = true
+script = ExtResource("2_probability")
+weather = SubResource("Resource_blizzard_weather")
+seasonal_weights = Vector4(0, 0, 0, 1)
+
+[resource]
+resource_local_to_scene = true
+resource_name = "Radial Storm Spawning"
+script = ExtResource("1_spawning")
+probabilities = Array[ExtResource("2_probability")]([SubResource("Resource_storm_probability"), SubResource("Resource_blizzard_probability")])

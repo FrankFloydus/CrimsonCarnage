@@ -1,6 +1,6 @@
 @tool
 extends Node3D
-## Alternates the authored right and left slashes on the Playground's mounted swords.
+## Runs authored melee clips and procedural motion for any assigned weapon sweeps.
 
 ## Emitted when a new slash starts.
 signal swing_started
@@ -9,16 +9,13 @@ signal world_contact(collider: Node3D)
 ## Relays the active weapon's first contact with each body in the hit window.
 signal surface_contact(collider: CollisionObject3D, point: Vector3, normal: Vector3, direction: Vector3)
 
-const IDLE := &"idle"
-const SLASH_RIGHT := &"slash"
-const SLASH_LEFT := &"slash_left"
-const HIT_START := &"HitStart"
-const HIT_END := &"HitEnd"
-const MAX_SAMPLE_INTERVAL := 1.0 / 60.0
-const WeaponClearance := preload("res://scripts/melee/weapon_clearance.gd")
+const WeaponSwaySettings := preload("res://scripts/melee/weapon_sway_settings.gd")
+const BobStyleResource := preload("res://scripts/melee/weapon_bob_style.gd")
 
 ## Player rig AnimationPlayer. The rig advances it in physics so visuals and contacts use the same pose.
 @export var animation_player: AnimationPlayer
+## Player locomotion component that supplies floor, stair support, and dash state for weapon bob.
+@export var movement: FirstPersonMovement
 ## Right-hand long sword sweep, selected with the first comparison input.
 @export var long_sweep: MeleeSweep3D
 ## Right-hand short sword sweep, selected with the second comparison input.
@@ -43,22 +40,25 @@ const WeaponClearance := preload("res://scripts/melee/weapon_clearance.gd")
 ## Time to return from full compression to the authored size. Zero restores it immediately.
 @export_range(0.0, 1.0, 0.01, "suffix:s") var clearance_recovery_time: float = 0.12
 
-var _right_sweep: MeleeSweep3D
-var _active_sweep: MeleeSweep3D
-var _next_slash := SLASH_RIGHT
-var _slash_buffered := false
-var _active_reach: MeleeAttackReach
-var _excluded: Array[RID]
-var _slash_time: float = 0.0
-var _hit_start: float = 0.0
-var _hit_end: float = 0.0
-var _sweeping: bool = false
-var _previous_pose: Transform3D
-var _previous_motion_point: Vector3
-var _right_clearance := WeaponClearance.new()
-var _left_clearance := WeaponClearance.new()
+@export_group("Weapon Sway")
+## Directional look poses and locomotion response. The left hand mirrors the right hand's poses.
+@export var sway_settings: WeaponSwaySettings
 
+@export_group("Animation Clips")
+## Clip sampled at time zero when carrying a sword or finishing an attack.
+@export var carry_animation: StringName = &""
+## Animation played by the right-hand sword sweep.
+@export var right_slash_animation: StringName = &""
+## Animation played by the left-hand sword sweep. Leave empty to attack with only the right hand.
+@export var left_slash_animation: StringName = &""
+
+var _right_sweep: MeleeSweep3D
+var _excluded: Array[RID]
+var _playback: CrimsonMeleePlayback
+var _rig: CrimsonWeaponRig
+var _configured_sway: WeaponSwaySettings
 @onready var _camera := get_parent() as Camera3D
+@onready var _body := owner as CharacterBody3D
 
 
 func _ready() -> void:
@@ -67,15 +67,20 @@ func _ready() -> void:
 		set_process_unhandled_input(false)
 		_update_reach_preview()
 		return
-	_excluded = [(owner as CollisionObject3D).get_rid()]
-	long_sweep.world_contact.connect(world_contact.emit)
-	short_sweep.world_contact.connect(world_contact.emit)
-	left_sweep.world_contact.connect(world_contact.emit)
-	long_sweep.surface_contact.connect(surface_contact.emit)
-	short_sweep.surface_contact.connect(surface_contact.emit)
-	left_sweep.surface_contact.connect(surface_contact.emit)
-	_select_sword(long_sweep)
-	_left_clearance.set_visuals(left_sweep.get_parent().get_node_or_null(^"Visuals") as Node3D)
+
+	_excluded = [_body.get_rid()]
+	for sweep: MeleeSweep3D in [long_sweep, short_sweep, left_sweep]:
+		if is_instance_valid(sweep):
+			sweep.world_contact.connect(world_contact.emit)
+			sweep.surface_contact.connect(surface_contact.emit)
+
+	_playback = CrimsonMeleePlayback.new()
+	_playback.configure(animation_player, _camera, _excluded, swing_started.emit)
+	_rig = CrimsonWeaponRig.new()
+	_sync_rig_settings()
+	if is_instance_valid(left_sweep):
+		_rig.set_left_visuals(left_sweep.get_parent().get_node_or_null(^"Visuals") as Node3D)
+	_select_sword(long_sweep if is_instance_valid(long_sweep) else short_sweep)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -93,114 +98,85 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if _active_sweep == null:
-		animation_player.advance(delta)
-	elif Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
-		_play_idle()
-	else:
-		_advance_slash(delta)
-	_right_clearance.update(delta, _camera, clearance_mask, clearance_padding, clearance_recovery_time, _excluded)
-	_left_clearance.update(delta, _camera, clearance_mask, clearance_padding, clearance_recovery_time, _excluded)
+	var captured := Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+	_playback.advance(delta, captured)
+	_sync_rig_settings()
+	var has_movement := is_instance_valid(movement)
+	var world_velocity := _body.get_real_velocity()
+	_rig.advance(
+		delta, Vector2(world_velocity.x, world_velocity.z),
+		movement.get_ground_travel() if has_movement else Vector2.ZERO,
+		_body.global_basis, has_movement and movement.is_grounded(),
+		has_movement and movement.did_dash_last_step(),
+		has_movement and movement.is_ground_braking(), captured, _playback.get_active_sweep() != null
+	)
+	_rig.apply_visuals(
+		delta, _camera, clearance_mask, clearance_padding, clearance_recovery_time, _excluded,
+		_right_sweep == short_sweep, _playback.sway_weight(_right_sweep), _playback.sway_weight(left_sweep)
+	)
+
+
+## Accumulates the pitch and yaw applied by Look between physics ticks.
+func add_look_turn(angles: Vector2) -> void:
+	if _rig != null:
+		_rig.add_look_turn(angles)
+
+
+## Previews a style on this player. Passing null restores the style in Sway Settings.
+func preview_bob_style(style: BobStyleResource) -> void:
+	if _rig != null:
+		_rig.preview_bob_style(style)
+
+
+## Plays the authored jump pose until the player lands.
+func play_takeoff_motion() -> void:
+	if _rig != null:
+		_sync_rig_settings()
+		_rig.play_takeoff_motion()
+
+
+## Scales the landing reaction to pre-contact downward speed in meters per second.
+func play_landing_motion(impact_speed: float) -> void:
+	if _rig != null:
+		_sync_rig_settings()
+		_rig.play_landing_motion(impact_speed)
+
+
+## Resets in-flight pose offsets after an external move.
+func clear_air_motion() -> void:
+	if _rig != null:
+		_rig.clear_air_motion()
+
+
+func _sync_rig_settings() -> void:
+	if _configured_sway != sway_settings:
+		_configured_sway = sway_settings
+		_rig.configure(sway_settings)
 
 
 func _select_sword(sweep: MeleeSweep3D) -> void:
-	if _right_sweep == sweep:
+	if not is_instance_valid(sweep) or _right_sweep == sweep:
 		return
 	_right_sweep = sweep
-	long_sweep.get_parent_node_3d().visible = sweep == long_sweep
-	short_sweep.get_parent_node_3d().visible = sweep == short_sweep
-	_play_idle()
-	_right_clearance.set_visuals(sweep.get_parent().get_node_or_null(^"Visuals") as Node3D)
-
-
-func _play_idle() -> void:
-	_sweeping = false
-	_active_reach = null
-	_active_sweep = null
-	_slash_buffered = false
-	animation_player.play(IDLE)
-	animation_player.advance(0.0)
+	for candidate: MeleeSweep3D in [long_sweep, short_sweep]:
+		if is_instance_valid(candidate):
+			candidate.get_parent_node_3d().visible = candidate == sweep
+	_playback.set_sweeps(sweep, left_sweep)
+	_playback.set_clips(carry_animation, right_slash_animation, left_slash_animation)
+	_playback.restore_carry_pose()
+	_rig.set_right_visuals(sweep.get_parent().get_node_or_null(^"Visuals") as Node3D)
 
 
 func _request_slash() -> void:
-	if _active_sweep == null:
-		_start_slash()
-	else:
-		_slash_buffered = true
-
-
-func _start_slash() -> void:
-	var slash := _next_slash
-	if not animation_player.has_animation(slash):
-		push_warning("WeaponControl needs the %s animation." % slash)
+	if not is_instance_valid(_right_sweep) or right_slash_animation.is_empty():
 		return
-	var clip := animation_player.get_animation(slash)
-	if not clip.has_marker(HIT_START) or not clip.has_marker(HIT_END):
-		push_warning("Slash needs HitStart and HitEnd markers.")
-		return
-	_hit_start = clip.get_marker_time(HIT_START)
-	_hit_end = clip.get_marker_time(HIT_END)
-	if _hit_start < 0.0 or _hit_end <= _hit_start or _hit_end > clip.length:
-		push_warning("Slash hit markers must define a window inside the clip.")
-		return
-	_slash_time = 0.0
-	_active_sweep = _right_sweep if slash == SLASH_RIGHT else left_sweep
-	_active_reach = slash_reach.duplicate() as MeleeAttackReach if slash_reach != null else null
-	_active_sweep.begin_swing()
-	_next_slash = SLASH_LEFT if slash == SLASH_RIGHT else SLASH_RIGHT
-	swing_started.emit()
-	animation_player.play(slash)
-	animation_player.advance(0.0)
-
-
-func _advance_slash(delta: float) -> void:
-	var length := animation_player.current_animation_length
-	var next_time := minf(_slash_time + delta, length)
-	if next_time >= _hit_start and _slash_time < _hit_end:
-		var trace_start := maxf(_slash_time, _hit_start)
-		var trace_end := minf(next_time, _hit_end)
-		if not _sweeping:
-			animation_player.seek(maxf(trace_start - MAX_SAMPLE_INTERVAL, 0.0), true, true)
-			_previous_motion_point = _active_sweep.sample_motion_point()
-			animation_player.seek(trace_start, true, true)
-			_previous_pose = _active_sweep.sample_pose()
-			var motion_point := _active_sweep.sample_motion_point()
-			var direction := _contact_direction(motion_point)
-			_active_sweep.trace_segment(_previous_pose, _previous_pose, _excluded, _active_reach, direction)
-			_previous_motion_point = motion_point
-			_sweeping = true
-		var steps := ceili((trace_end - trace_start) / MAX_SAMPLE_INTERVAL)
-		for index in range(1, steps + 1):
-			var sample_time := lerpf(trace_start, trace_end, float(index) / steps)
-			animation_player.seek(sample_time, true, true)
-			var pose := _active_sweep.sample_pose()
-			var motion_point := _active_sweep.sample_motion_point()
-			var direction := _contact_direction(motion_point)
-			_active_sweep.trace_segment(_previous_pose, pose, _excluded, _active_reach, direction)
-			_previous_pose = pose
-			_previous_motion_point = motion_point
-	_slash_time = next_time
-	if next_time >= length:
-		var chain_slash := _slash_buffered
-		_play_idle()
-		if chain_slash:
-			_start_slash()
-	elif not is_equal_approx(animation_player.current_animation_position, next_time):
-		animation_player.seek(next_time, true, true)
-
-
-func _contact_direction(motion_point: Vector3) -> Vector3:
-	var displacement := motion_point - _previous_motion_point
-	if displacement.length_squared() > 0.000001:
-		return displacement.normalized()
-	var fallback := _camera.global_basis * contact_direction_fallback
-	return -_camera.global_basis.z if fallback.is_zero_approx() else fallback.normalized()
+	_playback.set_clips(carry_animation, right_slash_animation, left_slash_animation)
+	_playback.set_reach(slash_reach)
+	_playback.set_contact_direction_fallback(contact_direction_fallback)
+	_playback.request_slash()
 
 
 func _update_reach_preview() -> void:
-	if is_instance_valid(long_sweep):
-		long_sweep.preview_reach = slash_reach
-	if is_instance_valid(short_sweep):
-		short_sweep.preview_reach = slash_reach
-	if is_instance_valid(left_sweep):
-		left_sweep.preview_reach = slash_reach
+	for sweep: MeleeSweep3D in [long_sweep, short_sweep, left_sweep]:
+		if is_instance_valid(sweep):
+			sweep.preview_reach = slash_reach

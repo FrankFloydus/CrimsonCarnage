@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="WeaponBobStyle" format=3 uid="uid://wudgq4adesbi"]
+
+[ext_resource type="Script" uid="uid://vunpi4kpp3o5" path="res://scripts/melee/weapon_bob_style.gd" id="1_style"]
+
+[sub_resource type="Curve" id="Curve_run_step"]
+resource_name = "Run Step"
+_limits = [-1.0, 1.0, 0.0, 1.0]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.14, -0.73), 0.0, 0.0, 0, 0, Vector2(0.49, 0.38), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="Curve" id="Curve_walk_step"]
+resource_name = "Walk Step"
+_limits = [-1.0, 1.0, 0.0, 1.0]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.16, -0.55), 0.0, 0.0, 0, 0, Vector2(0.52, 0.32), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 4
+
+[resource]
+resource_name = "Light Footed"
+script = ExtResource("1_style")
+cadence_scale = 1.18
+travel_scale = Vector3(0.75, 0.72, 0.68)
+rotation_scale = Vector2(0.76, 0.62)
+wrist_delay = 0.075
+walk_step = SubResource("Curve_walk_step")
+run_step = SubResource("Curve_run_step")

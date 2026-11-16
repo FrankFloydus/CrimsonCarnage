@@ -1,6 +1,6 @@
 class_name FirstPersonCameraEffects
-extends Node
-## Applies presentation effects to its parent Camera3D.
+extends Camera3D
+## Blends the first-person field of view during straight dashes.
 
 @export_group("Dash FOV", "dash_fov_")
 ## Fraction of the authored FOV used during a straight forward or backward dash.
@@ -15,11 +15,9 @@ var _base_fov: float
 var _dash_fov_active: bool = false
 var _fov_tween: Tween
 
-@onready var _camera := get_parent() as Camera3D
-
 
 func _ready() -> void:
-	_base_fov = _camera.fov
+	_base_fov = fov
 
 
 ## Blends from the current FOV for a dash with no strafe input.
@@ -35,8 +33,8 @@ func set_dash_active(active: bool, local_direction: Vector2) -> void:
 		_fov_tween = null
 	var target_fov := maxf(_base_fov * dash_fov_multiplier, 1.0) if active else _base_fov
 	var duration := dash_fov_blend_in if active else dash_fov_blend_out
-	if duration <= 0.0 or is_equal_approx(_camera.fov, target_fov):
-		_camera.fov = target_fov
+	if duration <= 0.0 or is_equal_approx(fov, target_fov):
+		fov = target_fov
 		return
 	_fov_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	_fov_tween.tween_property(_camera, "fov", target_fov, duration)
+	_fov_tween.tween_property(self, "fov", target_fov, duration)

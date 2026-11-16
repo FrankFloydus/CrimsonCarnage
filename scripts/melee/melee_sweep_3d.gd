@@ -37,6 +37,7 @@ const BOX_EDGES := [
 ## Attack reach supplied by the scene that previews this weapon in the editor.
 var preview_reach: MeleeAttackReach
 
+var _native_solver: RefCounted
 var _contacted: Dictionary[int, bool] = {}
 var _hit_receivers: Dictionary[int, bool] = {}
 var _box := BoxShape3D.new()
@@ -57,6 +58,13 @@ var _preview_size := Vector3.ZERO
 
 
 func _ready() -> void:
+	if ClassDB.class_exists(&"CrimsonMeleeSweep"):
+		_native_solver = ClassDB.instantiate(&"CrimsonMeleeSweep") as RefCounted
+		if _native_solver != null:
+			_native_solver.configure(
+					self, _start, _end, _blood_motion, world_contact.emit,
+					surface_contact.emit, _find_hit_receivers
+			)
 	var drawing := MeshInstance3D.new()
 	drawing.mesh = _draw_mesh
 	drawing.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -95,12 +103,17 @@ func _process(_delta: float) -> void:
 
 ## Resets the contacted bodies and hit receivers before a new swing.
 func begin_swing() -> void:
+	if _native_solver != null:
+		_native_solver.begin_swing()
+		return
 	_contacted.clear()
 	_hit_receivers.clear()
 
 
 ## Returns the current world-space sweep origin and basis, with local X pointing toward SweepEnd.
 func sample_pose() -> Transform3D:
+	if _native_solver != null:
+		return _native_solver.sample_pose()
 	if _start == null or _end == null:
 		return global_transform.orthonormalized()
 
@@ -119,6 +132,8 @@ func sample_pose() -> Transform3D:
 
 ## Returns the authored blade point used to estimate the visible swing direction.
 func sample_motion_point() -> Vector3:
+	if _native_solver != null:
+		return _native_solver.sample_motion_point()
 	if _blood_motion != null:
 		return _blood_motion.global_position
 	if _start != null and _end != null:
@@ -134,6 +149,14 @@ func trace_segment(
 		reach: MeleeAttackReach = null,
 		direction: Vector3 = Vector3.ZERO
 ) -> void:
+	if _native_solver != null:
+		var passes: Array[Dictionary] = _native_solver.trace_segment(
+				previous, current, excluded, reach, direction, width, height, collision_mask,
+				surface_contact.has_connections(), show_sweeps and debug_draw_duration > 0.0
+		)
+		for draw_pass in passes:
+			_record_debug_pass(draw_pass.pose, draw_pass.size, draw_pass.motion, draw_pass.contacts)
+		return
 	var size := _blade_size(reach)
 	if size.x <= 0.0:
 		return
@@ -193,15 +216,21 @@ func _trace_pass(
 			contact_fractions.append(impact_fraction)
 
 	if show_sweeps and debug_draw_duration > 0.0:
-		var draw_pass := DrawPass.new()
-		draw_pass.pose = pose
-		draw_pass.size = size
-		draw_pass.motion = motion
-		draw_pass.contacts = contact_fractions
-		draw_pass.expires_at = Time.get_ticks_msec() + roundi(debug_draw_duration * 1000.0)
-		_draw_passes.append(draw_pass)
-		_draw_dirty = true
-		set_process(true)
+		_record_debug_pass(pose, size, motion, contact_fractions)
+
+
+func _record_debug_pass(
+		pose: Transform3D, size: Vector3, motion: Vector3, contact_fractions: PackedFloat32Array
+) -> void:
+	var draw_pass := DrawPass.new()
+	draw_pass.pose = pose
+	draw_pass.size = size
+	draw_pass.motion = motion
+	draw_pass.contacts = contact_fractions
+	draw_pass.expires_at = Time.get_ticks_msec() + roundi(debug_draw_duration * 1000.0)
+	_draw_passes.append(draw_pass)
+	_draw_dirty = true
+	set_process(true)
 
 
 func _collect_overlaps(
@@ -292,6 +321,8 @@ func _find_hit_receivers(body: CollisionObject3D) -> Array[Node]:
 
 
 func _blade_size(reach: MeleeAttackReach = null) -> Vector3:
+	if _native_solver != null:
+		return _native_solver.blade_size(width, height, reach)
 	if _start == null or _end == null:
 		return Vector3.ZERO
 	var span := _end.global_position - _start.global_position

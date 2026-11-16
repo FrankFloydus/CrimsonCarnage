@@ -1,0 +1,17 @@
+{
+  "$comment": "Copyright Francesco Di Blasi 2026 - All Rights Reserved",
+  "enabled_classes": [
+    "Animation", "AnimationLibrary", "AnimationMixer", "AnimationPlayer", "AspectRatioContainer",
+    "Button", "Camera3D", "CheckBox", "CheckButton", "ColorPickerButton", "ConfirmationDialog",
+    "Curve", "DirectionalLight3D", "DisplayServer", "EditorFileDialog", "EditorFileSystem",
+    "EditorInterface", "EditorPlugin", "EditorSelection", "EditorUndoRedoManager", "Engine",
+    "Environment", "FileAccess", "FileDialog", "Font", "HFlowContainer", "HBoxContainer",
+    "HSlider", "HSplitContainer", "Input", "InputEventKey", "InputEventMouseButton", "InputEventMouseMotion",
+    "ItemList", "JSON", "Label", "LineEdit", "MarginContainer", "MeshInstance3D", "Node3D",
+    "OptionButton", "OS", "PackedScene", "PanelContainer", "PopupMenu", "ProjectSettings", "ResourceLoader",
+    "ResourceSaver", "ScrollContainer", "Shortcut", "SpinBox", "StandardMaterial3D", "StyleBoxFlat",
+    "SubViewport", "SubViewportContainer", "TextEdit", "TextServer", "Texture2D", "Theme", "UndoRedo",
+    "VBoxContainer", "VSplitContainer",
+    "Window", "WorldEnvironment"
+  ]
+}

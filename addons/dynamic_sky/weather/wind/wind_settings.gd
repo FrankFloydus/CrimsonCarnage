@@ -82,9 +82,18 @@ func phase_speed() -> float:
 func sample_wind(
 	base_wind: Vector2, gustiness: float, position: Vector3, phase: float, rig: Node3D
 ) -> Vector3:
+	var sample := sample_wind_and_gust(base_wind, gustiness, position, phase, rig)
+	return Vector3(sample.x, sample.y, sample.z)
+
+
+## Returns XYZ wind velocity in m/s and the longitudinal world gust multiplier in W.
+## The multiplier excludes lateral turbulence and is neutral for calm wind.
+func sample_wind_and_gust(
+	base_wind: Vector2, gustiness: float, position: Vector3, phase: float, rig: Node3D
+) -> Vector4:
 	var speed := base_wind.length()
 	if speed <= 0.00001:
-		return Vector3.ZERO
+		return Vector4(0.0, 0.0, 0.0, 1.0)
 	var direction := _resolve_direction(base_wind / speed, rig)
 	var point := Vector2(position.x, position.z)
 	var front := point.dot(direction) / maxf(gust_wavelength_meters, 4.0)
@@ -95,12 +104,12 @@ func sample_wind(
 	var progress := coordinate - float(segment)
 	var gust := lerpf(_gust_target(segment), _gust_target(segment + 1), progress)
 	var variation := clampf(gustiness, 0.0, 1.0)
-	var multiplier := 1.0 + variation * gust_intensity * gust
+	var multiplier := maxf(1.0 + variation * gust_intensity * gust, 0.0)
 	var sideways := variation * lateral_variation * lerpf(
 		_gust_target(segment + 271), _gust_target(segment + 272), progress
 	)
-	var velocity := (direction * maxf(multiplier, 0.0) + lateral * sideways) * speed
-	return Vector3(velocity.x, 0.0, velocity.y)
+	var velocity := (direction * multiplier + lateral * sideways) * speed
+	return Vector4(velocity.x, 0.0, velocity.y, multiplier)
 
 
 func _gust_target(segment: int) -> float:

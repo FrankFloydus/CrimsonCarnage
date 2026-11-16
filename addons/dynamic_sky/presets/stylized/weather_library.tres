@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="DynamicSkyWeatherLibrary" format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/weather/weather_library.gd" id="1"]
+[ext_resource type="Script" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="2"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/stylized/clear.tres" id="clear"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/stylized/fog.tres" id="fog"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/stylized/rain.tres" id="rain"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/stylized/thunderstorm.tres" id="thunderstorm"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/stylized/snow.tres" id="snow"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/stylized/blizzard.tres" id="blizzard"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/stylized/aurora.tres" id="aurora"]
+
+[resource]
+resource_name = "Nordic Fantasy Weather"
+script = ExtResource("1")
+presets = Array[ExtResource("2")]([
+ExtResource("clear"), ExtResource("fog"), ExtResource("rain"), ExtResource("thunderstorm"),
+ExtResource("snow"), ExtResource("blizzard"), ExtResource("aurora")
+])

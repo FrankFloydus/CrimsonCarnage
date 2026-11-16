@@ -44,6 +44,16 @@ extends Resource
 		dry_wind_density = value
 		emit_changed()
 
+@export_group("Dust Particles")
+## Scales suspended dust, bouncing grit and gust billows independently of the fog. Zero hides all three particle layers.
+@export_range(0.0, 1.0, 0.01) var dust_particle_density_scale: float = 1.0:
+	set(value):
+		var density := clampf(value, 0.0, 1.0)
+		if dust_particle_density_scale == density:
+			return
+		dust_particle_density_scale = density
+		emit_changed()
+
 @export_group("Shelter")
 ## Surfaces on these physics layers place the haze at ground level and shelter the camera.
 @export_flags_3d_physics var shelter_mask: int = 1:

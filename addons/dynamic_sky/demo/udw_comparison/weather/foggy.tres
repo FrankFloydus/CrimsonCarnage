@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="DynamicSkyWeather" format=3 uid="uid://oinlnbbmxti8"]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="1_weather"]
+
+[resource]
+resource_name = "Foggy"
+script = ExtResource("1_weather")
+cloud_coverage = 0.0
+fog_density = 0.0050687793
+fog_height_falloff = 0.001039720771
+fog_start_distance = 0.000000000
+fog_amount = 1.0
+rain = 0.0
+snow = 0.0
+snow_coverage_limit = 0.0
+wind = Vector2(0, 0.15)
+gustiness = 1.0
+temperature_offset = -3.0
+metadata/source_preset = "Foggy"
+metadata/source_wind_intensity = 1.0
+metadata/source_thunder_lightning = 0.0
+metadata/source_material_state = Vector3(0.55, 0.0, 0.0)

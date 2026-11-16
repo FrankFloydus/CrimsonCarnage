@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="DynamicSkyStylizedWeather" format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/weather/stylized_weather.gd" id="1"]
+
+[resource]
+resource_name = "Stylized Snow"
+script = ExtResource("1")
+cloud_coverage = 0.71
+fog_density = 0.00145
+fog_height_falloff = 0.0012
+fog_amount = 0.49
+snow = 0.54
+wind = Vector2(1.0, 4.2)
+gustiness = 0.38
+temperature_offset = -20.0
+sky_zenith_tint = Color(0.42, 0.54, 0.66, 1)
+sky_horizon_tint = Color(0.74, 0.79, 0.85, 1)
+cloud_shade_tint = Color(0.42, 0.51, 0.62, 1)
+cloud_light_tint = Color(0.83, 0.87, 0.94, 1)
+day_fog_tint = Color(0.65, 0.73, 0.82, 1)
+sunlight_tint = Color(0.83, 0.91, 1.0, 1)
+sunlight_strength = 0.56

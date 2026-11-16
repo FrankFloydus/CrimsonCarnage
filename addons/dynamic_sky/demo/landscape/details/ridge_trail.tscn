@@ -2,6 +2,8 @@
 
 [ext_resource type="Mesh" path="res://addons/dynamic_sky/demo/landscape/details/ridge_outcrop.obj" id="outcrop"]
 [ext_resource type="Shape3D" path="res://addons/dynamic_sky/demo/landscape/details/ridge_outcrop_collision.res" id="outcrop_shape"]
+[ext_resource type="Mesh" path="res://addons/dynamic_sky/demo/landscape/details/ridge_outcrop_small.obj" id="small_outcrop"]
+[ext_resource type="Shape3D" path="res://addons/dynamic_sky/demo/landscape/details/ridge_outcrop_small_collision.res" id="small_outcrop_shape"]
 [ext_resource type="Material" path="res://addons/dynamic_sky/demo/materials/ridge_gneiss_outcrop.tres" id="outcrop_material"]
 [ext_resource type="Mesh" path="res://addons/dynamic_sky/demo/landscape/terrace_boulder.obj" id="stone"]
 [ext_resource type="Material" path="res://addons/dynamic_sky/demo/materials/alpine_boulder.tres" id="stone_material"]
@@ -242,7 +244,7 @@ shape = ExtResource("outcrop_shape")
 
 [node name="TrailBlock" type="MeshInstance3D" parent="."]
 transform = Transform3D(2.17751, -0.46068, -2.01153, 0.38673, 1.55127, 0.06336, 1.61001, -0.47702, 1.85211, 19.20000, 0.76423, 30.50000)
-mesh = ExtResource("outcrop")
+mesh = ExtResource("small_outcrop")
 material_override = ExtResource("outcrop_material")
 
 [node name="WeatherResponse" type="Node" parent="TrailBlock"]
@@ -254,11 +256,11 @@ snow_seconds = 8.0
 collision_mask = 0
 
 [node name="Shape" type="CollisionShape3D" parent="TrailBlock/Collision"]
-shape = ExtResource("outcrop_shape")
+shape = ExtResource("small_outcrop_shape")
 
 [node name="BeddedStone" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.90413, 0.21787, 0.85839, -0.04351, 0.98711, -0.15402, -0.71310, 0.20718, 1.52924, 14.90000, 0.81665, 38.40000)
-mesh = ExtResource("outcrop")
+mesh = ExtResource("small_outcrop")
 material_override = ExtResource("outcrop_material")
 
 [node name="WeatherResponse" type="Node" parent="BeddedStone"]
@@ -270,7 +272,7 @@ snow_seconds = 8.0
 collision_mask = 0
 
 [node name="Shape" type="CollisionShape3D" parent="BeddedStone/Collision"]
-shape = ExtResource("outcrop_shape")
+shape = ExtResource("small_outcrop_shape")
 
 [node name="Talus00" type="MeshInstance3D" parent="."]
 transform = Transform3D(0.17255, -0.06962, 0.08920, 0.04894, 0.09809, -0.01811, -0.05185, 0.05186, 0.14077, 19.01303, 0.87852, 47.74557)

@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="DynamicSkyRainLayerSettings" format=3 uid="uid://7p7efds8gc32"]
+
+[ext_resource type="Script" uid="uid://deltwxr7en5v8" path="res://addons/dynamic_sky/precipitation/rain/rain_layer_settings.gd" id="1_settings"]
+
+[resource]
+resource_local_to_scene = true
+script = ExtResource("1_settings")
+amount = 12100
+lifetime = 1.72
+vertical_offset = 0.85
+spawn_radii = Vector2(4.8, 28.2)
+spawn_half_height = 4.4
+visibility_aabb = AABB(-41, -24, -41, 82, 39, 82)
+sprite_width = 0.012
+tint = Color(0.68, 0.73, 0.78, 1)
+opacity = 0.36
+view_depth_range = Vector4(4, 8.6, 22, 30.2)
+shutter_seconds = 0.027
+minimum_pixel_width = 1.42
+refraction_pixels = 0.38
+transmission_weight = 0.56
+contact_chance = 0.12
+storm_spray_contact = true

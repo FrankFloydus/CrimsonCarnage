@@ -25,6 +25,20 @@ uniform bool use_roughness_map = false;
 uniform sampler2D roughness_map : hint_default_white, filter_linear_mipmap_anisotropic, repeat_enable;
 // Number of roughness texture repeats per world meter.
 uniform float roughness_map_scale : hint_range(0.01, 10.0, 0.01) = 1.0;
+
+group_uniforms Normal;
+uniform bool use_normal_map = false;
+uniform sampler2D normal_map : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
+// Normal strength and texture repeats per world meter.
+uniform float normal_strength : hint_range(0.0, 2.0, 0.01) = 1.0;
+uniform float normal_map_scale : hint_range(0.01, 10.0, 0.01) = 1.0;
+
+group_uniforms Metallic;
+// Metallic value for a material without a map. An enabled map supplies the value from red.
+uniform float metallic : hint_range(0.0, 1.0, 0.01) = 0.0;
+uniform bool use_metallic_map = false;
+uniform sampler2D metallic_map : hint_default_black, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform float metallic_map_scale : hint_range(0.01, 10.0, 0.01) = 1.0;
 group_uniforms;
 
 varying vec3 world_position;
@@ -60,8 +74,36 @@ float triplanar_grid(float spacing, float thickness, vec3 weights) {
 }
 
 
+float triplanar_scalar(sampler2D value_map, vec3 point, vec3 weights) {
+	return texture(value_map, point.yz).r * weights.x
+		+ texture(value_map, point.xz).r * weights.y
+		+ texture(value_map, point.xy).r * weights.z;
+}
+
+
+vec2 normal_slope(vec2 texel) {
+	vec2 normal_xy = texel * 2.0 - 1.0;
+	float normal_z = sqrt(max(1.0 - dot(normal_xy, normal_xy), 0.001));
+	// The green component points towards the top of the image, opposite increasing UV.y.
+	return vec2(normal_xy.x, -normal_xy.y) / max(normal_z, 0.35);
+}
+
+
+vec3 triplanar_normal(vec3 point, vec3 geometric_normal, vec3 weights) {
+	vec2 x = normal_slope(texture(normal_map, point.yz).rg);
+	vec2 y = normal_slope(texture(normal_map, point.xz).rg);
+	vec2 z = normal_slope(texture(normal_map, point.xy).rg);
+	vec3 slope = vec3(0.0, x) * weights.x
+		+ vec3(y.x, 0.0, y.y) * weights.y
+		+ vec3(z, 0.0) * weights.z;
+	slope -= geometric_normal * dot(geometric_normal, slope);
+	return normalize(geometric_normal + slope * normal_strength);
+}
+
+
 void fragment() {
-	vec3 weights = pow(abs(normalize(world_normal)), vec3(8.0));
+	vec3 geometric_normal = normalize(world_normal);
+	vec3 weights = pow(abs(geometric_normal), vec3(8.0));
 	weights /= max(weights.x + weights.y + weights.z, 0.0001);
 	float minor_mask = triplanar_grid(minor_spacing, minor_thickness, weights);
 	float major_mask = triplanar_grid(major_spacing, major_thickness, weights);
@@ -69,11 +111,15 @@ void fragment() {
 	ALBEDO = mix(color, major_color.rgb, major_mask * major_color.a);
 	ROUGHNESS = roughness;
 	if (use_roughness_map) {
-		vec3 position = world_position * roughness_map_scale;
-		float mapped_roughness = texture(roughness_map, position.yz).r * weights.x
-			+ texture(roughness_map, position.xz).r * weights.y
-			+ texture(roughness_map, position.xy).r * weights.z;
-		ROUGHNESS *= mapped_roughness;
+		ROUGHNESS *= triplanar_scalar(roughness_map, world_position * roughness_map_scale, weights);
 	}
-	APPLY_DYNAMIC_SKY_WEATHER(world_position, world_normal);
+	METALLIC = metallic;
+	if (use_metallic_map) {
+		METALLIC = triplanar_scalar(metallic_map, world_position * metallic_map_scale, weights);
+	}
+	if (use_normal_map) {
+		vec3 mapped_normal = triplanar_normal(world_position * normal_map_scale, geometric_normal, weights);
+		NORMAL = normalize(mat3(VIEW_MATRIX) * mapped_normal);
+	}
+	APPLY_DYNAMIC_SKY_WEATHER(world_position, geometric_normal);
 }

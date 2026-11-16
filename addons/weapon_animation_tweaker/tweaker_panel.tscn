@@ -1,0 +1,1379 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/weapon_animation_tweaker/timeline.gd" id="1_timeline"]
+[ext_resource type="Script" path="res://addons/weapon_animation_tweaker/sword_gizmo.gd" id="2_sword_gizmo"]
+[ext_resource type="Script" path="res://addons/weapon_animation_tweaker/tweaker_panel.gd" id="3_panel"]
+[ext_resource type="Theme" path="res://addons/weapon_animation_tweaker/tweaker_theme.tres" id="4_theme"]
+[ext_resource type="Script" path="res://addons/weapon_animation_tweaker/track_timeline.gd" id="5_tracks"]
+[ext_resource type="Script" path="res://addons/weapon_animation_tweaker/track_timeline_canvas.gd" id="6_track_canvas"]
+
+[node name="WeaponAnimationTweaker" type="MarginContainer"]
+theme = ExtResource("4_theme")
+script = ExtResource("3_panel")
+
+[node name="Shell" type="PanelContainer" parent="."]
+layout_mode = 2
+theme_type_variation = &"TweakerWorkspace"
+
+[node name="Workspace" type="VBoxContainer" parent="Shell"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="PanelContainer" parent="Shell/Workspace"]
+layout_mode = 2
+theme_type_variation = &"TweakerToolbar"
+
+[node name="Toolbar" type="HBoxContainer" parent="Shell/Workspace/Header"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="ClipLabel" type="Label" parent="Shell/Workspace/Header/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Clip"
+theme_type_variation = &"TweakerHeading"
+
+[node name="Clip" type="OptionButton" parent="Shell/Workspace/Header/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text_overrun_behavior = 5
+fit_to_longest_item = false
+accessibility_name = "Animation clip"
+custom_minimum_size = Vector2(174, 0)
+custom_maximum_size = Vector2(356, -1)
+theme_type_variation = &"TweakerClipPicker"
+size_flags_stretch_ratio = 2.0
+
+[node name="ModeSwitch" type="OptionButton" parent="Shell/Workspace/Header/Toolbar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(82, 0)
+layout_mode = 2
+tooltip_text = "Switch between Edit and Pose. Press Tab in the preview to switch modes."
+accessibility_name = "Preview editing mode"
+item_count = 2
+selected = 0
+popup/item_0/text = "Edit"
+popup/item_0/id = 0
+popup/item_1/text = "Pose"
+popup/item_1/id = 1
+fit_to_longest_item = false
+
+[node name="ComboMode" type="Button" parent="Shell/Workspace/Header/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+text = "Combo"
+tooltip_text = "Compose clips and preview their transitions."
+
+[node name="ToolbarSpace" type="Control" parent="Shell/Workspace/Header/Toolbar"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.75
+mouse_filter = 2
+
+[node name="SceneLabel" type="Label" parent="Shell/Workspace/Header/Toolbar"]
+layout_mode = 2
+text = "Scene"
+theme_type_variation = &"TweakerMuted"
+
+[node name="ScenePicker" type="Button" parent="Shell/Workspace/Header/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+text = "Choose Scene…"
+text_overrun_behavior = 5
+alignment = 0
+accessibility_name = "Preview scene"
+custom_minimum_size = Vector2(108, 0)
+custom_maximum_size = Vector2(348, -1)
+
+[node name="PlayScene" type="Button" parent="Shell/Workspace/Header/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Play Scene"
+tooltip_text = "Run the selected scene in Godot."
+
+[node name="WindowDivider" type="VSeparator" parent="Shell/Workspace/Header/Toolbar"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="OpenWindow" type="Button" parent="Shell/Workspace/Header/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Open in Window"
+tooltip_text = "Open the tweaker in a separate, resizable window."
+
+[node name="Columns" type="HSplitContainer" parent="Shell/Workspace"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+split_offsets = PackedInt32Array(326)
+
+[node name="Sidebar" type="PanelContainer" parent="Shell/Workspace/Columns"]
+layout_mode = 2
+theme_type_variation = &"TweakerPane"
+custom_minimum_size = Vector2(276, 0)
+
+[node name="SidebarBody" type="VBoxContainer" parent="Shell/Workspace/Columns/Sidebar"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="SidebarSplit" type="VSplitContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 7
+
+[node name="Inspector" type="VBoxContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.3
+theme_override_constants/separation = 0
+
+[node name="InspectorHeader" type="PanelContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector"]
+layout_mode = 2
+theme_type_variation = &"TweakerInspectorHeader"
+
+[node name="HeaderActions" type="HBoxContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/InspectorHeader"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TransformHeading" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/InspectorHeader/HeaderActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Transform"
+theme_type_variation = &"TweakerHeading"
+
+
+[node name="ImportClips" type="Button" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/InspectorHeader/HeaderActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Import Clips…"
+tooltip_text = "Import a batch of Vermintide Viewer animation clips."
+
+
+[node name="Scroll" type="ScrollContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector"]
+layout_mode = 2
+size_flags_vertical = 3
+follow_focus = true
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 4
+
+[node name="Inset" type="MarginContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 12
+
+[node name="Settings" type="VBoxContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Target" type="FoldableContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings"]
+layout_mode = 2
+title = "Target"
+theme_type_variation = &"TweakerFoldSection"
+
+[node name="TargetFields" type="GridContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Target"]
+layout_mode = 2
+columns = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 6
+
+[node name="EditTargetLabel" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Target/TargetFields"]
+layout_mode = 2
+text = "Edit"
+
+[node name="EditTarget" type="OptionButton" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Target/TargetFields"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+accessibility_name = "Transform editing target"
+item_count = 2
+selected = 0
+popup/item_0/text = "Sword Mount"
+popup/item_0/id = 0
+popup/item_1/text = "Socket Keyframe"
+popup/item_1/id = 1
+fit_to_longest_item = false
+text_overrun_behavior = 5
+
+[node name="ModelPickerLabel" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Target/TargetFields"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Sword"
+
+[node name="Sword" type="OptionButton" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Target/TargetFields"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text_overrun_behavior = 5
+fit_to_longest_item = false
+accessibility_name = "Sword model"
+
+[node name="Position" type="FoldableContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings"]
+layout_mode = 2
+title = "Position"
+theme_type_variation = &"TweakerFoldSection"
+
+[node name="PositionFields" type="GridContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Position"]
+layout_mode = 2
+columns = 3
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 4
+
+[node name="SwordPositionXLabel" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Position/PositionFields"]
+layout_mode = 2
+text = "X"
+theme_type_variation = &"TweakerAxisX"
+custom_minimum_size = Vector2(20, 0)
+horizontal_alignment = 1
+
+[node name="SwordPositionXSlider" type="HSlider" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Position/PositionFields"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = -1.0
+max_value = 1.0
+step = 0.01
+custom_minimum_size = Vector2(50, 0)
+size_flags_horizontal = 3
+size_flags_vertical = 4
+accessibility_name = "Sword position x slider"
+
+[node name="SwordPositionX" type="SpinBox" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Position/PositionFields"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = -1.0
+max_value = 1.0
+step = 0.01
+custom_minimum_size = Vector2(98, 0)
+accessibility_name = "Sword position x"
+suffix = "m"
+
+[node name="SwordPositionYLabel" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Position/PositionFields"]
+layout_mode = 2
+text = "Y"
+theme_type_variation = &"TweakerAxisY"
+custom_minimum_size = Vector2(20, 0)
+horizontal_alignment = 1
+
+[node name="SwordPositionYSlider" type="HSlider" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Position/PositionFields"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = -1.0
+max_value = 1.0
+step = 0.01
+custom_minimum_size = Vector2(50, 0)
+size_flags_horizontal = 3
+size_flags_vertical = 4
+accessibility_name = "Sword position y slider"
+
+[node name="SwordPositionY" type="SpinBox" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Position/PositionFields"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = -1.0
+max_value = 1.0
+step = 0.01
+custom_minimum_size = Vector2(98, 0)
+accessibility_name = "Sword position y"
+suffix = "m"
+
+[node name="SwordPositionZLabel" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Position/PositionFields"]
+layout_mode = 2
+text = "Z"
+theme_type_variation = &"TweakerAxisZ"
+custom_minimum_size = Vector2(20, 0)
+horizontal_alignment = 1
+
+[node name="SwordPositionZSlider" type="HSlider" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Position/PositionFields"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = -1.0
+max_value = 1.0
+step = 0.01
+custom_minimum_size = Vector2(50, 0)
+size_flags_horizontal = 3
+size_flags_vertical = 4
+accessibility_name = "Sword position z slider"
+
+[node name="SwordPositionZ" type="SpinBox" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Position/PositionFields"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = -1.0
+max_value = 1.0
+step = 0.01
+custom_minimum_size = Vector2(98, 0)
+accessibility_name = "Sword position z"
+suffix = "m"
+
+[node name="Rotation" type="FoldableContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings"]
+layout_mode = 2
+title = "Rotation"
+theme_type_variation = &"TweakerFoldSection"
+
+[node name="RotationFields" type="GridContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Rotation"]
+layout_mode = 2
+columns = 3
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 4
+
+[node name="SwordRotationXLabel" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Rotation/RotationFields"]
+layout_mode = 2
+text = "X"
+theme_type_variation = &"TweakerAxisX"
+custom_minimum_size = Vector2(20, 0)
+horizontal_alignment = 1
+
+[node name="SwordRotationXSlider" type="HSlider" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Rotation/RotationFields"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = -180.0
+max_value = 180.0
+step = 0.01
+custom_minimum_size = Vector2(50, 0)
+size_flags_horizontal = 3
+size_flags_vertical = 4
+accessibility_name = "Sword rotation x slider"
+
+[node name="SwordRotationX" type="SpinBox" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Rotation/RotationFields"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = -180.0
+max_value = 180.0
+step = 0.01
+custom_minimum_size = Vector2(98, 0)
+accessibility_name = "Sword rotation x"
+suffix = "°"
+
+[node name="SwordRotationYLabel" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Rotation/RotationFields"]
+layout_mode = 2
+text = "Y"
+theme_type_variation = &"TweakerAxisY"
+custom_minimum_size = Vector2(20, 0)
+horizontal_alignment = 1
+
+[node name="SwordRotationYSlider" type="HSlider" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Rotation/RotationFields"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = -180.0
+max_value = 180.0
+step = 0.01
+custom_minimum_size = Vector2(50, 0)
+size_flags_horizontal = 3
+size_flags_vertical = 4
+accessibility_name = "Sword rotation y slider"
+
+[node name="SwordRotationY" type="SpinBox" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Rotation/RotationFields"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = -180.0
+max_value = 180.0
+step = 0.01
+custom_minimum_size = Vector2(98, 0)
+accessibility_name = "Sword rotation y"
+suffix = "°"
+
+[node name="SwordRotationZLabel" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Rotation/RotationFields"]
+layout_mode = 2
+text = "Z"
+theme_type_variation = &"TweakerAxisZ"
+custom_minimum_size = Vector2(20, 0)
+horizontal_alignment = 1
+
+[node name="SwordRotationZSlider" type="HSlider" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Rotation/RotationFields"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = -180.0
+max_value = 180.0
+step = 0.01
+custom_minimum_size = Vector2(50, 0)
+size_flags_horizontal = 3
+size_flags_vertical = 4
+accessibility_name = "Sword rotation z slider"
+
+[node name="SwordRotationZ" type="SpinBox" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/Rotation/RotationFields"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = -180.0
+max_value = 180.0
+step = 0.01
+custom_minimum_size = Vector2(98, 0)
+accessibility_name = "Sword rotation z"
+suffix = "°"
+
+[node name="ClipMotion" type="FoldableContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings"]
+layout_mode = 2
+title = "Clip Motion"
+theme_type_variation = &"TweakerFoldSection"
+
+[node name="MotionFields" type="GridContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/ClipMotion"]
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 4
+columns = 3
+
+[node name="VerticalOffsetLabel" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/ClipMotion/MotionFields"]
+layout_mode = 2
+text = "Vertical offset"
+
+[node name="VerticalOffsetSlider" type="HSlider" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/ClipMotion/MotionFields"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+accessibility_name = "Vertical offset slider"
+min_value = -2.0
+max_value = 2.0
+step = 0.01
+
+[node name="VerticalOffset" type="SpinBox" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/ClipMotion/MotionFields"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(98, 0)
+layout_mode = 2
+tooltip_text = "Raise or lower the socket paths along camera Y."
+accessibility_name = "Vertical offset"
+min_value = -2.0
+max_value = 2.0
+step = 0.01
+suffix = "m"
+
+[node name="WidthLabel" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/ClipMotion/MotionFields"]
+layout_mode = 2
+text = "Width"
+
+[node name="WidthSlider" type="HSlider" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/ClipMotion/MotionFields"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+accessibility_name = "Width slider"
+min_value = 0.1
+max_value = 4.0
+value = 1.0
+step = 0.01
+
+[node name="Width" type="SpinBox" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/ClipMotion/MotionFields"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(98, 0)
+layout_mode = 2
+tooltip_text = "Scale camera X motion around the center of each socket path."
+accessibility_name = "Path width"
+min_value = 0.1
+max_value = 4.0
+step = 0.01
+value = 1.0
+suffix = "×"
+
+[node name="HeightLabel" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/ClipMotion/MotionFields"]
+layout_mode = 2
+text = "Height"
+
+[node name="HeightSlider" type="HSlider" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/ClipMotion/MotionFields"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+accessibility_name = "Height slider"
+min_value = 0.1
+max_value = 4.0
+value = 1.0
+step = 0.01
+
+[node name="Height" type="SpinBox" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/ClipMotion/MotionFields"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(98, 0)
+layout_mode = 2
+tooltip_text = "Scale camera Y motion around the center of each socket path."
+accessibility_name = "Path height"
+min_value = 0.1
+max_value = 4.0
+step = 0.01
+value = 1.0
+suffix = "×"
+
+[node name="DepthLabel" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/ClipMotion/MotionFields"]
+layout_mode = 2
+text = "Depth"
+
+[node name="DepthSlider" type="HSlider" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/ClipMotion/MotionFields"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+accessibility_name = "Depth slider"
+min_value = 0.1
+max_value = 4.0
+value = 1.0
+step = 0.01
+
+[node name="Depth" type="SpinBox" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/ClipMotion/MotionFields"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(98, 0)
+layout_mode = 2
+tooltip_text = "Scale camera Z motion around the center of each socket path."
+accessibility_name = "Path depth"
+min_value = 0.1
+max_value = 4.0
+step = 0.01
+value = 1.0
+suffix = "×"
+
+[node name="CameraOffsetLabel" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/ClipMotion/MotionFields"]
+layout_mode = 2
+text = "Camera offset"
+
+[node name="CameraOffsetSlider" type="HSlider" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/ClipMotion/MotionFields"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+accessibility_name = "Camera offset slider"
+min_value = -2.0
+max_value = 2.0
+step = 0.01
+
+[node name="CameraOffset" type="SpinBox" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/ClipMotion/MotionFields"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(98, 0)
+layout_mode = 2
+tooltip_text = "Positive values move the socket paths toward the camera along camera Z."
+accessibility_name = "Camera offset"
+min_value = -2.0
+max_value = 2.0
+step = 0.01
+suffix = "m"
+
+[node name="DurationLabel" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/ClipMotion/MotionFields"]
+layout_mode = 2
+text = "Duration"
+
+[node name="DurationSlider" type="HSlider" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/ClipMotion/MotionFields"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+accessibility_name = "Duration slider"
+min_value = 0.01
+max_value = 6.0
+value = 1.0
+step = 0.01
+
+[node name="Duration" type="SpinBox" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/Inspector/Scroll/Inset/Settings/ClipMotion/MotionFields"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(98, 0)
+layout_mode = 2
+tooltip_text = "Set the total animation duration in seconds."
+accessibility_name = "Animation duration"
+min_value = 0.001
+max_value = 600.0
+step = 0.001
+value = 1.0
+allow_greater = true
+suffix = "s"
+
+[node name="TrackDetails" type="VBoxContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 102)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+
+[node name="DetailsHeader" type="PanelContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails"]
+layout_mode = 2
+theme_type_variation = &"TweakerInspectorHeader"
+
+[node name="DetailsHeading" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/DetailsHeader"]
+layout_mode = 2
+text = "Details"
+theme_type_variation = &"TweakerHeading"
+
+[node name="Scroll" type="ScrollContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails"]
+layout_mode = 2
+size_flags_vertical = 3
+follow_focus = true
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 4
+
+[node name="Inset" type="MarginContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 9
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 9
+
+[node name="TrackDetailsEmpty" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Select a marker, notify, or curve to edit its properties."
+autowrap_mode = 3
+theme_type_variation = &"TweakerMuted"
+
+[node name="TrackEditFields" type="VBoxContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="TrackSelectionType" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"TweakerSubheading"
+
+[node name="TrackNameRow" type="HBoxContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="Label" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields/TrackNameRow"]
+custom_minimum_size = Vector2(96, 0)
+layout_mode = 2
+text = "Name"
+theme_type_variation = &"TweakerMuted"
+
+[node name="TrackItemName" type="LineEdit" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields/TrackNameRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+accessibility_name = "Track or notify name"
+
+[node name="TrackColorRow" type="HBoxContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="Label" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields/TrackColorRow"]
+custom_minimum_size = Vector2(96, 0)
+layout_mode = 2
+text = "Color"
+theme_type_variation = &"TweakerMuted"
+
+[node name="TrackItemColor" type="ColorPickerButton" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields/TrackColorRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+edit_alpha = false
+accessibility_name = "Track item color"
+
+[node name="TrackTimeRow" type="HBoxContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="TrackTimeLabel" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields/TrackTimeRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 0)
+layout_mode = 2
+text = "Time"
+theme_type_variation = &"TweakerMuted"
+
+[node name="TrackItemTime" type="SpinBox" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields/TrackTimeRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+step = 0.000001
+suffix = "s"
+accessibility_name = "Track item time in seconds"
+
+[node name="TrackEndRow" type="HBoxContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="Label" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields/TrackEndRow"]
+custom_minimum_size = Vector2(96, 0)
+layout_mode = 2
+text = "End"
+theme_type_variation = &"TweakerMuted"
+
+[node name="TrackItemEnd" type="SpinBox" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields/TrackEndRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+step = 0.000001
+suffix = "s"
+accessibility_name = "Notify state end time in seconds"
+
+[node name="TrackValueRow" type="HBoxContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="Label" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields/TrackValueRow"]
+custom_minimum_size = Vector2(96, 0)
+layout_mode = 2
+text = "Value"
+theme_type_variation = &"TweakerMuted"
+
+[node name="TrackItemValue" type="SpinBox" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields/TrackValueRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = -1.0
+max_value = 1.0
+allow_greater = true
+allow_lesser = true
+step = 0.001
+accessibility_name = "Float curve key value"
+
+[node name="TrackInterpolationRow" type="HBoxContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="Label" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields/TrackInterpolationRow"]
+custom_minimum_size = Vector2(96, 0)
+layout_mode = 2
+text = "Interpolation"
+theme_type_variation = &"TweakerMuted"
+
+[node name="TrackInterpolation" type="OptionButton" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields/TrackInterpolationRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+accessibility_name = "Float curve key interpolation"
+
+[node name="TrackWeightedRow" type="HBoxContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="Label" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields/TrackWeightedRow"]
+custom_minimum_size = Vector2(96, 0)
+layout_mode = 2
+text = "Tangents"
+theme_type_variation = &"TweakerMuted"
+
+[node name="TrackWeighted" type="CheckBox" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/SidebarSplit/TrackDetails/Scroll/Inset/TrackEditFields/TrackWeightedRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Weighted"
+tooltip_text = "Let tangent handle length control the influence on the curve."
+accessibility_name = "Weighted curve tangents"
+
+[node name="InspectorFooter" type="PanelContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody"]
+layout_mode = 2
+theme_type_variation = &"TweakerInspectorFooter"
+
+[node name="Draft" type="VBoxContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/InspectorFooter"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="Status" type="Label" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/InspectorFooter/Draft"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"TweakerMuted"
+
+[node name="SetSocketKey" type="Button" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/InspectorFooter/Draft"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+tooltip_text = "Record this socket pose at the current playhead time."
+text = "Set Key"
+theme_type_variation = &"TweakerPrimaryButton"
+
+[node name="Actions" type="HBoxContainer" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/InspectorFooter/Draft"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Reset" type="Button" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/InspectorFooter/Draft/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Reset"
+theme_type_variation = &"TweakerQuietButton"
+
+[node name="Apply" type="Button" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/InspectorFooter/Draft/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Apply"
+theme_type_variation = &"TweakerPrimaryButton"
+
+[node name="SaveAs" type="Button" parent="Shell/Workspace/Columns/Sidebar/SidebarBody/InspectorFooter/Draft/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Save As…"
+
+[node name="PreviewPane" type="PanelContainer" parent="Shell/Workspace/Columns"]
+layout_mode = 2
+theme_type_variation = &"TweakerPane"
+size_flags_horizontal = 3
+
+[node name="Preview" type="VBoxContainer" parent="Shell/Workspace/Columns/PreviewPane"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="ViewportToolbar" type="PanelContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"TweakerInset"
+
+[node name="ViewOptions" type="HFlowContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/ViewportToolbar"]
+layout_mode = 2
+last_wrap_alignment = 3
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 4
+
+[node name="Overlays" type="HBoxContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/ViewportToolbar/ViewOptions"]
+layout_mode = 2
+theme_override_constants/separation = 6
+size_flags_horizontal = 3
+
+[node name="PreviewHeading" type="Label" parent="Shell/Workspace/Columns/PreviewPane/Preview/ViewportToolbar/ViewOptions/Overlays"]
+layout_mode = 2
+text = "Preview"
+theme_type_variation = &"TweakerHeading"
+
+[node name="OverlayDivider" type="VSeparator" parent="Shell/Workspace/Columns/PreviewPane/Preview/ViewportToolbar/ViewOptions/Overlays"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="ShowSockets" type="CheckBox" parent="Shell/Workspace/Columns/PreviewPane/Preview/ViewportToolbar/ViewOptions/Overlays"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Sockets"
+tooltip_text = "Show weapon socket markers."
+
+[node name="ShowTrails" type="CheckBox" parent="Shell/Workspace/Columns/PreviewPane/Preview/ViewportToolbar/ViewOptions/Overlays"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Trails"
+tooltip_text = "Show weapon socket motion trails."
+
+[node name="OnionTools" type="HBoxContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/ViewportToolbar/ViewOptions"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="OnionSkin" type="CheckBox" parent="Shell/Workspace/Columns/PreviewPane/Preview/ViewportToolbar/ViewOptions/OnionTools"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Onion Skin"
+tooltip_text = "Show neighboring animation poses as tinted ghosts."
+
+[node name="OnionOptions" type="MenuButton" parent="Shell/Workspace/Columns/PreviewPane/Preview/ViewportToolbar/ViewOptions/OnionTools"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(28, 0)
+text = "▾"
+tooltip_text = "Onion skinning options."
+accessibility_name = "Onion skinning options"
+flat = false
+theme_type_variation = &"TweakerQuietButton"
+
+[node name="ShowComparison" type="Button" parent="Shell/Workspace/Columns/PreviewPane/Preview/ViewportToolbar/ViewOptions"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+text = "Compare"
+tooltip_text = "Show a second clip with an independent timeline."
+accessibility_name = "Compare animation clips"
+theme_type_variation = &"TweakerCompareButton"
+
+[node name="Tools" type="HBoxContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/ViewportToolbar/ViewOptions"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="GizmoLabel" type="Label" parent="Shell/Workspace/Columns/PreviewPane/Preview/ViewportToolbar/ViewOptions/Tools"]
+layout_mode = 2
+text = "Gizmo"
+theme_type_variation = &"TweakerMuted"
+
+[node name="GizmoMode" type="OptionButton" parent="Shell/Workspace/Columns/PreviewPane/Preview/ViewportToolbar/ViewOptions/Tools"]
+unique_name_in_owner = true
+layout_mode = 2
+accessibility_name = "Sword gizmo mode"
+item_count = 3
+selected = 0
+popup/item_0/text = "Move"
+popup/item_0/id = 0
+popup/item_1/text = "Rotate"
+popup/item_1/id = 1
+popup/item_2/text = "Hide"
+popup/item_2/id = 2
+
+[node name="HistoryDivider" type="VSeparator" parent="Shell/Workspace/Columns/PreviewPane/Preview/ViewportToolbar/ViewOptions/Tools"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="UndoDraft" type="Button" parent="Shell/Workspace/Columns/PreviewPane/Preview/ViewportToolbar/ViewOptions/Tools"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 0)
+layout_mode = 2
+tooltip_text = "Undo draft edit (Ctrl+Z)"
+accessibility_name = "Undo draft edit"
+disabled = true
+text = "Undo"
+theme_type_variation = &"TweakerQuietButton"
+
+[node name="RedoDraft" type="Button" parent="Shell/Workspace/Columns/PreviewPane/Preview/ViewportToolbar/ViewOptions/Tools"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 0)
+layout_mode = 2
+tooltip_text = "Redo draft edit (Ctrl+Shift+Z)"
+accessibility_name = "Redo draft edit"
+disabled = true
+text = "Redo"
+theme_type_variation = &"TweakerQuietButton"
+
+[node name="TimelineSplit" type="VSplitContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 7
+
+[node name="Stage" type="PanelContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit"]
+layout_mode = 2
+theme_type_variation = &"TweakerStage"
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.65
+
+[node name="Framing" type="AspectRatioContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Stage"]
+custom_minimum_size = Vector2(320, 180)
+layout_mode = 2
+size_flags_vertical = 3
+ratio = 1.7777778
+
+[node name="ViewportContainer" type="SubViewportContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Stage/Framing"]
+layout_mode = 2
+stretch = true
+
+[node name="PreviewViewport" type="SubViewport" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Stage/Framing/ViewportContainer"]
+unique_name_in_owner = true
+own_world_3d = true
+size = Vector2i(640, 360)
+render_target_update_mode = 0
+
+[node name="PreviewCrosshair" type="Control" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Stage/Framing/ViewportContainer"]
+unique_name_in_owner = true
+visible = false
+z_index = 2
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -7.0
+offset_top = -7.0
+offset_right = 7.0
+offset_bottom = 7.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="HorizontalShadow" type="ColorRect" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Stage/Framing/ViewportContainer/PreviewCrosshair"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 5.0
+offset_right = 14.0
+offset_bottom = 9.0
+mouse_filter = 2
+color = Color(0.02, 0.02, 0.02, 0.78)
+
+[node name="VerticalShadow" type="ColorRect" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Stage/Framing/ViewportContainer/PreviewCrosshair"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 0.0
+offset_right = 9.0
+offset_bottom = 14.0
+mouse_filter = 2
+color = Color(0.02, 0.02, 0.02, 0.78)
+
+[node name="Horizontal" type="ColorRect" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Stage/Framing/ViewportContainer/PreviewCrosshair"]
+layout_mode = 0
+offset_left = 1.0
+offset_top = 6.5
+offset_right = 13.0
+offset_bottom = 7.5
+mouse_filter = 2
+color = Color(0.95, 0.96, 0.98, 0.94)
+
+[node name="Vertical" type="ColorRect" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Stage/Framing/ViewportContainer/PreviewCrosshair"]
+layout_mode = 0
+offset_left = 6.5
+offset_top = 1.0
+offset_right = 7.5
+offset_bottom = 13.0
+mouse_filter = 2
+color = Color(0.95, 0.96, 0.98, 0.94)
+
+[node name="SwordGizmo" type="Control" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Stage/Framing/ViewportContainer"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("2_sword_gizmo")
+
+[node name="Footer" type="PanelContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 118)
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"TweakerInset"
+
+[node name="Transport" type="VBoxContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PreviewHint" type="Label" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 2
+autowrap_mode = 3
+theme_type_variation = &"TweakerMuted"
+
+[node name="PlaybackControls" type="HBoxContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Play" type="Button" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/PlaybackControls"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+toggle_mode = true
+text = "Play Clip"
+tooltip_text = "Play or pause the selected clip in the preview."
+theme_type_variation = &"TweakerPrimaryButton"
+custom_minimum_size = Vector2(108, 0)
+
+[node name="TimeReadout" type="Label" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/PlaybackControls"]
+layout_mode = 2
+text = "0.000 / 1.100 s"
+unique_name_in_owner = true
+custom_minimum_size = Vector2(152, 0)
+mouse_filter = 2
+accessibility_name = "Current and total clip time"
+theme_type_variation = &"TweakerTimeReadout"
+
+[node name="PlaybackMode" type="OptionButton" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/PlaybackControls"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+accessibility_name = "Preview playback mode"
+
+[node name="TimelineSpace" type="Control" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/PlaybackControls"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Zoom" type="HBoxContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/PlaybackControls"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TimelineZoomOut" type="Button" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/PlaybackControls/Zoom"]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+size_flags_vertical = 4
+tooltip_text = "Zoom out on the timeline."
+accessibility_name = "Zoom out on timeline"
+text = "−"
+
+[node name="TimelineZoomIn" type="Button" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/PlaybackControls/Zoom"]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+size_flags_vertical = 4
+tooltip_text = "Zoom in on the timeline."
+accessibility_name = "Zoom in on timeline"
+text = "+"
+
+[node name="TimelineFit" type="Button" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/PlaybackControls/Zoom"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+tooltip_text = "Show the full clip on the timeline."
+accessibility_name = "Fit timeline to clip"
+text = "Fit"
+custom_minimum_size = Vector2(30, 0)
+
+[node name="PlaybackRegion" type="HFlowContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 6
+
+[node name="InControls" type="HBoxContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/PlaybackRegion"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="InLabel" type="Label" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/PlaybackRegion/InControls"]
+layout_mode = 2
+text = "In"
+theme_type_variation = &"TweakerMuted"
+
+[node name="LoopStart" type="SpinBox" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/PlaybackRegion/InControls"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+max_value = 1.0
+step = 0.000001
+suffix = "s"
+accessibility_name = "Loop region start in seconds"
+
+[node name="SetLoopStart" type="Button" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/PlaybackRegion/InControls"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Set In"
+tooltip_text = "Set the loop start to the current playhead time."
+accessibility_name = "Set loop start from playhead"
+
+[node name="OutControls" type="HBoxContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/PlaybackRegion"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="OutLabel" type="Label" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/PlaybackRegion/OutControls"]
+layout_mode = 2
+text = "Out"
+theme_type_variation = &"TweakerMuted"
+
+[node name="LoopEnd" type="SpinBox" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/PlaybackRegion/OutControls"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+max_value = 1.0
+step = 0.000001
+value = 1.0
+suffix = "s"
+accessibility_name = "Loop region end in seconds"
+
+[node name="SetLoopEnd" type="Button" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/PlaybackRegion/OutControls"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Set Out"
+tooltip_text = "Set the loop end to the current playhead time."
+accessibility_name = "Set loop end from playhead"
+
+[node name="TrackToolbar" type="HFlowContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 6
+
+[node name="AddTrack" type="MenuButton" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/TrackToolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "+ Track"
+tooltip_text = "Add a notify track, a float curve, or a saved curve preset."
+accessibility_name = "Add animation track"
+
+[node name="AddClipMarker" type="Button" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/TrackToolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "+ Marker"
+tooltip_text = "Add a named Tweaker marker at the current playhead (M)."
+accessibility_name = "Add clip marker at the playhead"
+
+[node name="CurveKeyMode" type="MenuButton" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/TrackToolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Key Mode"
+tooltip_text = "Set interpolation for the selected curve keys."
+accessibility_name = "Selected curve key mode"
+
+[node name="CurveMoveAxis" type="OptionButton" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/TrackToolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+tooltip_text = "Restrict movement of curve keys to time or value."
+accessibility_name = "Curve movement axis"
+
+[node name="BlendNeighbor" type="HBoxContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/TrackToolbar"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="Label" type="Label" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/TrackToolbar/BlendNeighbor"]
+layout_mode = 2
+text = "Blend Neighbor"
+theme_type_variation = &"TweakerMuted"
+
+[node name="CurveBlend" type="HSlider" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/TrackToolbar/BlendNeighbor"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(124, 0)
+layout_mode = 2
+size_flags_vertical = 4
+min_value = -1.0
+max_value = 1.0
+step = 0.01
+value = 0.0
+editable = false
+scrollable = false
+tick_count = 9
+ticks_on_borders = true
+tooltip_text = "Blend selected key values toward their preceding neighbor on the left or following neighbor on the right."
+accessibility_name = "Blend Neighbor amount"
+
+[node name="CurveBlendValue" type="Label" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/TrackToolbar/BlendNeighbor"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(34, 0)
+text = "0.00"
+horizontal_alignment = 2
+theme_type_variation = &"TweakerTimeReadout"
+
+[node name="TimelineBody" type="VBoxContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+
+[node name="Time" type="Range" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/TimelineBody"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 2
+clip_contents = true
+tooltip_text = "Drag to scrub. Hold Ctrl to scrub freely. Scroll to zoom, or middle-drag to pan."
+accessibility_name = "Animation playback time"
+max_value = 1.0
+step = 0.0
+script = ExtResource("1_timeline")
+theme_type_variation = &"WeaponTimeline"
+
+[node name="TrackTimeline" type="VBoxContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/TimelineBody"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+script = ExtResource("5_tracks")
+
+[node name="TrackScroll" type="ScrollContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/TimelineBody/TrackTimeline"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="TrackCanvas" type="Control" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/TimelineBody/TrackTimeline/TrackScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 2
+clip_contents = true
+accessibility_name = "Animation track timeline"
+script = ExtResource("6_track_canvas")
+
+[node name="TrackContextMenu" type="PopupMenu" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/TimelineBody/TrackTimeline"]
+unique_name_in_owner = true
+
+[node name="ComparisonLane" type="VBoxContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ComparisonDivider" type="HSeparator" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/ComparisonLane"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Header" type="HFlowContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/ComparisonLane"]
+layout_mode = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 4
+
+[node name="ClipControls" type="HBoxContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/ComparisonLane/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="ComparisonHeading" type="Label" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/ComparisonLane/Header/ClipControls"]
+layout_mode = 2
+text = "Compare"
+theme_type_variation = &"TweakerComparisonHeading"
+
+[node name="ComparisonClip" type="OptionButton" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/ComparisonLane/Header/ClipControls"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Select clip…"
+text_overrun_behavior = 5
+fit_to_longest_item = false
+custom_minimum_size = Vector2(100, 0)
+custom_maximum_size = Vector2(356, -1)
+tooltip_text = "Select the animation shown as the comparison ghost."
+accessibility_name = "Comparison animation clip"
+
+[node name="ScrubControls" type="HBoxContainer" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/ComparisonLane/Header"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ComparisonTimeReadout" type="Label" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/ComparisonLane/Header/ScrubControls"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "— / — s"
+custom_minimum_size = Vector2(134, 0)
+mouse_filter = 2
+accessibility_name = "Comparison clip current and total time"
+theme_type_variation = &"TweakerTimeReadout"
+
+[node name="ComparisonZoomOut" type="Button" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/ComparisonLane/Header/ScrubControls"]
+layout_mode = 2
+size_flags_vertical = 4
+custom_minimum_size = Vector2(26, 0)
+tooltip_text = "Zoom out on the comparison timeline."
+accessibility_name = "Zoom out on comparison timeline"
+text = "−"
+
+[node name="ComparisonZoomIn" type="Button" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/ComparisonLane/Header/ScrubControls"]
+layout_mode = 2
+size_flags_vertical = 4
+custom_minimum_size = Vector2(26, 0)
+tooltip_text = "Zoom in on the comparison timeline."
+accessibility_name = "Zoom in on comparison timeline"
+text = "+"
+
+[node name="ComparisonFit" type="Button" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/ComparisonLane/Header/ScrubControls"]
+layout_mode = 2
+size_flags_vertical = 4
+custom_minimum_size = Vector2(26, 0)
+tooltip_text = "Show the full comparison clip on its timeline."
+accessibility_name = "Fit comparison timeline to clip"
+text = "Fit"
+
+[node name="ComparisonTime" type="Range" parent="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/ComparisonLane"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 2
+clip_contents = true
+tooltip_text = "Scrub the comparison clip. Hold Ctrl to scrub freely. Scroll to zoom, or middle-drag to pan."
+accessibility_name = "Comparison animation time"
+max_value = 1.0
+step = 0.0
+script = ExtResource("1_timeline")
+theme_type_variation = &"WeaponComparisonTimeline"
+editable = false
+readout_path = NodePath("%ComparisonTimeReadout")
+
+[connection signal="pressed" from="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/ComparisonLane/Header/ScrubControls/ComparisonZoomOut" to="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/ComparisonLane/ComparisonTime" method="zoom_out"]
+[connection signal="pressed" from="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/ComparisonLane/Header/ScrubControls/ComparisonZoomIn" to="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/ComparisonLane/ComparisonTime" method="zoom_in"]
+[connection signal="pressed" from="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/ComparisonLane/Header/ScrubControls/ComparisonFit" to="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/ComparisonLane/ComparisonTime" method="fit"]
+[connection signal="pressed" from="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/PlaybackControls/Zoom/TimelineZoomOut" to="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/TimelineBody/Time" method="zoom_out"]
+[connection signal="pressed" from="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/PlaybackControls/Zoom/TimelineZoomIn" to="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/TimelineBody/Time" method="zoom_in"]
+[connection signal="pressed" from="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/PlaybackControls/Zoom/TimelineFit" to="Shell/Workspace/Columns/PreviewPane/Preview/TimelineSplit/Footer/Transport/TimelineBody/Time" method="fit"]

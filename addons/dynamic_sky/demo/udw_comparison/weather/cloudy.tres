@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="DynamicSkyWeather" format=3 uid="uid://dciqavxolhdcy"]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="1_weather"]
+
+[resource]
+resource_name = "Cloudy"
+script = ExtResource("1_weather")
+cloud_coverage = 0.5
+fog_density = 0.0002967598
+fog_height_falloff = 0.003846966852
+fog_start_distance = 67.162661589
+fog_amount = 0.1
+rain = 0.0
+snow = 0.0
+snow_coverage_limit = 0.0
+wind = Vector2(0, 0.9375)
+gustiness = 1.0
+temperature_offset = -1.5
+metadata/source_preset = "Cloudy"
+metadata/source_wind_intensity = 2.5
+metadata/source_thunder_lightning = 0.0
+metadata/source_material_state = Vector3(0.0, 0.0, 0.0)

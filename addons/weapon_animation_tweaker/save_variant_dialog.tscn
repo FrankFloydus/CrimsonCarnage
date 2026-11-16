@@ -1,0 +1,29 @@
+[gd_scene format=3]
+
+[node name="SaveVariantDialog" type="ConfirmationDialog"]
+title = "Save Animation As"
+size = Vector2i(410, 134)
+visible = false
+transient = true
+exclusive = true
+dialog_hide_on_ok = false
+ok_button_text = "Save"
+
+[node name="Fields" type="VBoxContainer" parent="."]
+theme_override_constants/separation = 6
+
+[node name="NameLabel" type="Label" parent="Fields"]
+layout_mode = 2
+text = "Animation name"
+
+[node name="VariantName" type="LineEdit" parent="Fields"]
+unique_name_in_owner = true
+layout_mode = 2
+accessibility_name = "Animation name"
+placeholder_text = "animation_name"
+
+[node name="VariantFeedback" type="Label" parent="Fields"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+

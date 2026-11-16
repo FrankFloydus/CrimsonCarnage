@@ -1,8 +1,9 @@
-[gd_scene format=3 uid="uid://dnp0mab635kx4"]
+[gd_scene format=4 uid="uid://dnp0mab635kx4"]
 
 [ext_resource type="Material" uid="uid://b2islhbhxuylt" path="res://materials/prototype/prototype_grid.tres" id="1_grid"]
 [ext_resource type="PackedScene" uid="uid://2fbk60pr8twj" path="res://addons/dynamic_sky/dynamic_sky.tscn" id="2_0obgs"]
 [ext_resource type="PackedScene" uid="uid://bx6r2r5geskx" path="res://scenes/player/player.tscn" id="2_player"]
+[ext_resource type="Resource" uid="uid://chkoxsjxpy0di" path="res://addons/dynamic_sky/presets/storm.tres" id="3_1soop"]
 [ext_resource type="Material" uid="uid://ccdvkxtwftcuj" path="res://materials/prototype/parkour_grid.tres" id="3_parkour_grid"]
 [ext_resource type="Script" uid="uid://b0thy0f3wu642" path="res://addons/dynamic_sky/rendering/atmospheric_optics/rainbow_settings.gd" id="4_1soop"]
 [ext_resource type="PackedScene" path="res://scenes/levels/parkour_stairs.tscn" id="4_stairs"]
@@ -23,7 +24,6 @@
 [ext_resource type="CompressedTexture3D" uid="uid://bgelm4xvgsb4g" path="res://addons/dynamic_sky/rendering/color_modes/simple_sun_color.png" id="13_ghqvo"]
 [ext_resource type="Script" uid="uid://c7bow0nlk628q" path="res://scripts/levels/playground.gd" id="13_playground"]
 [ext_resource type="Texture2D" uid="uid://cy287dfv7p53w" path="res://addons/dynamic_sky/rendering/cloud_modes/static_cloud_dome_lighting.png" id="14_882tv"]
-[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/blizzard.tres" id="14_rkli7"]
 
 [sub_resource type="Resource" id="Resource_kfa7q"]
 script = ExtResource("4_1soop")
@@ -39,12 +39,24 @@ shader_parameter/moon_direction = Vector3(0.5, -0.7094065, -0.49673176)
 shader_parameter/moon_phase = 0.5
 shader_parameter/star_rotation = Basis(1, 0, 0, 0, 1, 0, 0, 0, 1)
 shader_parameter/cloud_observer_position_km = Vector3(0, 0.00167, 0.017)
+shader_parameter/night_storm_irradiance = 1.0
+shader_parameter/daylight_cloud_transport = 0.0
+shader_parameter/daylight_cloud_distant_sky = Vector3(0.06722303, 0.12187913, 0.22772019)
 shader_parameter/lightning_flash = 0.0
 shader_parameter/lightning_direction = Vector3(0, 0, 0)
 shader_parameter/lightning_position_km = Vector3(0, 0, 0)
 shader_parameter/lightning_radius_km = 0.41
 shader_parameter/lightning_cloud_strength = 0.78
 shader_parameter/dust_density = 0.0
+shader_parameter/daylight_dust_scattering_scale = 1.0
+shader_parameter/moonlit_dust_fog_radiance = Vector3(0, 0, 0)
+shader_parameter/moonlit_dust_fog_weight = 0.0
+shader_parameter/horizon_fog_radiance = Vector3(0.12151636, 0.15682903, 0.21990901)
+shader_parameter/horizon_fog_strength = 0.94
+shader_parameter/horizon_fog_direction_y_range = Vector2(0.19, 0.58)
+shader_parameter/daylight_visibility_haze_weight = 0.0
+shader_parameter/daylight_visibility_horizon_radiance = Vector3(0.3, 0.39, 0.57)
+shader_parameter/daylight_visibility_zenith_radiance = Vector3(0.28, 0.36, 0.54)
 shader_parameter/atmosphere_view = ExtResource("7_q3yie")
 shader_parameter/atmosphere_transmittance = ExtResource("6_0obgs")
 shader_parameter/atmosphere_exposure = 0.52
@@ -69,6 +81,17 @@ shader_parameter/cloud_base_km = 0.6
 shader_parameter/cloud_thickness_km = 0.7
 shader_parameter/cloud_extinction = 10.0
 shader_parameter/low_cloud_scale = 2.4
+shader_parameter/radial_cloud_cell_count = 0
+shader_parameter/radial_cloud_cells = PackedVector4Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/radial_cloud_cell_values = PackedVector4Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/cloud_formation_texture_scale = 1.0
+shader_parameter/cloud_formation_phase = 0.37
+shader_parameter/cloud_formation_z_shift = 0.0
+shader_parameter/cloud_erosion_scale = 0.9
+shader_parameter/cloud_erosion_intensity = 1.2
+shader_parameter/cloud_high_frequency_amount = 0.24
+shader_parameter/cloud_macro_variation = 0.16
+shader_parameter/cloud_macro_scale = 1.3
 shader_parameter/aurora_intensity = 0.0
 shader_parameter/aurora_azimuth_degrees = 0.0
 shader_parameter/aurora_distance_km = 480.0
@@ -85,7 +108,7 @@ shader_parameter/planet_radius_degrees = 0.0
 shader_parameter/planet_color = Color(0.85, 0.63, 0.42, 1)
 shader_parameter/planet_ring_tilt = 24.0
 shader_parameter/planet_ring_opacity = 0.68
-shader_parameter/cloud_mode = 0
+shader_parameter/cloud_mode = 3
 shader_parameter/static_cloud_altitude_km = 1.25
 shader_parameter/static_cloud_scale = 1.0
 shader_parameter/sky_color_mode = 0
@@ -104,7 +127,7 @@ shader_parameter/simple_cloud_day_ambient = Color(0.34, 0.43, 0.58, 1)
 shader_parameter/simple_cloud_twilight_ambient = Color(0.16, 0.18, 0.32, 1)
 shader_parameter/simple_cloud_night_ambient = Color(0.012, 0.02, 0.044, 1)
 shader_parameter/rainbow_enabled = true
-shader_parameter/rainbow_strength = 0.015950000345706938
+shader_parameter/rainbow_strength = 0.02990625064820051
 shader_parameter/rainbow_cloud_transmission = 0.0
 shader_parameter/rainbow_exposure = 1.0
 shader_parameter/rainbow_primary_angle_degrees = 42.0
@@ -112,6 +135,17 @@ shader_parameter/rainbow_primary_width_degrees = 2.0
 shader_parameter/rainbow_secondary_strength = 0.28
 shader_parameter/rainbow_secondary_angle_degrees = 51.0
 shader_parameter/rainbow_secondary_width_degrees = 2.5
+shader_parameter/stylized_weather_enabled = false
+shader_parameter/stylized_day_zenith = Vector3(0, 0, 0)
+shader_parameter/stylized_day_horizon = Vector3(0, 0, 0)
+shader_parameter/stylized_night_zenith = Vector3(0, 0, 0)
+shader_parameter/stylized_night_horizon = Vector3(0, 0, 0)
+shader_parameter/stylized_twilight = Vector3(0, 0, 0)
+shader_parameter/stylized_cloud_shade = Vector3(0, 0, 0)
+shader_parameter/stylized_cloud_light = Vector3(0, 0, 0)
+shader_parameter/stylized_aurora_strength = 0.0
+shader_parameter/stylized_aurora_azimuth = 0.0
+shader_parameter/stylized_aurora_scroll = 0.0
 shader_parameter/dynamic_2d_cloud_map = ExtResource("11_35ntd")
 shader_parameter/dynamic_2d_base_km = 1.25
 shader_parameter/dynamic_2d_scale = 1.25
@@ -122,6 +156,7 @@ shader_parameter/dynamic_2d_upper_opacity = 0.24
 shader_parameter/static_cloud_dome_map = ExtResource("14_882tv")
 shader_parameter/static_cloud_yaw_degrees = 0.0
 shader_parameter/static_cloud_opacity = 1.0
+shader_parameter/clear_wisp_amount = 0.0
 
 [sub_resource type="Sky" id="Sky_sf41h"]
 resource_local_to_scene = true
@@ -141,10 +176,10 @@ sdfgi_enabled = true
 glow_enabled = true
 glow_intensity = 0.23
 fog_enabled = true
-fog_light_color = Color(0.48, 0.54, 0.63, 1)
-fog_density = 0.042
-fog_aerial_perspective = 0.06
-fog_sky_affect = 0.9251198
+fog_light_color = Color(0.38337955, 0.43254364, 0.50628966, 1)
+fog_density = 0.0098
+fog_aerial_perspective = 0.28
+fog_sky_affect = 0.65680534
 volumetric_fog_enabled = true
 volumetric_fog_density = 0.00035
 volumetric_fog_gi_inject = 0.0
@@ -244,7 +279,9 @@ data = PackedVector3Array(0, 0.59999996, 0.39999998, 0.19999999, 0.59999996, 0.3
 script = ExtResource("13_playground")
 
 [node name="DynamicSky" parent="." unique_id=516336137 instance=ExtResource("2_0obgs")]
-start_weather = ExtResource("14_rkli7")
+start_weather = ExtResource("3_1soop")
+stylized_weather_library = null
+cloud_mode = 3
 volumetric_quality = 1
 rainbow_settings = SubResource("Resource_kfa7q")
 snow_settings = null

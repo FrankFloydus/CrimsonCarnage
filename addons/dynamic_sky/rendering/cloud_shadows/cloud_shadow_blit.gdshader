@@ -1,13 +1,15 @@
 shader_type texture_blit;
 render_mode blend_disabled;
 
+uniform vec3 sun_direction = vec3(0.0, 0.7071068, -0.7071068);
+
+#define CLOUD_WORLD_SHADOW
 #include "res://addons/dynamic_sky/rendering/cloud_density.gdshaderinc"
 #include "res://addons/dynamic_sky/rendering/cloud_modes/dynamic_2d_cloud_field.gdshaderinc"
 
 uniform vec3 projector_center_km = vec3(0.0);
 uniform vec3 projector_right = vec3(1.0, 0.0, 0.0);
 uniform vec3 projector_up = vec3(0.0, 1.0, 0.0);
-uniform vec3 sun_direction = vec3(0.0, 0.7071068, -0.7071068);
 uniform float projector_size_km = 6.0;
 uniform int samples_per_ray = 12;
 uniform float shadow_strength = 1.0;
@@ -27,7 +29,7 @@ float volume_optical_depth(vec3 origin) {
 			float distance = interval.x + (float(index) + 0.5) * step_length;
 			vec3 point = origin + sun_direction * distance;
 			vec2 weather = cloud_coverage_at(point);
-			float density = cloud_density_at(point, altitude_at(point), weather, true);
+			float density = cloud_density_at(point, altitude_at(point), weather, false);
 			optical_depth += density * cloud_extinction * step_length;
 			if (optical_depth >= 7.0) {
 				break;
@@ -74,7 +76,7 @@ void blit() {
 	vec3 origin = projector_center_km + projector_right * plane.x + projector_up * plane.y;
 	float fade = smoothstep(0.035, 0.13, sun_direction.y) * shadow_strength;
 	float transmission = 1.0;
-	bool has_clouds = cloud_coverage > 0.0;
+	bool has_clouds = shadow_cloud_mode == 0 ? cloud_volume_may_exist() : cloud_coverage > 0.0;
 	if (fade > 0.0 && has_clouds) {
 		// Points along this sunlight ray share one texel. Start at the rig's sea-level plane.
 		origin -= sun_direction * (origin.y / sun_direction.y);

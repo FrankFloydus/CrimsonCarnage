@@ -9,10 +9,31 @@ extends Resource
 		cloud_coverage = clampf(value, 0.0, 1.0)
 		emit_changed()
 
+## Blends in source-calibrated atmosphere scattering and material emission inside daylight volumetric clouds.
+## Zero retains the sky material's ordinary cloud lighting. Camera exposure and scene lights remain authored separately.
+@export_range(0.0, 1.0, 0.01) var daylight_cloud_transport: float = 0.0:
+	set(value):
+		daylight_cloud_transport = clampf(value, 0.0, 1.0) if is_finite(value) else 0.0
+		emit_changed()
+
 ## Exponential distance fog density. Zero disables distance fog.
 @export_range(0.0, 0.1, 0.0001, "or_greater") var fog_density: float = 0.0:
 	set(value):
 		fog_density = maxf(value, 0.0)
+		emit_changed()
+
+## Integrated fog's vertical extinction falloff in inverse meters. Zero gives uniform density with altitude.
+## Used when the DynamicSky rig drives native height fog from this weather profile.
+@export_range(0.0, 0.1, 0.000001, "or_greater", "suffix:m⁻¹") var fog_height_falloff: float = 0.0:
+	set(value):
+		fog_height_falloff = maxf(value, 0.0) if is_finite(value) else 0.0
+		emit_changed()
+
+## Fog-free distance along each camera ray, in meters, before native integrated fog begins.
+## Used when the DynamicSky rig drives native height fog from this weather profile.
+@export_range(0.0, 4000.0, 0.01, "or_greater", "suffix:m") var fog_start_distance: float = 0.0:
+	set(value):
+		fog_start_distance = maxf(value, 0.0) if is_finite(value) else 0.0
 		emit_changed()
 
 ## Normalized weather fog strength for atmospheric effects, from zero to source Fog 10.
@@ -80,7 +101,10 @@ extends Resource
 func sample() -> Dictionary[StringName, Variant]:
 	return {
 		&"cloud_coverage": cloud_coverage,
+		&"daylight_cloud_transport": daylight_cloud_transport,
 		&"fog_density": fog_density,
+		&"fog_height_falloff": fog_height_falloff,
+		&"fog_start_distance": fog_start_distance,
 		&"fog_amount": fog_amount,
 		&"rain": rain,
 		&"snow": snow,

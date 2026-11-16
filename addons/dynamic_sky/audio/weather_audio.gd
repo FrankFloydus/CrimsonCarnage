@@ -2,6 +2,11 @@ extends Node3D
 ## Mixes spatial weather beds and propagating thunder for the local listener.
 
 const THUNDER_VOICE := preload("res://addons/dynamic_sky/audio/thunder_voice.tscn")
+const CARDINAL_WEATHER_BEDS := preload("res://addons/dynamic_sky/audio/cardinal_weather_beds.tscn")
+const WeatherAudioPortal := preload("res://addons/dynamic_sky/audio/weather_audio_portal.gd")
+const WeatherState := preload("res://addons/dynamic_sky/weather/weather_state.gd")
+const CardinalOcclusion := preload("res://addons/dynamic_sky/audio/cardinal_occlusion.gd")
+const CardinalWeatherBeds := preload("res://addons/dynamic_sky/audio/cardinal_weather_beds.gd")
 const SILENT_GAIN := 0.0001
 const AUDIBLE_INTENSITY := 0.001
 const RAY_SAMPLES: Array[float] = [0.0, -1.0, 1.0]
@@ -12,13 +17,22 @@ const RAY_SAMPLES: Array[float] = [0.0, -1.0, 1.0]
 ## Physics layers that block the path from outdoor sound to the listener. Zero ignores shelter.
 @export_flags_3d_physics var occlusion_mask: int = 1
 
-## How far roof and upwind rays search for shelter, in meters.
+## Enables directional Rain and Wind beds and a 48-ray shelter sample every 0.55 seconds.
+@export var use_cardinal_occlusion: bool = false:
+	set(value):
+		if use_cardinal_occlusion == value:
+			return
+		use_cardinal_occlusion = value
+		_probe_remaining = 0.0
+		_cardinal_mix_initialized = false
+
+## How far the default roof and upwind rays search for shelter, in meters.
 @export_range(1.0, 100.0, 0.5, "suffix:m") var cover_probe_distance: float = 24.0
 
 ## Spacing of neighboring cover rays, in meters. Larger values soften the transition at edges.
 @export_range(0.1, 3.0, 0.05, "suffix:m") var cover_probe_spread: float = 0.55
 
-## Real seconds between cover samples.
+## Real seconds between samples in the default roof and upwind mode.
 @export_range(0.05, 1.0, 0.01, "suffix:s") var cover_sample_interval: float = 0.12
 
 ## Real seconds for weather and shelter changes to settle in the mix.
@@ -33,15 +47,32 @@ const RAY_SAMPLES: Array[float] = [0.0, -1.0, 1.0]
 ## Maximum distance from which thunder can be heard, in meters.
 @export_range(50.0, 10000.0, 10.0, "or_greater", "suffix:m") var thunder_range: float = 6400.0
 
+
+class PortalOpenings:
+	var legacy: Vector2 = Vector2.ZERO
+	var cardinal: Vector4 = Vector4.ZERO
+
+
 var _wind: Vector2 = Vector2.ZERO
+var _source_wind_strength: float = 0.0
+var _wind_gust: float = 1.0
 var _intensity: Vector4 = Vector4.ZERO
 var _mixed_intensity: Vector4 = Vector4.ZERO
 var _cover: Vector2 = Vector2.ZERO
 var _target_cover: Vector2 = Vector2.ZERO
+var _cardinal_cover: Vector4 = Vector4.ZERO
+var _target_cardinal_cover: Vector4 = Vector4.ZERO
+var _rain_portal_openness: float = 0.0
+var _target_rain_portal_openness: float = 0.0
+var _close_rain_cover: float = 0.0
+var _target_close_rain_cover: float = 0.0
+var _cardinal_mix_initialized: bool = false
 var _probe_remaining: float = 0.0
 var _listener_id: int = 0
 var _tree_generation: int = 0
 var _underwater: bool = false
+var _cardinal_sampler: CardinalOcclusion
+var _cardinal_beds: CardinalWeatherBeds
 var _open_players: Array[AudioStreamPlayer3D] = []
 var _sheltered_players: Array[AudioStreamPlayer3D] = []
 var _open_gain: Array[float] = []
@@ -71,6 +102,8 @@ func _exit_tree() -> void:
 	for index in _open_players.size():
 		_open_players[index].stop()
 		_sheltered_players[index].stop()
+	if is_instance_valid(_cardinal_beds):
+		_cardinal_beds.stop_beds()
 	for voice in get_children():
 		if voice.scene_file_path != THUNDER_VOICE.resource_path:
 			continue
@@ -84,6 +117,7 @@ func _physics_process(delta: float) -> void:
 	if listener == null:
 		_listener_id = 0
 		_mixed_intensity = Vector4.ZERO
+		_cardinal_mix_initialized = false
 		_update_beds()
 		return
 
@@ -95,13 +129,22 @@ func _physics_process(delta: float) -> void:
 	var new_listener := listener.get_instance_id() != _listener_id
 	if _underwater:
 		_target_cover = Vector2.ONE
+		_target_cardinal_cover = Vector4.ONE
+		_target_rain_portal_openness = 0.0
+		_target_close_rain_cover = 1.0
 	elif _intensity != Vector4.ZERO or _mixed_intensity.length_squared() > AUDIBLE_INTENSITY:
 		_probe_remaining -= delta
 		if _probe_remaining <= 0.0 or new_listener:
 			_target_cover = _sample_cover(listener, upwind)
-			if new_listener or _mixed_intensity.is_zero_approx():
+			var snap := new_listener or _mixed_intensity.is_zero_approx()
+			if snap:
 				_cover = _target_cover
-			_probe_remaining = cover_sample_interval
+			if use_cardinal_occlusion and (snap or not _cardinal_mix_initialized):
+				_cardinal_cover = _target_cardinal_cover
+				_rain_portal_openness = _target_rain_portal_openness
+				_close_rain_cover = _target_close_rain_cover
+				_cardinal_mix_initialized = true
+			_probe_remaining = CardinalOcclusion.UPDATE_PERIOD if use_cardinal_occlusion else cover_sample_interval
 	else:
 		_probe_remaining = 0.0
 	_listener_id = listener.get_instance_id()
@@ -109,12 +152,21 @@ func _physics_process(delta: float) -> void:
 	var blend := minf(delta / maxf(mix_response_seconds, 0.001), 1.0)
 	_cover = _cover.move_toward(_target_cover, blend)
 	_mixed_intensity = _mixed_intensity.lerp(_intensity, blend)
-	_update_beds()
+	if use_cardinal_occlusion:
+		_cardinal_cover = _cardinal_cover.lerp(_target_cardinal_cover, blend)
+		_rain_portal_openness = lerpf(_rain_portal_openness, _target_rain_portal_openness, blend)
+		_close_rain_cover = lerpf(_close_rain_cover, _target_close_rain_cover, blend)
+	_update_beds(listener.get_viewport().is_audio_listener_3d())
 
 
 ## Sets rain, snow and dust intensity from zero to one, and horizontal wind velocity in m/s.
-func apply_weather(rain: float, snow: float, dust: float, wind: Vector2) -> void:
+## Optional source strength (0–10) and longitudinal gust keep global wind cues independent of turbulence.
+func apply_weather(
+	rain: float, snow: float, dust: float, wind: Vector2, source_strength: float = -1.0, gust: float = 1.0,
+) -> void:
 	_wind = wind
+	_source_wind_strength = clampf(source_strength, 0.0, 10.0) if source_strength >= 0.0 else WeatherState.source_wind_strength(wind)
+	_wind_gust = maxf(gust, 0.0)
 	_intensity = Vector4(
 		clampf(rain, 0.0, 1.0),
 		clampf(snow, 0.0, 1.0),
@@ -133,6 +185,12 @@ func set_underwater(underwater: bool) -> void:
 	if underwater:
 		_target_cover = Vector2.ONE
 		_cover = Vector2.ONE
+		_target_cardinal_cover = Vector4.ONE
+		_cardinal_cover = Vector4.ONE
+		_target_rain_portal_openness = 0.0
+		_rain_portal_openness = 0.0
+		_target_close_rain_cover = 1.0
+		_close_rain_cover = 1.0
 	elif is_inside_tree():
 		# Re-sample the current observer immediately on the next physics update.
 		_listener_id = 0
@@ -173,15 +231,59 @@ func _directional_position(authored_offset: Vector3, upwind: Vector3) -> Vector3
 
 func _sample_cover(listener: Node3D, upwind: Vector3) -> Vector2:
 	if occlusion_mask == 0:
+		_target_cardinal_cover = Vector4.ZERO
+		_target_rain_portal_openness = 0.0
+		_target_close_rain_cover = 0.0
 		return Vector2.ZERO
 	var origin := listener.global_position
 	var exclude := _listener_colliders(listener)
+	if use_cardinal_occlusion:
+		if _cardinal_sampler == null:
+			_cardinal_sampler = CardinalOcclusion.new()
+		var openness := _cardinal_sampler.sample(get_world_3d().direct_space_state, origin, occlusion_mask, exclude)
+		var cover := Vector2(1.0 - openness.upward, 1.0 - openness.in_direction(upwind))
+		var openings := _sample_portal_openings(origin, upwind, exclude)
+		_target_cardinal_cover = (Vector4.ONE - openness.cardinal - openings.cardinal).clamp(Vector4.ZERO, Vector4.ONE)
+		_target_rain_portal_openness = minf(openings.legacy.x, 1.0)
+		var global_openness := maxf(openness.global_open + openings.legacy.x, minf(openness.upward, 0.7))
+		_target_close_rain_cover = 1.0 - minf(global_openness, 1.0)
+		return (cover - openings.legacy).clamp(Vector2.ZERO, Vector2.ONE)
 	var roof := _blocked_fraction(origin, origin + Vector3.UP * cover_probe_distance, exclude)
 	var wind_cover := roof * 0.5
 	if not upwind.is_zero_approx():
 		var end := origin + upwind * cover_probe_distance + Vector3.UP
 		wind_cover = maxf(wind_cover, _blocked_fraction(origin, end, exclude))
-	return Vector2(roof, wind_cover)
+	var cover := Vector2(roof, wind_cover)
+	if not cover.is_zero_approx():
+		cover -= _sample_portal_openings(origin, upwind, exclude).legacy
+	return cover.clamp(Vector2.ZERO, Vector2.ONE)
+
+
+func _sample_portal_openings(origin: Vector3, upwind: Vector3, exclude: Array[RID]) -> PortalOpenings:
+	var openings := PortalOpenings.new()
+	var world := get_world_3d()
+	for node in get_tree().get_nodes_in_group(WeatherAudioPortal.GROUP):
+		var portal := node as WeatherAudioPortal
+		if portal == null or portal.get_world_3d() != world:
+			continue
+		var offset := portal.global_position - origin
+		var openness := portal.openness_at(offset.length())
+		if openness.is_zero_approx():
+			continue
+		var heading := Vector3(offset.x, 0.0, offset.z).normalized()
+		var upwind_openness := openness.y * maxf(upwind.dot(heading), 0.0)
+		if not use_cardinal_occlusion and is_zero_approx(openness.x) and is_zero_approx(upwind_openness):
+			continue
+		if not offset.is_zero_approx():
+			var query := PhysicsRayQueryParameters3D.create(portal.global_position, origin, occlusion_mask, exclude)
+			query.hit_from_inside = true
+			if not world.direct_space_state.intersect_ray(query).is_empty():
+				continue
+		openings.legacy += Vector2(openness.x, upwind_openness)
+		if use_cardinal_occlusion:
+			var projection := Vector4(heading.x, -heading.x, heading.z, -heading.z)
+			openings.cardinal += openness.y * projection.max(Vector4.ZERO)
+	return openings
 
 
 func _blocked_fraction(from: Vector3, to: Vector3, exclude: Array[RID]) -> float:
@@ -212,13 +314,15 @@ func _listener_colliders(listener: Node3D) -> Array[RID]:
 	return exclude
 
 
-func _update_beds() -> void:
+func _update_beds(close_rain_enabled: bool = false) -> void:
 	for index in _emitters.size():
 		var intensity := _mixed_intensity[index]
 		var shelter := _cover.x if index < 2 else _cover.y
 		var open := _open_players[index]
 		var sheltered := _sheltered_players[index]
-		if _listener_id == 0 or (intensity <= AUDIBLE_INTENSITY and _intensity[index] <= AUDIBLE_INTENSITY):
+		var replaced_by_cardinal := use_cardinal_occlusion and (index == 0 or index == 2)
+		var dry := intensity <= AUDIBLE_INTENSITY and _intensity[index] <= AUDIBLE_INTENSITY
+		if _listener_id == 0 or replaced_by_cardinal or dry:
 			if open.playing:
 				open.stop()
 				sheltered.stop()
@@ -228,6 +332,26 @@ func _update_beds() -> void:
 		if not open.playing and intensity > AUDIBLE_INTENSITY:
 			open.play()
 			sheltered.play()
+	_update_cardinal_beds(close_rain_enabled)
+
+
+func _update_cardinal_beds(close_rain_enabled: bool) -> void:
+	if not use_cardinal_occlusion or _listener_id == 0:
+		if is_instance_valid(_cardinal_beds):
+			_cardinal_beds.stop_beds()
+		return
+	if not is_instance_valid(_cardinal_beds):
+		if maxf(_mixed_intensity.x, _mixed_intensity.z) <= AUDIBLE_INTENSITY:
+			return
+		_cardinal_beds = CARDINAL_WEATHER_BEDS.instantiate() as CardinalWeatherBeds
+		add_child(_cardinal_beds)
+		_cardinal_beds.global_basis = Basis.IDENTITY
+	_cardinal_beds.global_position = _ambience.global_position
+	var rain_cover := (_cardinal_cover - Vector4.ONE * _rain_portal_openness).max(Vector4.ZERO)
+	_cardinal_beds.apply_mix(
+		_mixed_intensity.x, _mixed_intensity.z, rain_cover, _cardinal_cover, _close_rain_cover, _wind,
+		close_rain_enabled, _source_wind_strength, _wind_gust,
+	)
 
 
 func _play_arrived_thunder(world_position: Vector3, intensity: float, generation: int) -> void:

@@ -1,0 +1,8 @@
+[gd_resource type="Curve" format=3]
+
+[resource]
+resource_local_to_scene = true
+resource_name = "Lightning Cloud Ray Envelope"
+_limits = [0.0, 1.2, 0.0, 1.0]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.117786, 0.53091), 4.75, 4.75, 0, 0, Vector2(0.2, 0.95), 1.574392, 1.574392, 0, 0, Vector2(0.328856, 0.863217), -1.75, -1.75, 0, 0, Vector2(0.6, 0.25), -1.286188, -1.286188, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 6

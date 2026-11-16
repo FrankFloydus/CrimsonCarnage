@@ -2,20 +2,36 @@ class_name FirstPersonLook
 extends Node3D
 ## Owns mouse capture, body yaw, eye pitch, and smoothed lateral camera roll.
 
+## Emitted with the applied pitch (X) and yaw (Y) change in radians after mouse input.
+signal mouse_turned(angles: Vector2)
+
 ## Character rotated around its vertical axis when the mouse moves horizontally.
 @export var body: CharacterBody3D
 ## Editable mouse sensitivity, vertical look limit, and lateral camera tilt configuration.
 @export var settings: FirstPersonLookSettings
+## Camera-local transform keyed by weapon clips and composed with procedural view motion.
+@export_storage var attack_camera_motion := Transform3D.IDENTITY:
+	set(value):
+		attack_camera_motion = value
+		if is_node_ready():
+			_apply_camera_pose()
 
 @onready var _camera: Camera3D = $Camera3D
 
 var _authored_camera_position: Vector3
+var _camera_rotation: Vector3
+var _camera_scale: Vector3
+var _stair_camera_position: Vector3
 var _stair_offset: float = 0.0
 var _stair_velocity: float = 0.0
 
 
 func _ready() -> void:
 	_authored_camera_position = _camera.position
+	_camera_rotation = _camera.rotation
+	_camera_scale = _camera.scale
+	_stair_camera_position = _authored_camera_position
+	_apply_camera_pose()
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
@@ -32,13 +48,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		get_viewport().set_input_as_handled()
 	elif event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		body.rotate_y(-deg_to_rad(event.screen_relative.x * settings.mouse_sensitivity))
+		var yaw_change := -deg_to_rad(event.screen_relative.x * settings.mouse_sensitivity)
+		body.rotate_y(yaw_change)
+		var previous_pitch := rotation.x
 		var pitch_limit := deg_to_rad(settings.pitch_limit)
 		rotation.x = clampf(
-				rotation.x - deg_to_rad(event.screen_relative.y * settings.mouse_sensitivity),
+				previous_pitch - deg_to_rad(event.screen_relative.y * settings.mouse_sensitivity),
 				-pitch_limit,
 				pitch_limit
 		)
+		mouse_turned.emit(Vector2(rotation.x - previous_pitch, yaw_change))
 		get_viewport().set_input_as_handled()
 
 
@@ -46,12 +65,13 @@ func _process(delta: float) -> void:
 	var lateral_speed := body.get_real_velocity().dot(body.global_basis.x)
 	var tilt_fraction := clampf(lateral_speed / settings.full_tilt_speed, -1.0, 1.0)
 	var target_roll := -deg_to_rad(settings.maximum_tilt) * tilt_fraction
-	_camera.rotation.z = lerpf(
-			_camera.rotation.z, target_roll, 1.0 - exp(-settings.tilt_response * delta)
+	_camera_rotation.z = lerpf(
+			_camera_rotation.z, target_roll, 1.0 - exp(-settings.tilt_response * delta)
 	)
 	if settings.stair_smoothing_time <= 0.0:
 		clear_stair_smoothing()
-	_update_stair_camera()
+	else:
+		_update_stair_camera()
 
 
 ## Advances the critically damped stair spring once per movement tick.
@@ -80,7 +100,8 @@ func advance_terrain(delta: float, height_change: float) -> void:
 func clear_stair_smoothing() -> void:
 	_stair_offset = 0.0
 	_stair_velocity = 0.0
-	_camera.position = _authored_camera_position
+	_stair_camera_position = _authored_camera_position
+	_apply_camera_pose()
 
 
 func _update_stair_camera() -> void:
@@ -102,4 +123,10 @@ func _update_stair_camera() -> void:
 			var allowed := maxf(0.0, eye.distance_to(hit_position) - padding)
 			offset = signf(offset) * minf(absf(offset), allowed)
 	# Translate along world up even when the Look node is pitched.
-	_camera.position = _authored_camera_position + global_basis.inverse() * Vector3.UP * offset
+	_stair_camera_position = _authored_camera_position + global_basis.inverse() * Vector3.UP * offset
+	_apply_camera_pose()
+
+
+func _apply_camera_pose() -> void:
+	var base := Basis.from_euler(_camera_rotation, _camera.rotation_order).scaled_local(_camera_scale)
+	_camera.transform = Transform3D(base, _stair_camera_position) * attack_camera_motion

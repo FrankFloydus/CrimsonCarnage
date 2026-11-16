@@ -1,0 +1,62 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/weather/sandstorm/source_dust_particles.gd" id="1_dust"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/weather/sandstorm/source_dust_process.gdshader" id="2_motion"]
+[ext_resource type="Shader" path="res://addons/dynamic_sky/weather/sandstorm/source_dust_draw.gdshader" id="3_optics"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/weather/sandstorm/textures/dust_card_sheet.png" id="4_cards"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/precipitation/snow/textures/snow_sheet.png" id="5_spots"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_unit"]
+size = Vector2(1, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_card_motion"]
+resource_local_to_scene = true
+shader = ExtResource("2_motion")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_card_optics"]
+resource_local_to_scene = true
+render_priority = -1
+shader = ExtResource("3_optics")
+shader_parameter/atlas = ExtResource("4_cards")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_spot_motion"]
+resource_local_to_scene = true
+shader = ExtResource("2_motion")
+shader_parameter/spot = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_spot_optics"]
+resource_local_to_scene = true
+shader = ExtResource("3_optics")
+shader_parameter/atlas = ExtResource("5_spots")
+shader_parameter/spot = true
+
+[node name="SourceDustParticles" type="Node3D"]
+script = ExtResource("1_dust")
+
+[node name="DustCards" type="GPUParticles3D" parent="."]
+visible = false
+layers = 524288
+cast_shadow = 0
+material_override = SubResource("ShaderMaterial_card_optics")
+emitting = false
+amount = 2000
+lifetime = 2.0
+fixed_fps = 30
+visibility_aabb = AABB(-40, -20, -40, 80, 40, 80)
+draw_order = 3
+process_material = SubResource("ShaderMaterial_card_motion")
+draw_pass_1 = SubResource("QuadMesh_unit")
+
+[node name="DustSpots" type="GPUParticles3D" parent="."]
+visible = false
+layers = 524288
+cast_shadow = 0
+material_override = SubResource("ShaderMaterial_spot_optics")
+emitting = false
+amount = 20000
+lifetime = 2.0
+fixed_fps = 30
+visibility_aabb = AABB(-40, -20, -40, 80, 40, 80)
+draw_order = 3
+process_material = SubResource("ShaderMaterial_spot_motion")
+draw_pass_1 = SubResource("QuadMesh_unit")

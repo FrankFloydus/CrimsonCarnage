@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="DynamicSkyWeather" format=3 uid="uid://h5yckklkymn5"]
+
+[ext_resource type="Script" uid="uid://c1xk5mfkswtr8" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="1_weather"]
+
+[resource]
+resource_name = "Blizzard"
+script = ExtResource("1_weather")
+cloud_coverage = 1.0
+fog_density = 0.0051648699
+fog_height_falloff = 0.001039720771
+fog_start_distance = 0.000000000
+fog_amount = 1.0
+rain = 0.0
+snow = 1.0
+snow_coverage_limit = 1.0
+wind = Vector2(0, 15.0)
+gustiness = 1.0
+temperature_offset = -34.0
+metadata/source_preset = "Snow_Blizzard"
+metadata/source_wind_intensity = 10.0
+metadata/source_thunder_lightning = 0.0
+metadata/source_material_state = Vector3(0.0, 1.0, 0.0)

@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://cn3a1l8pkgb40"
+path="res://.godot/imported/young_fern_frond_mid.obj-9c7e3bb78635f0c7a19ee46f915fc2f6.mesh"
+
+[deps]
+
+files=["res://.godot/imported/young_fern_frond_mid.obj-9c7e3bb78635f0c7a19ee46f915fc2f6.mesh"]
+
+source_file="res://addons/dynamic_sky/demo/landscape/vegetation/ground_plants/young_fern_frond_mid.obj"
+dest_files=["res://.godot/imported/young_fern_frond_mid.obj-9c7e3bb78635f0c7a19ee46f915fc2f6.mesh", "res://.godot/imported/young_fern_frond_mid.obj-9c7e3bb78635f0c7a19ee46f915fc2f6.mesh"]
+
+[params]
+
+generate_tangents=false
+generate_lods=false
+generate_shadow_mesh=false
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

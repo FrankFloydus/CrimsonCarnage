@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="DynamicSkyWeather" format=3 uid="uid://dekuk7updmq8n"]
+
+[ext_resource type="Script" uid="uid://c1xk5mfkswtr8" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="1_weather"]
+
+[resource]
+resource_name = "Calm Dust"
+script = ExtResource("1_weather")
+cloud_coverage = 0.0
+fog_density = 0.0242869
+fog_height_falloff = 0.002079441542
+fog_amount = 0.1
+rain = 0.0
+snow = 0.0
+snow_coverage_limit = 0.0
+dust = 0.97
+wind = Vector2(2.1, 0.65)
+gustiness = 0.16
+temperature_offset = 7.0
+metadata/source_preset = "Sand_Dust_Calm"
+metadata/source_wind_intensity = 1.0
+metadata/source_thunder_lightning = 0.0
+metadata/source_material_state = Vector3(0.0, 0.0, 1.0)
+metadata/source_airborne_dust = 1.0

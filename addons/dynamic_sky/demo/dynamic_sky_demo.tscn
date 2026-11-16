@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://cwfdxadlx8qsv"]
+[gd_scene format=4 uid="uid://cwfdxadlx8qsv"]
 
 [ext_resource type="Shader" uid="uid://di76ut38qwnkc" path="res://addons/dynamic_sky/rendering/dynamic_sky.gdshader" id="4_8nehg"]
 [ext_resource type="Texture2D" uid="uid://d016jgp22smmq" path="res://addons/dynamic_sky/rendering/atmosphere_transmittance.png" id="5_rb07s"]
@@ -11,10 +11,13 @@
 [ext_resource type="CompressedTexture3D" uid="uid://bgelm4xvgsb4g" path="res://addons/dynamic_sky/rendering/color_modes/simple_sun_color.png" id="12_huuvt"]
 [ext_resource type="Texture2D" uid="uid://cy287dfv7p53w" path="res://addons/dynamic_sky/rendering/cloud_modes/static_cloud_dome_lighting.png" id="13_tuf1b"]
 [ext_resource type="Material" path="res://addons/dynamic_sky/demo/landscape/vegetation/spruce/spruce_material.tres" id="botanical_material"]
-[ext_resource type="ArrayMesh" uid="uid://baaea3rndaw8q" path="res://addons/dynamic_sky/demo/landscape/details/ridge_outcrop.obj" id="boulder"]
-[ext_resource type="Shape3D" path="res://addons/dynamic_sky/demo/landscape/details/ridge_outcrop_collision.res" id="boulder_collision"]
+[ext_resource type="ArrayMesh" uid="uid://b2n4unqy3i6pd" path="res://addons/dynamic_sky/demo/landscape/details/ridge_outcrop_small.obj" id="boulder"]
+[ext_resource type="Shape3D" path="res://addons/dynamic_sky/demo/landscape/details/ridge_outcrop_small_collision.res" id="boulder_collision"]
 [ext_resource type="Material" path="res://addons/dynamic_sky/demo/materials/ridge_gneiss_outcrop.tres" id="boulder_material"]
 [ext_resource type="CameraAttributesPractical" path="res://addons/dynamic_sky/demo/lookout_camera_attributes.tres" id="camera_attributes"]
+[ext_resource type="Texture2D" uid="uid://bhc54xocvm664" path="res://addons/dynamic_sky/rendering/cloud_modes/clear_cirrus.png" id="clear_cirrus"]
+[ext_resource type="CompressedTexture3D" uid="uid://w6s6sjk5xsqe" path="res://addons/dynamic_sky/rendering/cloud_erosion_volume.png" id="cloud_erosion"]
+[ext_resource type="Texture2D" uid="uid://bigdef16g0obs" path="res://addons/dynamic_sky/rendering/cloud_profile.png" id="cloud_profile"]
 [ext_resource type="Script" uid="uid://cdl3p2t7rg2kt" path="res://addons/dynamic_sky/demo/dynamic_sky_demo.gd" id="demo"]
 [ext_resource type="Texture2D" uid="uid://bx4w5o7263fk4" path="res://addons/dynamic_sky/demo/materials/pbr/slate_flagstone_albedo.webp" id="flagstone_albedo"]
 [ext_resource type="Texture2D" uid="uid://dtmby4otud4jd" path="res://addons/dynamic_sky/demo/materials/pbr/slate_flagstone_normal.webp" id="flagstone_normal"]
@@ -28,15 +31,16 @@
 [ext_resource type="PackedScene" path="res://addons/dynamic_sky/demo/landscape/vegetation/meadow_carpet.tscn" id="meadow_carpet"]
 [ext_resource type="Texture2D" uid="uid://c2mlblwyndwgv" path="res://addons/dynamic_sky/demo/materials/pbr/alpine_meadow_normal.webp" id="meadow_normal"]
 [ext_resource type="Texture2D" uid="uid://f5qi8ammhl40" path="res://addons/dynamic_sky/demo/materials/pbr/alpine_meadow_orm.webp" id="meadow_orm"]
-[ext_resource type="Resource" path="res://addons/dynamic_sky/presets/partly_cloudy.tres" id="partly_cloudy"]
+[ext_resource type="Resource" uid="uid://bg3hhq48ces10" path="res://addons/dynamic_sky/presets/partly_cloudy.tres" id="partly_cloudy"]
 [ext_resource type="ArrayMesh" uid="uid://nsggrwf4edwf" path="res://addons/dynamic_sky/demo/landscape/vegetation/spruce/spruce_open_near.obj" id="pine"]
 [ext_resource type="PackedScene" path="res://addons/dynamic_sky/precipitation/runoff/rain_runoff.tscn" id="rain_runoff"]
 [ext_resource type="PackedScene" path="res://addons/dynamic_sky/demo/landscape/details/ridge_trail.tscn" id="ridge_trail"]
-[ext_resource type="Texture2D" uid="uid://mb1i1kep0bxj" path="res://addons/dynamic_sky/demo/materials/pbr/alpine_rock_albedo.webp" id="rock_albedo"]
-[ext_resource type="Texture2D" uid="uid://cwu2p50km52gn" path="res://addons/dynamic_sky/demo/materials/pbr/alpine_rock_macro_normal.webp" id="rock_macro_normal"]
-[ext_resource type="Texture2D" uid="uid://ljc7ve8kyh4k" path="res://addons/dynamic_sky/demo/materials/pbr/alpine_rock_macro_orm.webp" id="rock_macro_orm"]
-[ext_resource type="Texture2D" uid="uid://dlttutf33yikp" path="res://addons/dynamic_sky/demo/materials/pbr/alpine_rock_normal.webp" id="rock_normal"]
-[ext_resource type="Texture2D" uid="uid://egrv0ug1afs0" path="res://addons/dynamic_sky/demo/materials/pbr/alpine_rock_orm.webp" id="rock_orm"]
+[ext_resource type="PackedScene" path="res://addons/dynamic_sky/demo/landscape/vegetation/ground_plants/ridge_understory.tscn" id="ridge_understory"]
+[ext_resource type="Texture2D" uid="uid://d1yrern40adbg" path="res://addons/dynamic_sky/demo/materials/pbr/mountain_granodiorite_albedo.webp" id="rock_albedo"]
+[ext_resource type="Texture2D" uid="uid://drryi55434gd4" path="res://addons/dynamic_sky/demo/materials/pbr/mountain_granodiorite_macro_normal.webp" id="rock_macro_normal"]
+[ext_resource type="Texture2D" uid="uid://daavp0xxtsnx" path="res://addons/dynamic_sky/demo/materials/pbr/mountain_granodiorite_macro_orm.webp" id="rock_macro_orm"]
+[ext_resource type="Texture2D" uid="uid://d1771rim0blo3" path="res://addons/dynamic_sky/demo/materials/pbr/mountain_granodiorite_normal.webp" id="rock_normal"]
+[ext_resource type="Texture2D" uid="uid://r5xhfkypjh3y" path="res://addons/dynamic_sky/demo/materials/pbr/mountain_granodiorite_orm.webp" id="rock_orm"]
 [ext_resource type="Texture2D" uid="uid://cawh447piippx" path="res://addons/dynamic_sky/demo/materials/pbr/standing_seam_zinc_albedo.webp" id="roof_albedo"]
 [ext_resource type="Texture2D" uid="uid://c38gypfbgoq73" path="res://addons/dynamic_sky/demo/materials/pbr/standing_seam_zinc_normal.webp" id="roof_normal"]
 [ext_resource type="Texture2D" uid="uid://dk6bowjv3rbpm" path="res://addons/dynamic_sky/demo/materials/pbr/standing_seam_zinc_orm.webp" id="roof_orm"]
@@ -48,6 +52,7 @@
 [ext_resource type="Texture2D" uid="uid://dg2nrhp1wvtiy" path="res://addons/dynamic_sky/surfaces/textures/snowpack_normal.webp" id="snowpack_normal"]
 [ext_resource type="Texture2D" uid="uid://cphuhxij3015c" path="res://addons/dynamic_sky/surfaces/textures/snowpack_orm.webp" id="snowpack_orm"]
 [ext_resource type="Script" uid="uid://dhoqvkso41mkx" path="res://addons/dynamic_sky/surfaces/weather_surface.gd" id="surface"]
+[ext_resource type="PackedScene" path="res://addons/dynamic_sky/demo/landscape/vegetation/ground_plants/terrace_understory.tscn" id="terrace_understory"]
 [ext_resource type="ArrayMesh" uid="uid://ftqbwadjlsm0" path="res://addons/dynamic_sky/demo/landscape/lookout_terrain.obj" id="terrain"]
 [ext_resource type="Shape3D" path="res://addons/dynamic_sky/demo/landscape/lookout_terrain_collision.res" id="terrain_collision"]
 [ext_resource type="Shader" uid="uid://dvcpduaykjg3l" path="res://addons/dynamic_sky/demo/landscape/terrain.gdshader" id="terrain_shader"]
@@ -65,12 +70,24 @@ shader_parameter/moon_direction = Vector3(0.5, -0.7094065, -0.49673176)
 shader_parameter/moon_phase = 0.5
 shader_parameter/star_rotation = Basis(1, 0, 0, 0, 1, 0, 0, 0, 1)
 shader_parameter/cloud_observer_position_km = Vector3(-0.0045439554, 0.0025000002, 0.008022)
+shader_parameter/night_storm_irradiance = 1.0
+shader_parameter/daylight_cloud_transport = 0.0
+shader_parameter/daylight_cloud_distant_sky = Vector3(0, 0, 0)
 shader_parameter/lightning_flash = 0.0
 shader_parameter/lightning_direction = Vector3(0, 0, 0)
 shader_parameter/lightning_position_km = Vector3(0, 0, 0)
 shader_parameter/lightning_radius_km = 0.41
 shader_parameter/lightning_cloud_strength = 0.78
 shader_parameter/dust_density = 0.0
+shader_parameter/daylight_dust_scattering_scale = 1.0
+shader_parameter/moonlit_dust_fog_radiance = Vector3(0, 0, 0)
+shader_parameter/moonlit_dust_fog_weight = 0.0
+shader_parameter/horizon_fog_radiance = Vector3(0, 0, 0)
+shader_parameter/horizon_fog_strength = 0.0
+shader_parameter/horizon_fog_direction_y_range = Vector2(0.13, 0.54)
+shader_parameter/daylight_visibility_haze_weight = 0.0
+shader_parameter/daylight_visibility_horizon_radiance = Vector3(0.3, 0.39, 0.57)
+shader_parameter/daylight_visibility_zenith_radiance = Vector3(0.28, 0.36, 0.54)
 shader_parameter/atmosphere_view = ExtResource("6_hxtmo")
 shader_parameter/atmosphere_transmittance = ExtResource("5_rb07s")
 shader_parameter/atmosphere_exposure = 0.52
@@ -88,13 +105,26 @@ shader_parameter/high_cloud_scale = 3.0
 shader_parameter/high_cloud_amount = 0.0
 shader_parameter/cloud_formation = ExtResource("7_aptdt")
 shader_parameter/cloud_noise = ExtResource("8_2j07u")
+shader_parameter/cloud_erosion_volume = ExtResource("cloud_erosion")
 shader_parameter/cloud_weather = ExtResource("9_ix0ij")
-shader_parameter/cloud_coverage = 0.54
+shader_parameter/cloud_coverage = 0.38
 shader_parameter/cloud_offset = Vector2(0, 0)
 shader_parameter/cloud_base_km = 0.6
 shader_parameter/cloud_thickness_km = 0.7
 shader_parameter/cloud_extinction = 10.0
 shader_parameter/low_cloud_scale = 2.4
+shader_parameter/radial_cloud_cell_count = 0
+shader_parameter/radial_cloud_cells = PackedVector4Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/radial_cloud_cell_values = PackedVector4Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/cloud_profile = ExtResource("cloud_profile")
+shader_parameter/cloud_formation_texture_scale = 0.75
+shader_parameter/cloud_formation_phase = 0.37
+shader_parameter/cloud_formation_z_shift = 0.0
+shader_parameter/cloud_erosion_scale = 0.9
+shader_parameter/cloud_erosion_intensity = 1.2
+shader_parameter/cloud_high_frequency_amount = 0.24
+shader_parameter/cloud_macro_variation = 0.16
+shader_parameter/cloud_macro_scale = 1.3
 shader_parameter/aurora_intensity = 0.0
 shader_parameter/aurora_azimuth_degrees = 0.0
 shader_parameter/aurora_distance_km = 480.0
@@ -111,7 +141,7 @@ shader_parameter/planet_radius_degrees = 0.0
 shader_parameter/planet_color = Color(0.85, 0.63, 0.42, 1)
 shader_parameter/planet_ring_tilt = 24.0
 shader_parameter/planet_ring_opacity = 0.68
-shader_parameter/cloud_mode = 0
+shader_parameter/cloud_mode = 3
 shader_parameter/static_cloud_altitude_km = 1.25
 shader_parameter/static_cloud_scale = 1.0
 shader_parameter/sky_color_mode = 0
@@ -129,7 +159,7 @@ shader_parameter/simple_cloud_night_tint = Color(0.43, 0.56, 0.87, 1)
 shader_parameter/simple_cloud_day_ambient = Color(0.34, 0.43, 0.58, 1)
 shader_parameter/simple_cloud_twilight_ambient = Color(0.16, 0.18, 0.32, 1)
 shader_parameter/simple_cloud_night_ambient = Color(0.012, 0.02, 0.044, 1)
-shader_parameter/rainbow_enabled = false
+shader_parameter/rainbow_enabled = true
 shader_parameter/rainbow_strength = 0.0
 shader_parameter/rainbow_cloud_transmission = 1.0
 shader_parameter/rainbow_exposure = 1.0
@@ -138,6 +168,17 @@ shader_parameter/rainbow_primary_width_degrees = 2.0
 shader_parameter/rainbow_secondary_strength = 0.28
 shader_parameter/rainbow_secondary_angle_degrees = 51.0
 shader_parameter/rainbow_secondary_width_degrees = 2.5
+shader_parameter/stylized_weather_enabled = false
+shader_parameter/stylized_day_zenith = Vector3(0, 0, 0)
+shader_parameter/stylized_day_horizon = Vector3(0, 0, 0)
+shader_parameter/stylized_night_zenith = Vector3(0, 0, 0)
+shader_parameter/stylized_night_horizon = Vector3(0, 0, 0)
+shader_parameter/stylized_twilight = Vector3(0, 0, 0)
+shader_parameter/stylized_cloud_shade = Vector3(0, 0, 0)
+shader_parameter/stylized_cloud_light = Vector3(0, 0, 0)
+shader_parameter/stylized_aurora_strength = 0.0
+shader_parameter/stylized_aurora_azimuth = 0.0
+shader_parameter/stylized_aurora_scroll = 0.0
 shader_parameter/dynamic_2d_cloud_map = ExtResource("10_jh0sj")
 shader_parameter/dynamic_2d_base_km = 1.25
 shader_parameter/dynamic_2d_scale = 1.25
@@ -148,6 +189,8 @@ shader_parameter/dynamic_2d_upper_opacity = 0.24
 shader_parameter/static_cloud_dome_map = ExtResource("13_tuf1b")
 shader_parameter/static_cloud_yaw_degrees = 0.0
 shader_parameter/static_cloud_opacity = 1.0
+shader_parameter/clear_wisp_texture = ExtResource("clear_cirrus")
+shader_parameter/clear_wisp_amount = 0.22
 
 [sub_resource type="Sky" id="Sky_rx3mp"]
 resource_local_to_scene = true
@@ -168,11 +211,13 @@ glow_enabled = true
 glow_levels/6 = 0.9
 glow_bloom = 0.3
 fog_enabled = true
-fog_density = 0.0012
+fog_light_color = Color(0.59, 0.66999996, 0.76, 1)
+fog_density = 0.00026473
+fog_aerial_perspective = 0.58
+fog_sky_affect = 0.030271243
 volumetric_fog_enabled = true
 volumetric_fog_density = 0.001
 volumetric_fog_temporal_reprojection_amount = 0.72
-adjustment_enabled = true
 adjustment_brightness = 1.04
 adjustment_contrast = 1.115
 adjustment_saturation = 1.46
@@ -180,6 +225,7 @@ adjustment_saturation = 1.46
 [sub_resource type="ShaderMaterial" id="terrain_material"]
 render_priority = 0
 shader = ExtResource("terrain_shader")
+shader_parameter/dynamic_sky_radial_material_enabled = false
 shader_parameter/scree_albedo = ExtResource("scree_albedo")
 shader_parameter/scree_normal = ExtResource("scree_normal")
 shader_parameter/scree_orm = ExtResource("scree_orm")
@@ -196,16 +242,17 @@ shader_parameter/meadow_normal = ExtResource("meadow_normal")
 shader_parameter/meadow_orm = ExtResource("meadow_orm")
 shader_parameter/meadow_texture_scale = 0.5
 shader_parameter/scree_texture_scale = 0.25
-shader_parameter/rock_texture_scale = 0.4545
-shader_parameter/geological_texture_scale = 0.03125
+shader_parameter/rock_texture_scale = 0.0833333333
+shader_parameter/geological_texture_scale = 0.0277777778
 shader_parameter/snow_texture_scale = 0.625
 shader_parameter/stochastic_patch_repeats = 2.7
 shader_parameter/detail_normal_strength = 0.78
-shader_parameter/geological_normal_strength = 1.0
+shader_parameter/geological_normal_strength = 0.5
 shader_parameter/use_biome_vertex_colors = true
 shader_parameter/rock_slope_degrees = Vector2(24, 48)
 shader_parameter/bedrock_height_range = Vector2(180, 420)
 shader_parameter/natural_snowline = Vector2(420, 580)
+shader_parameter/natural_snow_slope_degrees = Vector2(28, 54)
 shader_parameter/shelter_bounds = Vector4(-0.467808, -6.678597, 4.85, 4.55)
 shader_parameter/shelter_yaw_degrees = 73.0
 
@@ -221,6 +268,15 @@ size = Vector3(190, 1, 395)
 [sub_resource type="ShaderMaterial" id="terrace_material"]
 render_priority = 0
 shader = ExtResource("weather_shader")
+shader_parameter/snow_tracks_enabled = false
+shader_parameter/snow_track_rect = Vector4(0, 0, 1, 1)
+shader_parameter/snow_track_resolution = Vector2(4, 4)
+shader_parameter/snow_track_depth = 0.14
+shader_parameter/snow_track_compression = 0.8
+shader_parameter/snow_track_rim = 0.022
+shader_parameter/snow_track_normal_strength = 1.0
+shader_parameter/snow_track_retain_grazing_relief = false
+shader_parameter/dynamic_sky_radial_material_enabled = false
 shader_parameter/base_color = Color(0.95, 0.94, 0.92, 1)
 shader_parameter/albedo_texture = ExtResource("flagstone_albedo")
 shader_parameter/normal_texture = ExtResource("flagstone_normal")
@@ -236,11 +292,12 @@ shader_parameter/macro_texture_scale = 0.2778
 shader_parameter/macro_normal_strength = 0.7
 shader_parameter/snow_color = Color(0.99, 0.995, 1, 1)
 shader_parameter/dust_color = Color(0.64, 0.55, 0.44, 1)
-shader_parameter/puddle_scale = 3.1
-shader_parameter/puddle_threshold = 0.68
-shader_parameter/puddle_roughness = 0.13
+shader_parameter/puddle_scale = 0.93
+shader_parameter/puddle_threshold = 0.6
+shader_parameter/puddle_roughness = 0.055
 shader_parameter/puddle_cavity_bias = 0.28
 shader_parameter/ripple_scale = 6.0
+shader_parameter/wet_film_ripple_strength = 0.24
 shader_parameter/coating_scale = 2.5
 shader_parameter/shelter_bounds = Vector4(0, 0, 0, 0)
 shader_parameter/shelter_yaw_degrees = 0.0
@@ -270,6 +327,15 @@ point_count = 5
 [sub_resource type="ShaderMaterial" id="shelter_material"]
 render_priority = 0
 shader = ExtResource("weather_shader")
+shader_parameter/snow_tracks_enabled = false
+shader_parameter/snow_track_rect = Vector4(0, 0, 1, 1)
+shader_parameter/snow_track_resolution = Vector2(4, 4)
+shader_parameter/snow_track_depth = 0.14
+shader_parameter/snow_track_compression = 0.8
+shader_parameter/snow_track_rim = 0.022
+shader_parameter/snow_track_normal_strength = 1.0
+shader_parameter/snow_track_retain_grazing_relief = false
+shader_parameter/dynamic_sky_radial_material_enabled = false
 shader_parameter/base_color = Color(0.96, 0.93, 0.88, 1)
 shader_parameter/albedo_texture = ExtResource("flagstone_albedo")
 shader_parameter/normal_texture = ExtResource("flagstone_normal")
@@ -290,6 +356,7 @@ shader_parameter/puddle_threshold = 0.57
 shader_parameter/puddle_roughness = 0.065
 shader_parameter/puddle_cavity_bias = 0.0
 shader_parameter/ripple_scale = 6.0
+shader_parameter/wet_film_ripple_strength = 0.0
 shader_parameter/coating_scale = 2.5
 shader_parameter/shelter_bounds = Vector4(-0.467808, -6.678597, 4.85, 4.55)
 shader_parameter/shelter_yaw_degrees = 73.0
@@ -314,6 +381,15 @@ size = Vector3(10.25, 0.26, 9.7)
 [sub_resource type="ShaderMaterial" id="roof_material"]
 render_priority = 0
 shader = ExtResource("weather_shader")
+shader_parameter/snow_tracks_enabled = false
+shader_parameter/snow_track_rect = Vector4(0, 0, 1, 1)
+shader_parameter/snow_track_resolution = Vector2(4, 4)
+shader_parameter/snow_track_depth = 0.14
+shader_parameter/snow_track_compression = 0.8
+shader_parameter/snow_track_rim = 0.022
+shader_parameter/snow_track_normal_strength = 1.0
+shader_parameter/snow_track_retain_grazing_relief = false
+shader_parameter/dynamic_sky_radial_material_enabled = false
 shader_parameter/base_color = Color(0.74, 0.78, 0.82, 1)
 shader_parameter/albedo_texture = ExtResource("roof_albedo")
 shader_parameter/normal_texture = ExtResource("roof_normal")
@@ -334,6 +410,7 @@ shader_parameter/puddle_threshold = 0.57
 shader_parameter/puddle_roughness = 0.065
 shader_parameter/puddle_cavity_bias = 0.0
 shader_parameter/ripple_scale = 6.0
+shader_parameter/wet_film_ripple_strength = 0.0
 shader_parameter/coating_scale = 2.5
 shader_parameter/shelter_bounds = Vector4(0, 0, 0, 0)
 shader_parameter/shelter_yaw_degrees = 0.0
@@ -351,6 +428,15 @@ material = SubResource("roof_material")
 [sub_resource type="ShaderMaterial" id="timber_material"]
 render_priority = 0
 shader = ExtResource("weather_shader")
+shader_parameter/snow_tracks_enabled = false
+shader_parameter/snow_track_rect = Vector4(0, 0, 1, 1)
+shader_parameter/snow_track_resolution = Vector2(4, 4)
+shader_parameter/snow_track_depth = 0.14
+shader_parameter/snow_track_compression = 0.8
+shader_parameter/snow_track_rim = 0.022
+shader_parameter/snow_track_normal_strength = 1.0
+shader_parameter/snow_track_retain_grazing_relief = false
+shader_parameter/dynamic_sky_radial_material_enabled = false
 shader_parameter/base_color = Color(0.87, 0.84, 0.81, 1)
 shader_parameter/albedo_texture = ExtResource("timber_albedo")
 shader_parameter/normal_texture = ExtResource("timber_normal")
@@ -371,6 +457,7 @@ shader_parameter/puddle_threshold = 0.57
 shader_parameter/puddle_roughness = 0.065
 shader_parameter/puddle_cavity_bias = 0.0
 shader_parameter/ripple_scale = 6.0
+shader_parameter/wet_film_ripple_strength = 0.0
 shader_parameter/coating_scale = 2.5
 shader_parameter/shelter_bounds = Vector4(0, 0, 0, 0)
 shader_parameter/shelter_yaw_degrees = 0.0
@@ -385,6 +472,15 @@ material = SubResource("timber_material")
 [sub_resource type="ShaderMaterial" id="stone_material"]
 render_priority = 0
 shader = ExtResource("weather_shader")
+shader_parameter/snow_tracks_enabled = false
+shader_parameter/snow_track_rect = Vector4(0, 0, 1, 1)
+shader_parameter/snow_track_resolution = Vector2(4, 4)
+shader_parameter/snow_track_depth = 0.14
+shader_parameter/snow_track_compression = 0.8
+shader_parameter/snow_track_rim = 0.022
+shader_parameter/snow_track_normal_strength = 1.0
+shader_parameter/snow_track_retain_grazing_relief = false
+shader_parameter/dynamic_sky_radial_material_enabled = false
 shader_parameter/base_color = Color(0.63, 0.62, 0.58, 1)
 shader_parameter/albedo_texture = ExtResource("flagstone_albedo")
 shader_parameter/normal_texture = ExtResource("flagstone_normal")
@@ -405,6 +501,7 @@ shader_parameter/puddle_threshold = 0.57
 shader_parameter/puddle_roughness = 0.065
 shader_parameter/puddle_cavity_bias = 0.0
 shader_parameter/ripple_scale = 6.0
+shader_parameter/wet_film_ripple_strength = 0.0
 shader_parameter/coating_scale = 2.5
 shader_parameter/shelter_bounds = Vector4(0, 0, 0, 0)
 shader_parameter/shelter_yaw_degrees = 0.0
@@ -471,8 +568,10 @@ scene_msaa = 3
 [node name="DynamicSky" parent="." unique_id=809160006 instance=ExtResource("sky")]
 start_weather = ExtResource("partly_cloudy")
 wind_settings = null
+cloud_mode = 3
 volumetric_quality = 1
-rainbow_settings = null
+cloud_shadow_settings = null
+rain_settings = null
 
 [node name="WorldEnvironment" parent="DynamicSky" index="0" unique_id=1677835470]
 environment = SubResource("Environment_qi0b6")
@@ -549,6 +648,10 @@ script = ExtResource("surface")
 [node name="MeadowCarpet" parent="Lookout/Valley" unique_id=199617301 instance=ExtResource("meadow_carpet")]
 
 [node name="RidgeTrail" parent="Lookout/Valley" unique_id=1163873714 instance=ExtResource("ridge_trail")]
+
+[node name="RidgeUnderstory" parent="Lookout/Valley" unique_id=1669229855 instance=ExtResource("ridge_understory")]
+
+[node name="TerraceUnderstory" parent="Lookout/Valley" unique_id=1874778602 instance=ExtResource("terrace_understory")]
 
 [node name="TerracePine" type="MeshInstance3D" parent="Lookout/Valley" unique_id=1664265195]
 transform = Transform3D(0.71779114, 0, -0.21945076, 0, 0.75058824, 0, 0.21945076, 0, 0.71779114, -13.7, -0.17122073, -7)
@@ -1114,6 +1217,21 @@ theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 8
 columns = 2
 
+[node name="WeatherStyleLabel" type="Label" parent="Controls/Panel/Rows/SkyModes" unique_id=2038750542]
+layout_mode = 2
+text = "Weather Style"
+
+[node name="WeatherStyleSelector" type="OptionButton" parent="Controls/Panel/Rows/SkyModes" unique_id=803745552]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+selected = 0
+item_count = 2
+popup/item_0/text = "Realistic"
+popup/item_0/id = 0
+popup/item_1/text = "Stylized"
+popup/item_1/id = 1
+
 [node name="CloudModeLabel" type="Label" parent="Controls/Panel/Rows/SkyModes" unique_id=260298836]
 layout_mode = 2
 text = "Cloud Mode"
@@ -1194,6 +1312,7 @@ text = "Hold RMB to look   â€¢   WASD to fly   â€¢   Q/E to descend/asce
 [connection signal="value_changed" from="Controls/Panel/Rows/TimeSlider" to="." method="_on_time_changed"]
 [connection signal="toggled" from="Controls/Panel/Rows/Weather/RunClock" to="." method="_on_run_clock_toggled"]
 [connection signal="item_selected" from="Controls/Panel/Rows/Weather/WeatherPreset" to="." method="_on_weather_selected"]
+[connection signal="item_selected" from="Controls/Panel/Rows/SkyModes/WeatherStyleSelector" to="." method="_on_weather_style_selected"]
 [connection signal="item_selected" from="Controls/Panel/Rows/SkyModes/CloudModeSelector" to="." method="_on_cloud_mode_selected"]
 [connection signal="item_selected" from="Controls/Panel/Rows/SkyModes/ColorModeSelector" to="." method="_on_color_mode_selected"]
 [connection signal="item_selected" from="Controls/Panel/Rows/Preview/ViewPreset" to="." method="_on_view_selected"]

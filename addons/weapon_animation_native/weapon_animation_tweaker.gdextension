@@ -1,0 +1,12 @@
+; Copyright Francesco Di Blasi 2026 - All Rights Reserved
+
+[configuration]
+
+entry_symbol = "crimson_weapon_animation_init"
+compatibility_minimum = "4.7"
+reloadable = false
+
+[libraries]
+
+windows.debug.x86_64.single = "./bin/weapon_animation_tweaker.windows.template_debug.x86_64.dll"
+windows.release.x86_64.single = "./bin/weapon_animation_tweaker.windows.template_release.x86_64.dll"

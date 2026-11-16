@@ -1,0 +1,11 @@
+# Prototype concrete detail maps
+
+The worn-concrete source was generated with built-in ImageGen at 1254 × 1254. The normal and roughness textures are derived at 4096 × 4096. The original source is retained for editing, and the engine imports both textures with full mip chains. Normal uses BC5 and roughness uses BC7. Both are linear data.
+
+Run `python textures/prototype/authoring/bake_grid_concrete.py` from the project root with NumPy, SciPy, and Pillow. The bake uses a periodic Poisson solve to reduce the tile edge jump, wrapped cubic resampling, and Sobel gradients over a 1.80 m repeat. Broad wear and fine scuffing produce roughness values of 0.57–0.98 before the material multiplier. A separate height band keeps shallow abrasion and quiet worn areas. Its normal slope is approximately 1.8° at the median and 8.9° at the 95th percentile before material strength.
+
+[Normal map](../grid_worn_concrete_normal.webp) · [Roughness map](../grid_worn_concrete_roughness.webp) · [Original reference](grid_worn_concrete_source.png)
+
+The ImageGen prompt was
+
+> Use case: photorealistic-natural. Asset type: original square material-source tile for roughness and subtle height on an outdoor game prototype grid floor and parkour concrete. Generate a single straight-down orthographic grayscale scan-like swatch of genuinely worn, once-troweled gray exterior concrete, about 1.8 meters square. Art direction: restrained urban grunge with uneven mottled patches of smoother burnished cement, irregular matte weathered islands, scuffed areas and softly broken patch edges, all at several scales. Height detail should be sparse and irregular: patches of shallow abrasion and occasional tiny imperfect pits, with calmer smooth stretches between them. No regular rounded pebbles, uniform stippling or repeating stamped bumps. Encode an intentionally useful coarse grayscale pattern: worn smoother areas subtly darker and matte porous patches lighter, keeping enough tonal separation to derive a roughness texture. The surface is dry under uniform diffuse illumination. No baked highlights or shadows, color, perspective, stains with obvious shapes, seam lines, tile grid, distinct large cracks, text, border or objects. Seamlessly tiling across opposite edges, fills the square. Original bitmap, no reference assets.

@@ -6,7 +6,12 @@ extends Node3D
 signal struck(world_position: Vector3, intensity: float)
 
 const BoltMesh = preload("res://addons/dynamic_sky/lightning/lightning_bolt_mesh.gd")
+const CloudRays = preload("res://addons/dynamic_sky/lightning/cloud_rays.gd")
 const PLACEMENT_ATTEMPTS: int = 5
+const NOMINAL_FLASH_DURATION: float = 1.975
+const FLASH_DURATION_VARIATION: float = 0.225 / NOMINAL_FLASH_DURATION
+const FULL_LIGHT_NEAR_DISTANCE: float = 1550.0
+const FULL_LIGHT_FAR_DISTANCE: float = 6500.0
 
 @export_group("Placement")
 ## Optional origin and forward direction for automatic strikes. Empty uses the active camera.
@@ -46,62 +51,86 @@ const PLACEMENT_ATTEMPTS: int = 5
 ## Peak return-stroke multiplier for the bolt and the emitted impact intensity.
 @export_range(0.1, 3.0, 0.05) var intensity: float = 1.0
 
-## Peak energy of the local OmniLight3D. Zero disables ground illumination.
-@export_range(0.0, 32.0, 0.1, "or_greater") var impact_light_energy: float = 3.8
+## Nominal energy of the aimed, shadow-casting full-strike light. Zero disables its direct lighting.
+@export_range(0.0, 32.0, 0.1, "or_greater") var impact_light_energy: float = 5.0
+
+## Strength of the depth-masked optical glow during a full strike on Forward+.
+@export_range(0.0, 8.0, 0.05, "or_greater") var flash_glow_intensity: float = 2.0
 
 @export_group("Timing")
 ## Seconds for the faint leader to travel from cloud to ground. Zero starts on impact.
 @export_range(0.0, 0.2, 0.005, "suffix:s") var leader_duration: float = 0.045
 
-## Seconds from impact until the last return stroke fades away.
-@export_range(0.05, 1.0, 0.01, "suffix:s") var return_duration: float = 0.24
+## Nominal full-strike lighting duration in seconds after the leader, with 11.4% random variation.
+@export_range(0.05, 4.0, 0.005, "or_greater", "suffix:s") var return_duration: float = NOMINAL_FLASH_DURATION
+
+var cloud_ray_intensity: float = 1.0:
+	set(value):
+		cloud_ray_intensity = value
+		if is_instance_valid(_rays):
+			_rays.intensity = value
+
+var cloud_ray_envelope: Curve:
+	set(value):
+		cloud_ray_envelope = value
+		if is_instance_valid(_rays):
+			_rays.envelope = value
 
 var _random := RandomNumberGenerator.new()
+var _envelope_random := RandomNumberGenerator.new()
 var _auto_requested: bool = false
 var _sheet_requested: bool = false
 var _elapsed: float = 0.0
 var _hit_ground: bool = false
 var _return_intensity: float = 0.0
-var _second_stroke: float = 0.0
-var _third_stroke: float = 0.0
-var _third_strength: float = 0.0
-var _cloud_channel: bool = false
+var _full_flash_intensity: float = 0.0
+var _active_return_duration: float = NOMINAL_FLASH_DURATION
+var _light_distance_scale: float = 1.0
+var _noise_phase: float = 0.0
 var _reported_position: Vector3 = Vector3.ZERO
 var _flash_position: Vector3 = Vector3.ZERO
 
 @onready var _bolt: MeshInstance3D = $Bolt
-@onready var _impact_light: OmniLight3D = $ImpactLight
+@onready var _impact_light: DirectionalLight3D = $ImpactLight
 @onready var _material: ShaderMaterial = _bolt.material_override as ShaderMaterial
+@onready var _glow := get_node_or_null(^"FlashGlow") as MeshInstance3D
+@onready var _glow_material := _glow.material_override as ShaderMaterial if _glow != null else null
+@onready var _rays := get_node_or_null(^"CloudRays") as CloudRays
 
 
 func _ready() -> void:
 	set_process(false)
 	set_physics_process(false)
+	if _glow_material != null:
+		_glow.hide()
+		_glow_material.set_shader_parameter(&"cloud_base_m", global_position.y + cloud_base_height)
+
+
+## Supplies world-space cloud bounds, sun elevation, and wind to the optical effects.
+func set_glow_environment(
+	sun_elevation: float, cloud_base_m: float, cloud_top_m: float = 1000000.0, wind: Vector2 = Vector2.ZERO
+) -> void:
+	if _glow_material != null:
+		_glow_material.set_shader_parameter(&"sun_elevation", sun_elevation)
+		_glow_material.set_shader_parameter(&"cloud_base_m", cloud_base_m)
+	if _rays != null:
+		_rays.set_environment(cloud_top_m, wind)
 
 
 func _process(delta: float) -> void:
 	_elapsed += delta
-	if _elapsed < leader_duration:
-		_show_bolt(_elapsed / leader_duration, 0.12 * _return_intensity)
-		return
-
 	if not _hit_ground:
+		if _elapsed < leader_duration:
+			_show_bolt(_elapsed / leader_duration, 0.12 * _return_intensity)
+			return
 		_begin_return_stroke()
 		return
 
-	var progress := _elapsed / return_duration
-	if progress >= 1.0:
-		_bolt.hide()
-		_impact_light.hide()
-		set_process(false)
+	if _elapsed >= _active_return_duration * 1.1:
+		_end_channel()
 		return
 
-	var energy := 0.88 * exp(-12.0 * progress) + 0.12 * (1.0 - progress)
-	if progress >= _second_stroke:
-		energy += 0.62 * exp(-18.0 * (progress - _second_stroke))
-	if progress >= _third_stroke:
-		energy += _third_strength * exp(-22.0 * (progress - _third_stroke))
-	_apply_return_stroke(energy * _return_intensity)
+	_apply_return_stroke()
 
 
 func _physics_process(_delta: float) -> void:
@@ -178,6 +207,21 @@ func get_flash_position() -> Vector3:
 	return _flash_position
 
 
+## Returns the active full-strike envelope for the sky and its surrounding haze.
+func get_full_flash_intensity() -> float:
+	return _full_flash_intensity
+
+
+## Clears a pending request or active channel when transient flash state resets.
+func clear_flash() -> void:
+	if _auto_requested:
+		_auto_requested = false
+		_sheet_requested = false
+		set_physics_process(false)
+	if is_processing():
+		_end_channel()
+
+
 func _distant_candidate(view_position: Vector3, forward: Vector3) -> Vector3:
 	var direction := forward.rotated(
 		Vector3.UP, deg_to_rad(_random.randf_range(-strike_angle, strike_angle))
@@ -201,9 +245,9 @@ func _strike_in_clouds(candidate: Vector3, forward: Vector3, view: Node3D) -> vo
 
 
 func _begin_channel(start: Vector3, end: Vector3, view: Node3D, cloud_arc: float) -> void:
-	_cloud_channel = cloud_arc > 0.0
-	_reported_position = start.lerp(end, 0.5) if _cloud_channel else end
-	_flash_position = _reported_position if _cloud_channel else start
+	var cloud_channel := cloud_arc > 0.0
+	_reported_position = start.lerp(end, 0.5) if cloud_channel else end
+	_flash_position = _reported_position if cloud_channel else start
 
 	var view_offset := Vector3.BACK * far_distance
 	var camera := get_viewport().get_camera_3d()
@@ -218,12 +262,32 @@ func _begin_channel(start: Vector3, end: Vector3, view: Node3D, cloud_arc: float
 	_material.set_shader_parameter(&"cloud_base_local", relative_base)
 	_material.set_shader_parameter(&"cloud_veil_depth", maxf(channel_depth, 25.0))
 	_bolt.show()
-	_impact_light.global_position = end + Vector3.UP * 1.8
+	var eye := end + view_offset
+	var light_origin := start + (end - start) * Vector3(0.3, 0.0, 0.3)
+	var light_direction := eye - light_origin
+	if not light_direction.is_zero_approx():
+		var up := Vector3.BACK if absf(light_direction.normalized().y) > 0.99 else Vector3.UP
+		_impact_light.global_basis = Basis.looking_at(light_direction, up)
+	if _glow_material != null:
+		_glow.global_position = eye
+		_glow.hide()
+		_glow_material.set_shader_parameter(&"strike_position", start)
+		_glow_material.set_shader_parameter(&"strike_forward", -_impact_light.global_basis.z)
+	_light_distance_scale = clampf(
+		inverse_lerp(FULL_LIGHT_FAR_DISTANCE, FULL_LIGHT_NEAR_DISTANCE, eye.distance_to(start)), 0.15, 1.0
+	)
+	_impact_light.light_energy = 0.0
 	_impact_light.hide()
 	_return_intensity = intensity * _random.randf_range(0.86, 1.0)
-	_second_stroke = _random.randf_range(0.25, 0.45)
-	_third_stroke = _random.randf_range(0.55, 0.67)
-	_third_strength = _random.randf_range(0.18, 0.44) if _random.randf() > 0.25 else 0.0
+	_active_return_duration = maxf(return_duration, 0.05) * _envelope_random.randf_range(
+		1.0 - FLASH_DURATION_VARIATION, 1.0 + FLASH_DURATION_VARIATION
+	)
+	_noise_phase = _envelope_random.randf_range(0.0, 25.6)
+	if _rays != null:
+		_rays.intensity = cloud_ray_intensity
+		_rays.envelope = cloud_ray_envelope
+		_rays.begin(_flash_position, _active_return_duration, _noise_phase)
+	_full_flash_intensity = 0.0
 	_hit_ground = false
 	_elapsed = 0.0
 	_show_bolt(0.0, 0.0)
@@ -240,15 +304,77 @@ func _get_observer() -> Node3D:
 
 func _begin_return_stroke() -> void:
 	_hit_ground = true
-	_elapsed = 0.0
-	_apply_return_stroke(_return_intensity)
+	_elapsed = maxf(_elapsed - leader_duration, 0.0)
+	if _elapsed < _active_return_duration * 1.1:
+		_apply_return_stroke()
 	struck.emit(_reported_position, _return_intensity)
+	# Keep the signal classified as a channel even when one tick crosses its entire lifetime.
+	# Read the current state after signal handlers, which may cancel or start another strike.
+	if is_processing() and _elapsed >= _active_return_duration * 1.1:
+		_end_channel()
 
 
-func _apply_return_stroke(energy: float) -> void:
-	_show_bolt(1.055, energy)
-	_impact_light.light_energy = impact_light_energy * energy
-	_impact_light.visible = not _cloud_channel and _impact_light.light_energy > 0.01
+func _apply_return_stroke() -> void:
+	var progress := minf(_elapsed / _active_return_duration, 1.0)
+	var light_pulse := 1.0 - 2.0 * absf(pow(progress, 0.4) - 0.5)
+	var modulation := 1.0 + 0.25 * _flash_noise((_noise_phase + _elapsed) * 10.0)
+	var light_curve := pow(light_pulse * light_pulse * modulation, 3.0)
+	_full_flash_intensity = light_curve * _return_intensity * _light_distance_scale
+	_impact_light.light_energy = impact_light_energy * _full_flash_intensity
+	_impact_light.visible = _impact_light.light_energy > 0.01
+	if _glow_material != null:
+		var glow_energy := _impact_light.light_energy * flash_glow_intensity / 170.0
+		_glow.visible = glow_energy > 0.0001 and RenderingServer.get_current_rendering_method() == "forward_plus"
+		if _glow.visible:
+			_glow_material.set_shader_parameter(&"energy", glow_energy)
+	var bolt_age := _elapsed / (_active_return_duration * 1.1)
+	_show_bolt(1.055, _bolt_intensity(bolt_age) * _return_intensity)
+
+
+func _end_channel() -> void:
+	_bolt.hide()
+	_impact_light.light_energy = 0.0
+	_impact_light.hide()
+	if _glow != null:
+		_glow.hide()
+	if _rays != null:
+		_rays.clear()
+	_full_flash_intensity = 0.0
+	set_process(false)
+
+
+static func _bolt_intensity(age: float) -> float:
+	# The visible channel has an earlier peak than the light reaching the scene.
+	const PEAK_AGE: float = 0.10
+	const PEAK_TANGENT: float = -3.509785
+	var curve: float
+	if age <= PEAK_AGE:
+		curve = _hermite(0.0, 1.0, 0.0, PEAK_TANGENT * PEAK_AGE, age / PEAK_AGE)
+	else:
+		var tail := 1.0 - PEAK_AGE
+		curve = _hermite(1.0, 0.0, PEAK_TANGENT * tail, 0.0, (age - PEAK_AGE) / tail)
+	return pow(maxf(curve, 0.0), 3.0)
+
+
+static func _hermite(first: float, last: float, first_tangent: float, last_tangent: float, t: float) -> float:
+	var t2 := t * t
+	var t3 := t2 * t
+	return (
+		(2.0 * t3 - 3.0 * t2 + 1.0) * first + (t3 - 2.0 * t2 + t) * first_tangent
+		+ (-2.0 * t3 + 3.0 * t2) * last + (t3 - t2) * last_tangent
+	)
+
+
+static func _flash_noise(sample: float) -> float:
+	var cell := floori(sample)
+	var phase := sample - float(cell)
+	var weight := phase * phase * phase * (phase * (phase * 6.0 - 15.0) + 10.0)
+	return 2.0 * lerpf(_flash_gradient(cell) * phase, _flash_gradient(cell + 1) * (phase - 1.0), weight)
+
+
+static func _flash_gradient(cell: int) -> float:
+	var index := hash(cell) & 15
+	return float(index - 8 if index < 8 else index - 7) / 8.0
 
 
 func _show_bolt(progress: float, brightness: float) -> void:

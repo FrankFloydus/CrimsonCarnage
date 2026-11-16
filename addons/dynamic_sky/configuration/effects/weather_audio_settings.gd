@@ -9,6 +9,12 @@ extends Resource
 		occlusion_mask = value
 		emit_changed()
 
+## Sample openness above and around the listener so offset openings can admit outdoor weather sound.
+@export var use_cardinal_occlusion: bool = false:
+	set(value):
+		use_cardinal_occlusion = value
+		emit_changed()
+
 ## How far roof and upwind rays search for shelter, in meters.
 @export_range(1.0, 100.0, 0.5, "suffix:m") var cover_probe_distance: float = 24.0:
 	set(value):

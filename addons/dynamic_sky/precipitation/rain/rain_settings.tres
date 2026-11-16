@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="DynamicSkyRainSettings" format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/precipitation/rain/rain_settings.gd" id="1_settings"]
+
+[ext_resource type="Resource" path="res://addons/dynamic_sky/precipitation/rain/rain_near.tres" id="near"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/precipitation/rain/rain_middle.tres" id="middle"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/precipitation/rain/rain_distant.tres" id="distant"]
+
+[resource]
+resource_local_to_scene = true
+script = ExtResource("1_settings")
+fall_distribution = 1
+near_layer = ExtResource("near")
+middle_layer = ExtResource("middle")
+distant_layer = ExtResource("distant")
+splash_collision = 2
+splash_amount = 6000
+ripple_tint = Color(0.7, 0.75, 0.78, 0.161604)
+contact_tint = Color(0.18, 0.23, 0.28, 0.080802)
+crown_tint = Color(0.77, 0.82, 0.88, 0.20368)
+bounce_tint = Color(0.72, 0.8, 0.89, 0.2412)

@@ -11,6 +11,11 @@ uniform float moon_phase : hint_range(0.0, 1.0) = 0.5;
 uniform mat3 star_rotation = mat3(1.0);
 // Observer position relative to the rig's sea-level origin, in kilometers.
 uniform vec3 cloud_observer_position_km = vec3(0.0);
+// Nighttime Storm scales only the lighting cubemap.
+uniform float night_storm_irradiance : hint_range(0.0, 1.0) = 1.0;
+// Weather-profile weight and isotropic atmosphere light for the visible volume.
+uniform float daylight_cloud_transport : hint_range(0.0, 1.0) = 0.0;
+uniform vec3 daylight_cloud_distant_sky = vec3(0.0);
 // Brief lightning illumination of the visible sky and cloud cover.
 uniform float lightning_flash : hint_range(0.0, 1.0) = 0.0;
 // Normalized direction toward a nearby bolt. Zero uses broad cloud lightning.
@@ -23,6 +28,20 @@ uniform float lightning_radius_km : hint_range(0.05, 2.0, 0.01) = 0.41;
 uniform float lightning_cloud_strength : hint_range(0.0, 1.5, 0.01) = 0.78;
 // Strength of the suspended mineral haze.
 uniform float dust_density : hint_range(0.0, 1.0) = 0.0;
+// Daylight scattering in the visible dust sky, separate from the lighting cubemap.
+uniform float daylight_dust_scattering_scale = 1.0;
+// Visible radiance of distant mineral haze under a high moon.
+uniform vec3 moonlit_dust_fog_radiance = vec3(0.0);
+uniform float moonlit_dust_fog_weight : hint_range(0.0, 1.0, 0.01) = 0.0;
+// Native distance-fog radiance and visible blend for severe terrestrial weather.
+uniform vec3 horizon_fog_radiance = vec3(0.0);
+uniform float horizon_fog_strength : hint_range(0.0, 1.0) = 0.0;
+// Vertical ray components where the distance-fog blend begins and finishes fading out.
+uniform vec2 horizon_fog_direction_y_range = vec2(0.13, 0.54);
+// Visible daytime haze can scatter light without increasing reflected or indirect sky light.
+uniform float daylight_visibility_haze_weight : hint_range(0.0, 1.0, 0.01) = 0.0;
+uniform vec3 daylight_visibility_horizon_radiance = vec3(0.30, 0.39, 0.57);
+uniform vec3 daylight_visibility_zenith_radiance = vec3(0.28, 0.36, 0.54);
 
 group_uniforms Atmosphere;
 // Baked RGB single-scattered radiance and approximate multiple-scattering fill.
@@ -50,7 +69,7 @@ uniform int volumetric_quality : hint_enum("Balanced", "High") = 0;
 // Albedo tint of directly lit clouds and ambient tint inside their shadows.
 uniform vec3 cloud_light : source_color = vec3(0.93, 0.95, 0.98);
 uniform vec3 cloud_shadow : source_color = vec3(0.34, 0.40, 0.48);
-// Balanced ray sample budget. High uses up to 50 percent more view samples.
+// Balanced ray sample budget. High permits up to three times as many view samples.
 uniform int cloud_steps : hint_range(12, 96, 1) = 64;
 // Horizontal frequency of the upper cloud wisps.
 uniform float high_cloud_scale : hint_range(0.5, 16.0, 0.1) = 3.0;
@@ -116,7 +135,73 @@ float low_sun_strength() {
 	return smoothstep(-0.052, 0.011, sun_y) * (1.0 - smoothstep(0.043, 0.24, sun_y));
 }
 
+group_uniforms Stylized_Weather;
+uniform bool stylized_weather_enabled = false;
+uniform vec3 stylized_day_zenith = vec3(0.0);
+uniform vec3 stylized_day_horizon = vec3(0.0);
+uniform vec3 stylized_night_zenith = vec3(0.0);
+uniform vec3 stylized_night_horizon = vec3(0.0);
+uniform vec3 stylized_twilight = vec3(0.0);
+uniform vec3 stylized_cloud_shade = vec3(0.0);
+uniform vec3 stylized_cloud_light = vec3(0.0);
+uniform float stylized_aurora_strength = 0.0;
+uniform float stylized_aurora_azimuth = 0.0;
+uniform float stylized_aurora_scroll = 0.0;
+group_uniforms;
+
+vec3 stylized_atmosphere(vec3 direction) {
+	float daylight = smoothstep(-0.12, 0.20, sun_direction.y);
+	float height = pow(clamp(direction.y, 0.0, 1.0), 0.55);
+	vec3 day_color = mix(stylized_day_horizon, stylized_day_zenith, height);
+	vec3 night_color = mix(stylized_night_horizon, stylized_night_zenith, height) * 0.46;
+	vec3 palette = mix(night_color, day_color, daylight);
+	float twilight = smoothstep(-0.16, -0.04, sun_direction.y) * (1.0 - smoothstep(0.02, 0.25, sun_direction.y));
+	float toward_sun = max(dot(direction, sun_direction), 0.0);
+	float glow = twilight * exp(-max(direction.y, 0.0) * 5.0) * (0.13 + 0.87 * pow(toward_sun, 3.0));
+	palette = mix(palette, stylized_twilight, glow * (1.0 - cloud_coverage * 0.65));
+	return mix(palette, mix(stylized_night_horizon * 0.16, stylized_day_horizon * 0.35, daylight),
+		smoothstep(0.0, 0.18, -direction.y));
+}
+
+vec3 stylized_cloud_color(vec3 radiance) {
+	float value = dot(radiance, vec3(0.2126, 0.7152, 0.0722));
+	float daylight = smoothstep(-0.10, 0.20, sun_direction.y);
+	float brush_value = smoothstep(0.045, 0.58, value);
+	vec3 day_color = mix(stylized_cloud_shade, stylized_cloud_light, brush_value);
+	vec3 night_color = stylized_night_zenith * (0.36 + 2.6 * value);
+	return mix(night_color, day_color, daylight);
+}
+
+vec3 stylized_aurora(vec3 direction) {
+	float night = 1.0 - smoothstep(-0.20, -0.12, sun_direction.y);
+	if (night <= 0.0 || stylized_aurora_strength <= 0.0) {
+		return vec3(0.0);
+	}
+	float bearing = atan(direction.x, -direction.z) - stylized_aurora_azimuth;
+	bearing = atan(sin(bearing), cos(bearing));
+	float curtain_end = 1.0 - smoothstep(0.50, 1.35, abs(bearing));
+	float elevation = asin(clamp(direction.y, -1.0, 1.0));
+	vec3 light = vec3(0.0);
+	for (int index = 0; index < 3; index++) {
+		float layer = float(index);
+		float drift = bearing + layer * 1.75 + stylized_aurora_scroll;
+		float base = 0.29 + layer * 0.11 + sin(drift * 3.7) * 0.082 + sin(drift * 10.3) * 0.027;
+		float height = elevation - base;
+		float folds = 0.27 + 0.73 * aurora_noise(drift * 16.0 + layer * 32.0);
+		float rays = mix(0.38, 1.0, pow(aurora_noise(drift * 82.0 + layer * 11.0), 1.5));
+		float veil = smoothstep(-0.014, 0.025, height) * exp(-max(height, 0.0) * 14.0);
+		vec3 green = vec3(0.030, 0.39, 0.20);
+		vec3 violet = vec3(0.14, 0.045, 0.29);
+		vec3 color = mix(green, violet, smoothstep(0.028, 0.16, height));
+		light += color * veil * folds * rays * (0.30 - layer * 0.065);
+	}
+	return light * curtain_end * night * stylized_aurora_strength;
+}
+
 vec3 atmosphere(vec3 direction) {
+	if (stylized_weather_enabled) {
+		return stylized_atmosphere(direction);
+	}
 	if (sky_color_mode == 1) {
 		float coverage = cloud_mode == 2 ? 0.0 : cloud_coverage;
 		return simple_sky_color(direction, sun_direction, moon_direction, moon_illumination(), coverage, dust_density);
@@ -154,7 +239,8 @@ vec3 atmosphere(vec3 direction) {
 	float storm_haze = cloud_mode == 2 ? 0.0 : smoothstep(0.76, 1.0, cloud_coverage) * (1.0 - smoothstep(0.015, 0.38, view_y));
 	vec3 storm_light = mix(vec3(0.006, 0.012, 0.027), vec3(0.105, 0.151, 0.237), day);
 	radiance = mix(radiance, storm_light, storm_haze * 0.89);
-	vec3 dust_scatter = mix(vec3(0.012, 0.008, 0.005), vec3(0.190, 0.153, 0.116), day);
+	float dust_scattering_scale = AT_CUBEMAP_PASS ? 1.0 : daylight_dust_scattering_scale;
+	vec3 dust_scatter = mix(vec3(0.012, 0.008, 0.005), vec3(0.190, 0.153, 0.116) * dust_scattering_scale, day);
 	float dusty_air = dust_density * mix(0.98, 0.90, smoothstep(0.0, 0.65, view_y));
 	radiance = mix(radiance, dust_scatter, dusty_air);
 	vec3 ground = sky_ground * mix(0.004, 0.34, day);
@@ -253,24 +339,27 @@ float cloud_layer_distance(vec3 direction, float altitude) {
 	return distance;
 }
 
-float light_through_cloud(vec3 position, vec3 light_dir, vec2 weather) {
+float light_through_cloud(vec3 position, vec3 light_dir, vec2 weather, float source_coverage) {
 	float optical_depth = 0.0;
-	float step_length = cloud_thickness_km * 0.10;
-	float distance = step_length * 0.5;
-	for (int index = 0; index < 7; index++) {
+	float coverage_weight = pow(clamp((source_coverage - 1.3) / 0.7, 0.0, 1.0), 2.0);
+	float altitude_weight = clamp((abs(light_dir.y) - 0.15) / 0.60, 0.0, 1.0);
+	float reach = 0.5 * (2.4 / low_cloud_scale) * mix(mix(1.0, 0.25, altitude_weight), mix(3.0, 0.35, altitude_weight), coverage_weight);
+	float previous = 0.0;
+	for (int index = 0; index < 12; index++) {
+		float edge = float(index + 1) / 12.0;
+		edge *= edge;
+		float segment = (edge - previous) * reach;
+		float distance = (previous + (edge - previous) * 0.5) * reach;
 		vec3 point = position + light_dir * distance;
 		float height = altitude_at(point);
 		if (height >= cloud_base_km + cloud_thickness_km) {
 			break;
 		}
 		float density = cloud_density_at(point, height, weather, false);
-		optical_depth += density * step_length;
-		distance += step_length * 1.275;
-		step_length *= 1.55;
+		optical_depth += density * segment;
+		previous = edge;
 	}
-	float deep_shadow = exp(-optical_depth * cloud_extinction);
-	float multiple_scatter = exp(-optical_depth * cloud_extinction * 0.27);
-	return deep_shadow * 0.64 + multiple_scatter * 0.36;
+	return optical_depth * cloud_extinction;
 }
 
 float phase_lobe(float cosine, float eccentricity) {
@@ -302,27 +391,46 @@ vec4 trace_clouds(vec3 direction, bool high_quality) {
 	vec3 sky_color = atmosphere(direction);
 	float sunlight = smoothstep(-0.075, 0.045, sun_direction.y);
 	float daylight = smoothstep(-0.10, 0.14, sun_direction.y);
-	float overcast = smoothstep(0.63, 1.0, cloud_coverage);
+	float global_overcast = smoothstep(0.63, 1.0, cloud_coverage);
 	vec3 light_dir = sunlight > 0.025 ? sun_direction : moon_direction;
 	float light_cosine = dot(direction, light_dir);
-	float phase = 0.61 * phase_lobe(light_cosine, 0.59) + 0.39 * phase_lobe(light_cosine, -0.26);
-	phase = min(phase, 3.05);
+	float forward_phase = phase_lobe(light_cosine, mix(0.68, 0.85, sunlight));
+	float broad_phase = phase_lobe(light_cosine, 0.4);
+	float light_elevation_weight = clamp((abs(light_dir.y) - 0.1) / 0.2, 0.0, 1.0);
 	vec3 solar = transmission_to_space(sun_direction.y, cloud_base_km + cloud_thickness_km) * sunlight;
 	solar *= exp(-dust_density * vec3(1.49, 1.72, 2.01));
 	vec3 lunar = vec3(0.065, 0.103, 0.18) * (1.0 - sunlight)
 		* smoothstep(0.0, 0.20, moon_direction.y) * moon_illumination();
-	vec3 light_color = cloud_light * (solar * mix(0.55, 0.53, overcast) + lunar);
-	vec3 ambient = mix(vec3(0.0022, 0.004, 0.009), cloud_shadow * vec3(0.88, 0.97, 1.11) * mix(0.58, 0.68, overcast), daylight);
+	vec3 light_color = cloud_light * (solar * 0.089524655 + lunar * 0.10);
+	float shadow_luma = dot(cloud_shadow, vec3(0.2126, 0.7152, 0.0722));
+	vec3 ambient = mix(vec3(0.0022, 0.004, 0.009), mix(cloud_shadow, vec3(shadow_luma), 0.55) * mix(0.85, 0.96, global_overcast), daylight);
 	ambient += vec3(0.018, 0.025, 0.036) * daylight;
 	float forward_twilight = pow(max(dot(direction, sun_direction), 0.0), 6.0) * low_sun_strength();
 	ambient += vec3(0.37, 0.182, 0.071) * forward_twilight * (1.0 - dust_density * 0.69);
 	if (sky_color_mode == 1) {
 		float lunar_strength = moon_illumination();
 		light_color = cloud_light * simple_cloud_direct_color(sun_direction, moon_direction, lunar_strength)
-			* mix(0.55, 0.53, overcast) * exp(-dust_density * vec3(1.49, 1.72, 2.01));
-		ambient = simple_cloud_ambient_color(sun_direction, moon_direction, lunar_strength) * mix(0.54, 0.61, overcast);
+			* 0.089524655 * exp(-dust_density * vec3(1.49, 1.72, 2.01));
+		ambient = simple_cloud_ambient_color(sun_direction, moon_direction, lunar_strength) * mix(0.54, 0.61, global_overcast);
+	}
+	if (sky_color_mode == 0) {
+		// Noon base derived from the resolved source top/bottom emission, before their height scale.
+		vec3 noon_ambient = vec3(0.06061865, 0.09131417, 0.15987535);
+		float day_mix = clamp(sun_direction.y / 0.30, 0.0, 1.0);
+		float twilight_mix = smoothstep(-0.11, 0.035, sun_direction.y);
+		float twilight_facing = mix(0.43, 1.0, pow(dot(direction, sun_direction) * 0.5 + 0.5, 2.0));
+		vec3 night_ambient = vec3(0.0024, 0.0031, 0.0046) * (0.28 + 0.72 * moon_illumination());
+		vec3 twilight_ambient = vec3(0.076, 0.038, 0.027) * twilight_facing;
+		ambient = mix(mix(night_ambient, twilight_ambient, twilight_mix), noon_ambient, day_mix);
 	}
 
+	// The source cloud material has its own emission and uses distant atmosphere light in order zero.
+	// Scale the measured noon material colors with the daylight approximation, retaining stock twilight.
+	vec3 source_bottom = vec3(0.03277370, 0.04892615, 0.09433382);
+	vec3 source_top = vec3(0.04916054, 0.04886687, 0.05778253);
+	vec3 source_day_ratio = daylight_cloud_distant_sky / vec3(0.06781279, 0.12444532, 0.23523293);
+	vec3 distant_light = daylight_cloud_distant_sky * (0.25 * 0.7125 * daylight_cloud_transport);
+	float direct_transport = mix(1.0, 1.1083333, daylight_cloud_transport);
 	float upper_distance = cloud_layer_distance(direction, 7.2);
 	vec4 upper = upper_clouds(direction, upper_distance, sky_color, light_color, daylight);
 	vec2 segment = cloud_shell_interval(cloud_observer_position_km, direction, CLOUD_MAX_TRACE_DISTANCE_KM);
@@ -332,12 +440,11 @@ vec4 trace_clouds(vec3 direction, bool high_quality) {
 		return upper;
 	}
 	float trace_length = end - start;
-	int budget = high_quality ? cloud_steps * 3 / 2 : cloud_steps;
-	float minimum_step = high_quality ? 0.040 : 0.062;
+	int budget = high_quality ? cloud_steps * 3 : cloud_steps;
+	float minimum_step = high_quality ? 0.010 : 0.030;
 	float step_length = max(trace_length / float(budget), minimum_step);
 	float distance = start;
 	float flash = flash_in_direction(direction);
-	float dusty_cloud = smoothstep(0.30, 1.0, dust_density);
 	float view_transmittance = 1.0;
 	vec3 scattered = vec3(0.0);
 	for (int index = 0; index < budget; index++) {
@@ -351,18 +458,70 @@ vec4 trace_clouds(vec3 direction, bool high_quality) {
 		vec3 position = cloud_observer_position_km + observer_relative_position;
 		float height = altitude_at(position);
 		vec2 weather = cloud_coverage_at(position);
-		float visible_detail = 1.0 - smoothstep(8.0, 28.0, sample_distance);
-		float density = cloud_density_with_detail(position, height, weather, true, visible_detail);
+		float visible_detail = min(0.75 / max(sample_distance, 0.001), 1.0);
+		float local_coverage = cloud_coverage_for_position(position.xz);
+		vec4 source_sample = cloud_source_field_at_coverage(position, height, true, visible_detail * 2.0, local_coverage);
+		float density = source_sample.r * 1000.0 / max(cloud_extinction, 0.0001);
 		if (density > 0.001) {
 			float segment_transmittance = exp(-density * cloud_extinction * segment_length);
-			float illuminated = light_through_cloud(position, light_dir, weather);
-			float height_light = clamp((height - cloud_base_km) / cloud_thickness_km, 0.0, 1.0);
-			vec3 lighting = ambient * (0.55 + 0.62 * height_light) * (1.0 - 0.16 * smoothstep(0.18, 0.74, density));
-			lighting += light_color * (0.46 + 0.69 * phase) * illuminated;
+			float source_coverage = local_coverage * 3.0;
+			float overcast = smoothstep(0.63, 1.0, local_coverage);
+			float phase_blend = mix(0.65, 0.90, clamp((source_coverage - 1.7) / 0.4, 0.0, 1.0));
+			float phase = mix(forward_phase, broad_phase, phase_blend);
+			float scattering_contribution = 0.85 * mix(1.0, 0.85, clamp((source_coverage - 1.3) / 0.5, 0.0, 1.0));
+			float scattering_occlusion = 0.5 * mix(0.8, mix(1.0, 0.75, clamp((source_coverage - 1.3) / 0.55, 0.0, 1.0)), light_elevation_weight);
+			float light_optical_depth = light_through_cloud(position, light_dir, weather, source_coverage);
+			float height_light = source_sample.g;
+			float ambient_scale = mix(0.6375, 0.425, pow(1.0 - height_light, 3.0));
+			float inner_emit_limit = mix(0.2, 0.08, clamp((source_coverage - 1.6) / 0.5, 0.0, 1.0));
+			float emit_limit = mix(inner_emit_limit, 0.07, clamp(sample_distance / 6.872235, 0.0, 1.0));
+			float norm_altitude = clamp((height-cloud_base_km)/cloud_thickness_km,0.0,1.0);
+			float camera_layer_height = clamp((cloud_observer_position_km.y-cloud_base_km)/cloud_thickness_km,0.0,1.0);
+			float sun_height = abs(sun_direction.y);
+			float floor_color_strength = 0.96*(1.0-camera_layer_height)*mix(clamp((sun_height-0.07)/0.28,0.0,1.0),1.0,overcast);
+			float cloudy_floor_variation = 0.8*0.8*mix(0.15,1.0,clamp((sun_height-0.07)/0.13,0.0,1.0));
+			float floor_luminance = mix(1.0,clamp(pow(norm_altitude/(max(cloudy_floor_variation,0.72)*0.5),2.0),0.0,1.0),floor_color_strength*clamp(source_sample.a-1.65,0.0,1.0));
+			vec2 projected_bottom = cloud_observer_position_km.xz + direction.xz * max(cloud_base_km-cloud_observer_position_km.y,0.0)/max(abs(direction.y),0.001);
+			float turbulence = textureLod(cloud_weather,projected_bottom/7.123931875+cloud_offset*(18.0/128.0),0.0).r;
+			float turbulence_strength = 0.48*clamp((source_coverage-1.8)/0.25,0.0,1.0)*clamp((cloud_base_km-cloud_observer_position_km.y)*100000.0,0.0,1.0);
+			float turbulence_luminance = 1.0+(turbulence-0.5)*turbulence_strength;
+			// Diffuse sky transport through the local cloud approximates a broad cone
+			// with a lower effective optical depth than the direct light ray.
+			float ambient_visibility = mix(0.53, 1.0, exp(-0.14 * light_optical_depth));
+			vec3 emissive_per_meter = ambient * ambient_scale * min(source_sample.r, emit_limit)*floor_luminance*turbulence_luminance*ambient_visibility;
+			if (daylight_cloud_transport > 0.0) {
+				vec3 source_emission = mix(source_top, source_bottom, pow(1.0 - height_light, 3.0)) * source_day_ratio;
+				source_emission *= min(source_sample.r, emit_limit) * floor_luminance * turbulence_luminance;
+				emissive_per_meter = mix(emissive_per_meter, source_emission, daylight_cloud_transport);
+			}
+			float single_alpha = 1.0 - segment_transmittance;
+			float scattering_weight = 1.0;
+			float extinction_weight = 1.0;
+			float phase_weight = 1.0;
+			float contribution_factor = scattering_contribution;
+			float occlusion_factor = scattering_occlusion;
+			float phase_factor = 0.4;
+			float direct_integral = 0.0;
+			vec3 emission_integral = vec3(0.0);
+			for (int order = 0; order < 3; order++) {
+				float order_phase = mix(1.0, phase, phase_weight);
+				float alpha = 1.0 - exp(-density * cloud_extinction * segment_length * extinction_weight);
+				direct_integral += scattering_weight * order_phase * exp(-light_optical_depth * extinction_weight) * alpha / max(extinction_weight, 0.0001);
+				emission_integral += emissive_per_meter * alpha / max(source_sample.r * extinction_weight, 0.000001);
+				scattering_weight *= contribution_factor;
+				extinction_weight *= occlusion_factor;
+				phase_weight = phase_factor;
+				contribution_factor *= contribution_factor;
+				occlusion_factor *= occlusion_factor;
+				phase_factor *= phase_factor;
+			}
+			vec3 lighting = (emission_integral + light_color * direct_integral * direct_transport + distant_light * single_alpha) / max(single_alpha, 0.000001);
 			lighting += cloud_flash_radiance(observer_relative_position, lighting, density, flash);
-			float haze = 1.0 - exp(-sample_distance * (mix(0.013, 0.012, overcast) + 0.043 * dust_density))
-				* (1.0 - dusty_cloud * 0.87);
-			lighting = mix(lighting, sky_color, haze);
+			float mean_altitude = max((cloud_observer_position_km.y+height)*0.5,0.0);
+			vec3 air_extinction = vec3(0.005802,0.013558,0.033100)*exp(-mean_altitude/8.0)+vec3(0.0044*exp(-mean_altitude/1.2));
+			air_extinction += vec3(0.030 + 0.043*dust_density);
+			vec3 air_transmittance = exp(-sample_distance*air_extinction);
+			lighting = lighting*air_transmittance+sky_color*(vec3(1.0)-air_transmittance);
 			scattered += view_transmittance * (1.0 - segment_transmittance) * lighting;
 			view_transmittance *= segment_transmittance;
 		}
@@ -377,6 +536,7 @@ vec4 trace_clouds(vec3 direction, bool high_quality) {
 }
 
 #include "res://addons/dynamic_sky/rendering/cloud_modes/layered_cloud_modes.gdshaderinc"
+#include "res://addons/dynamic_sky/rendering/cloud_modes/clear_wisps.gdshaderinc"
 
 void sky() {
 	bool from_space = celestial_mode == 1 || cloud_mode == 4;
@@ -398,12 +558,16 @@ void sky() {
 			float daylight = smoothstep(-0.18, 0.16, sun_direction.y);
 			float sky_weight = smoothstep(-0.07, 0.29, EYEDIR.y);
 			vec3 cloud_tint = mix(vec3(0.004, 0.007, 0.016), mix(cloud_shadow, cloud_light, 0.26), daylight);
+			if (stylized_weather_enabled) {
+				cloud_tint = stylized_cloud_color(cloud_tint);
+			}
 			COLOR = mix(COLOR, cloud_tint, cloud_coverage * cloud_coverage * sky_weight * 0.75);
 		}
+		COLOR *= night_storm_irradiance;
 	} else if (AT_HALF_RES_PASS) {
 		vec4 clouds = vec4(0.0);
 		float visible_base = cloud_mode == 3 ? dynamic_2d_base_km : cloud_base_km;
-		bool has_clouds = cloud_coverage > 0.0;
+		bool has_clouds = cloud_mode == 0 ? cloud_volume_may_exist() : cloud_coverage > 0.0;
 		if (!high_volume && has_clouds
 			&& (EYEDIR.y > 0.0 || altitude_at(cloud_observer_position_km) >= visible_base)) {
 			if (cloud_mode == 0) {
@@ -423,22 +587,51 @@ void sky() {
 		ALPHA = clouds.a;
 	} else {
 		vec3 color = atmosphere(EYEDIR);
+		vec3 atmospheric_flash = vec3(0.0);
 		if (EYEDIR.y > 0.0) {
 			if (celestial_mode != 2) {
 				color += space_backdrop(EYEDIR, false);
 			}
 			color = draw_celestials(color, EYEDIR, false);
 			color = draw_space_planet(color, EYEDIR);
-			color += aurora_emission(EYEDIR);
-			color += flash_in_direction(EYEDIR) * vec3(0.014, 0.023, 0.042);
+			color += stylized_weather_enabled ? stylized_aurora(EYEDIR) : aurora_emission(EYEDIR);
+			atmospheric_flash = flash_in_direction(EYEDIR) * vec3(0.014, 0.023, 0.042);
+			color += atmospheric_flash;
 		}
 		vec4 clouds = HALF_RES_COLOR;
-		if (high_volume && cloud_coverage > 0.0
+		if (high_volume && cloud_volume_may_exist()
 			&& (EYEDIR.y > 0.0 || altitude_at(cloud_observer_position_km) >= cloud_base_km)) {
 			clouds = trace_clouds(EYEDIR, true);
 		}
+		if (stylized_weather_enabled && clouds.a > 0.0001) {
+			vec3 raw = clouds.rgb / clouds.a;
+			clouds.rgb = (stylized_cloud_color(raw) + atmospheric_flash * 2.0) * clouds.a;
+		}
 		COLOR = color * (1.0 - clouds.a) + clouds.rgb;
+		if (cloud_mode == 0 && cloud_coverage < 0.18 && clear_wisp_amount > 0.0) {
+			vec4 wisps = clear_wisps(EYEDIR);
+			COLOR = mix(COLOR, wisps.rgb, wisps.a);
+		}
 		COLOR += atmospheric_rainbow(EYEDIR, sun_direction);
+		if (horizon_fog_strength > 0.0) {
+			float horizon_weight = 1.0 - smoothstep(
+				horizon_fog_direction_y_range.x, horizon_fog_direction_y_range.y, EYEDIR.y
+			);
+			// The intervening haze scatters the localized flash even where it obscures the cloud.
+			vec3 lit_fog = horizon_fog_radiance + atmospheric_flash * 2.0;
+			COLOR = mix(COLOR, lit_fog, horizon_fog_strength * horizon_weight);
+		}
+		if (moonlit_dust_fog_weight > 0.0) {
+			float sky_weight = smoothstep(-0.025, 0.22, EYEDIR.y);
+			vec3 radiance = moonlit_dust_fog_radiance * mix(1.12, 1.32, sky_weight);
+			FOG = vec4(radiance, moonlit_dust_fog_weight * 0.72);
+		}
+		float daylight_haze = daylight_visibility_haze_weight * smoothstep(0.03, 0.35, sun_direction.y);
+		if (daylight_haze > 0.0) {
+			vec3 radiance = mix(daylight_visibility_horizon_radiance, daylight_visibility_zenith_radiance,
+				smoothstep(0.0, 0.6, EYEDIR.y));
+			FOG = vec4(radiance + atmospheric_flash * 2.0, daylight_haze);
+		}
 	}
 }
 

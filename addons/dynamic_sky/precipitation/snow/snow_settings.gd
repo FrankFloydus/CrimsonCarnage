@@ -1,7 +1,7 @@
 @tool
 class_name DynamicSkySnowSettings
 extends Resource
-## Authored snow emitter and cached trajectory settings recovered from the source weather actor.
+## Authored settings for snowfall emission, cached trajectories, and flake appearance.
 
 ## Falling particles emitted per second at full snow intensity before camera-motion compensation.
 @export_range(1.0, 100000.0, 1.0, "or_greater", "suffix:particles/s") var spawn_rate: float = 20000.0:
@@ -105,4 +105,60 @@ extends Resource
 		if sprite_size_meters == value:
 			return
 		sprite_size_meters = value
+		emit_changed()
+
+## Maximum rendered flake height divided by its width. Zero uses the full velocity stretch.
+@export_range(0.0, 24.0, 0.1, "or_greater", "suffix:x") var maximum_visual_stretch: float = 0.0:
+	set(value):
+		value = maxf(value, 1.0) if value > 0.0 else 0.0
+		if maximum_visual_stretch == value:
+			return
+		maximum_visual_stretch = value
+		emit_changed()
+
+## Distance in meters where close flakes reach their full opacity. Set to zero to use the hard near cutoff.
+@export_range(0.0, 5.0, 0.05, "or_greater", "suffix:m") var near_feather_end_meters: float = 0.0:
+	set(value):
+		value = maxf(value, 0.0)
+		if near_feather_end_meters == value:
+			return
+		near_feather_end_meters = value
+		emit_changed()
+
+## Draws airborne flakes after temporal antialiasing and camera depth of field on supported Forward+ builds.
+## Defaults to ordinary transparency. The flake material keeps its own blur and opaque-depth rejection.
+@export var render_after_depth_of_field: bool = false:
+	set(value):
+		if render_after_depth_of_field == value:
+			return
+		render_after_depth_of_field = value
+		emit_changed()
+
+@export_group("Daytime Blizzard Visibility")
+
+## Airborne flake opacity during strong daylight blizzards. One keeps the authored flake opacity.
+@export_range(0.0, 1.0, 0.01) var blizzard_daytime_opacity: float = 1.0:
+	set(value):
+		value = clampf(value, 0.0, 1.0)
+		if blizzard_daytime_opacity == value:
+			return
+		blizzard_daytime_opacity = value
+		emit_changed()
+
+## Additional opacity multiplier over the distant veil, blended across opaque receiver depths from 7 to 42 meters.
+@export_range(0.0, 1.0, 0.01) var blizzard_distant_receiver_opacity: float = 1.0:
+	set(value):
+		value = clampf(value, 0.0, 1.0)
+		if blizzard_distant_receiver_opacity == value:
+			return
+		blizzard_distant_receiver_opacity = value
+		emit_changed()
+
+## Extends the near-field feather to this distance during strong daylight blizzards. Zero uses the regular near cutoff.
+@export_range(0.0, 5.0, 0.05, "or_greater", "suffix:m") var blizzard_near_feather_end_meters: float = 0.0:
+	set(value):
+		value = maxf(value, 0.0)
+		if blizzard_near_feather_end_meters == value:
+			return
+		blizzard_near_feather_end_meters = value
 		emit_changed()

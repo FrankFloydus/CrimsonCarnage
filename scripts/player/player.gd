@@ -2,23 +2,39 @@ class_name Player
 extends CharacterBody3D
 ## Resolves first-person movement input and advances physical locomotion once.
 
+const LOCOMOTION_MAP := &"Locomotion"
+const WALK := &"walk"
+const CROUCH := &"crouch"
+const DASH := &"dash"
+
 var _gait := FirstPersonGait.new()
 var _crouch_input_held: bool = false
+var _controls: Controls
 
 @onready var _movement: FirstPersonMovement = $Movement
 @onready var _crouch: FirstPersonCrouch = $Crouch
+@onready var _controls_setup: ControlsComponent = $Controls
+
+
+func _ready() -> void:
+	_controls = Controls.boot(self, _controls_setup.input_layout)
+	if _controls == null or not _controls.is_ready() or _controls.set_map_enabled(LOCOMOTION_MAP, true) != OK:
+		push_error("Assign a valid Locomotion Input Layout to the player's Controls.")
+		_controls = null
 
 
 func _physics_process(delta: float) -> void:
-	var controls_active := Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
-	if not controls_active:
+	_advance_control_frame(delta, Input.mouse_mode == Input.MOUSE_MODE_CAPTURED)
+
+
+func _advance_control_frame(delta: float, controls_active: bool) -> void:
+	if not controls_active or _controls == null or not _controls.is_ready():
 		advance_locomotion(delta, Vector2.ZERO)
 		return
-	var movement_input := Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_backward")
-	advance_locomotion(delta, movement_input,
-			Input.is_action_just_pressed(&"jump"),
-			Input.is_action_just_pressed(&"crouch"), Input.is_action_pressed(&"crouch"),
-			Input.is_action_pressed(&"walk"), Input.is_action_just_pressed(&"dash")
+	advance_locomotion(delta, _controls.vector(_controls_setup.move_action),
+			_controls.pressed(_controls_setup.jump_action),
+			_controls.pressed(CROUCH), _controls.held(CROUCH),
+			_controls.held(WALK), _controls.pressed(DASH)
 	)
 
 

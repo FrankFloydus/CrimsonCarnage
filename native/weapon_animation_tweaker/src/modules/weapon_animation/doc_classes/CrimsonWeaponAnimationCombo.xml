@@ -1,0 +1,57 @@
+<!-- Copyright Francesco Di Blasi 2026 - All Rights Reserved -->
+<class name="CrimsonWeaponAnimationCombo" inherits="Resource">
+	<brief_description>Ordered weapon animation clips with authored joins.</brief_description>
+	<description>Stores clip keys and the exit, entry and blend settings between them. Legacy resources can be copied into native drafts through [method from_resource].</description>
+	<methods>
+		<method name="from_resource" qualifiers="static">
+			<return type="CrimsonWeaponAnimationCombo" />
+			<param index="0" name="resource" type="Resource" />
+			<description>Read a detached combo draft from native storage or a legacy saved resource with the same fields. Returns null for incompatible storage.</description>
+		</method>
+		<method name="copy" qualifiers="const">
+			<return type="CrimsonWeaponAnimationCombo" />
+			<description>Copy the combo and its per-transition settings for independent editing.</description>
+		</method>
+		<method name="set_clips">
+			<return type="void" />
+			<param index="0" name="keys" type="StringName[]" />
+			<description>Replace the sequence and retain authored settings for matching directed pairs, including the closing pair. A new pair initially blends for 0.08 seconds between the natural end and start.</description>
+		</method>
+		<method name="get_join_count" qualifiers="const">
+			<return type="int" />
+			<description>Return the number of active transitions. Two or more clips yield one transition per adjacent pair and an optional closing transition.</description>
+		</method>
+		<method name="get_join" qualifiers="const">
+			<return type="Dictionary" />
+			<param index="0" name="index" type="int" />
+			<description>Return a detached transition record for the outgoing step index. Missing fields and invalid indexes return their defaults.</description>
+		</method>
+		<method name="set_join">
+			<return type="void" />
+			<param index="0" name="index" type="int" />
+			<param index="1" name="exit_marker" type="StringName" />
+			<param index="2" name="entry_marker" type="StringName" />
+			<param index="3" name="blend_duration" type="float" />
+			<param index="4" name="exit_time" type="float" default="-1.0" />
+			<param index="5" name="entry_time" type="float" default="-1.0" />
+			<description>Set a transition by outgoing step index. At either endpoint a nonempty marker name takes priority. A time of -1 uses the natural boundary. Blend and time arguments are in seconds. Out-of-range indexes leave the resource unchanged.</description>
+		</method>
+		<method name="resolve_join" qualifiers="const">
+			<return type="Dictionary" />
+			<param index="0" name="player" type="AnimationPlayer" />
+			<param index="1" name="index" type="int" />
+			<description>Resolve the active transition against [param player]. Success returns clip keys, durations, names, times, and the requested blend in seconds. An invalid transition returns an [code]error[/code] string.</description>
+		</method>
+		<method name="validate" qualifiers="const">
+			<return type="String" />
+			<param index="0" name="player" type="AnimationPlayer" />
+			<description>Check the active transitions and each clip's trim order. Returns the first problem or an empty string for a playable sequence.</description>
+		</method>
+	</methods>
+	<members>
+		<member name="display_name" type="String" setter="set_display_name" getter="get_display_name" default="&quot;&quot;">Name shown in the editor.</member>
+		<member name="clip_keys" type="StringName[]" setter="set_clip_keys" getter="get_clip_keys" default="[]">Ordered animation library keys accepted by [method AnimationPlayer.play]. Use [method set_clips] to preserve existing transition settings during order edits.</member>
+		<member name="joins" type="Dictionary[]" setter="set_joins" getter="get_joins" default="[]">Per-step authored transitions. The final row closes the loop. Each record contains marker names, optional explicit endpoint times, and blend duration in seconds.</member>
+		<member name="loop" type="bool" setter="set_loop" getter="get_loop" default="true">Play the transition from the final clip back to the first. Adjusting this flag retains the saved closing transition.</member>
+	</members>
+</class>

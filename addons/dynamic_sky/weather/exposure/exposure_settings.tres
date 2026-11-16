@@ -1,6 +1,14 @@
-[gd_resource type="Resource" script_class="DynamicSkyExposureSettings" format=3]
+[gd_resource type="Resource" script_class="DynamicSkyExposureSettings" format=3 uid="uid://bp2qxv81etyuo"]
 
-[ext_resource type="Script" path="res://addons/dynamic_sky/weather/exposure/exposure_settings.gd" id="1_settings"]
+[ext_resource type="Script" uid="uid://uhrboack0on8" path="res://addons/dynamic_sky/weather/exposure/exposure_settings.gd" id="1_settings"]
+
+[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_dust"]
+resource_name = "Nighttime Dust Exposure"
+auto_exposure_enabled = true
+auto_exposure_scale = 0.17
+auto_exposure_speed = 3.0
+auto_exposure_min_sensitivity = 34.0
 
 [resource]
 script = ExtResource("1_settings")
+dust_night_exposure = SubResource("CameraAttributesPractical_dust")

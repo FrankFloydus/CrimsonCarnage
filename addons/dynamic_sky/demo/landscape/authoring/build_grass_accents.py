@@ -1,5 +1,6 @@
 from pathlib import Path
 from terrain_sampling import sample_ground
+from reanchor_multimesh import edit_multimesh_scene
 import json
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
@@ -41,7 +42,7 @@ for level,blade_count,sections in [("near",29,3),("mid",12,2),("far",4,1)]:
         for normal in n:f.write("vn %.5f %.5f %.5f\n"%tuple(normal))
         for face in idx+1:f.write("f "+" ".join(f"{i}//{i}" for i in face)+"\n")
     print(filename,len(faces),"triangles")
-data=np.load(out/"terrain_field.npz")
+data=np.load(out/"authored_site_source.npz")
 coords=(data["zs"],data["xs"])
 field=lambda name,q:RegularGridInterpolator(coords,data[name])(q)
 gz,gx=np.gradient(data["height"],data["zs"],data["xs"])
@@ -118,8 +119,30 @@ header="""[gd_scene format=3]
 [ext_resource type="Script" path="res://addons/dynamic_sky/surfaces/weather_surface.gd" id="weather"]
 [ext_resource type="PackedScene" path="res://addons/dynamic_sky/weather/wind/foliage_wind.tscn" id="wind"]
 """
-temporary=root/"ground_cover.tscn.tmp"
-temporary.write_text(header+"".join(resources)+"".join(nodes),encoding="utf-8")
-temporary.replace(root/"ground_cover.tscn")
-print("grass",len(x),"tufts",len(groups),"patches")
 
+field=dict(np.load(Path(__file__).with_name("terrain_field.npz")))
+grid=(field["zs"],field["xs"])
+gz,gx=np.gradient(field["height"],*grid)
+slope_at=RegularGridInterpolator(grid,np.hypot(gx,gz))
+meadow_at=RegularGridInterpolator(grid,field["meadow"])
+trail_at=RegularGridInterpolator(grid,field["trail"])
+
+
+def reanchor(rows,position):
+    px,pz=rows[:,3]+position[0],rows[:,11]+position[2]
+    py=sample_ground(field,px,pz)
+    q=np.stack([pz,px],axis=-1)
+    keep=(py>-24)&(slope_at(q)<.75)&(meadow_at(q)>.20)&(trail_at(q)<.13)
+    keep|=abs(py-(rows[:,7]+position[1]+.018))<.002
+    rows=rows[keep].copy()
+    py=py[keep]
+    cy=float(np.mean(py-.018)) if len(py) else position[1]
+    rows[:,7]=py-.018-cy
+    return rows,np.array([position[0],cy,position[2]])
+
+
+text,counts=edit_multimesh_scene(header+"".join(resources)+"".join(nodes),"Cover","cover",reanchor)
+temporary=root/"ground_cover.tscn.tmp"
+temporary.write_text(text,encoding="utf-8")
+temporary.replace(root/"ground_cover.tscn")
+print("grass",sum(counts),"tufts",len(counts),"patches")

@@ -1,0 +1,47 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/weather/radial_storm.gd" id="1_storm"]
+[ext_resource type="Script" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="2_profile"]
+[ext_resource type="Script" path="res://addons/dynamic_sky/audio/radial_storm_thunder.gd" id="3_thunder"]
+[ext_resource type="AudioStreamSynchronized" path="res://addons/dynamic_sky/audio/radial_thunder_recording.tres" id="4_bed"]
+[ext_resource type="PackedScene" path="res://addons/dynamic_sky/weather/radial_visuals/radial_storm_ray_visual.tscn" id="5_visual"]
+
+[sub_resource type="Resource" id="Resource_storm_weather"]
+resource_local_to_scene = true
+resource_name = "Radial Thunderstorm"
+script = ExtResource("2_profile")
+cloud_coverage = 0.8
+fog_density = 0.0012179784
+fog_height_falloff = 0.001888826067
+fog_start_distance = 3.319276139
+fog_amount = 0.65
+rain = 1.0
+snow_coverage_limit = 0.0
+wind = Vector2(0, 15)
+gustiness = 1.0
+lightning_rate = 11.0
+sheet_lightning_rate = 3.5
+temperature_offset = -7.0
+metadata/source_material_state = Vector3(1, 0, 0)
+
+[node name="RadialStorm" type="Node3D"]
+script = ExtResource("1_storm")
+weather = SubResource("Resource_storm_weather")
+priority = 1
+apply_material_state = true
+thunder_stream = ExtResource("4_bed")
+
+[node name="DistantVisual" parent="." instance=ExtResource("5_visual")]
+
+[node name="Thunder" type="Node3D" parent="."]
+script = ExtResource("3_thunder")
+
+[node name="Left" type="AudioStreamPlayer3D" parent="Thunder"]
+top_level = true
+attenuation_model = 3
+attenuation_filter_db = 0.0
+
+[node name="Right" type="AudioStreamPlayer3D" parent="Thunder"]
+top_level = true
+attenuation_model = 3
+attenuation_filter_db = 0.0

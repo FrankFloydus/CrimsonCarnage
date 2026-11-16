@@ -12,8 +12,12 @@ const IMMEDIATE_ROTATION_COSINE := 0.995
 const VOLUMETRIC := 0
 const STATIC := 1
 const DYNAMIC_2D := 3
+const MAX_RADIAL_CLOUD_CELLS := 8
 const VOLUME_PARAMETERS: Array[StringName] = [
 	&"cloud_offset", &"cloud_base_km", &"cloud_thickness_km", &"cloud_extinction", &"low_cloud_scale",
+	&"cloud_formation_texture_scale", &"cloud_formation_phase", &"cloud_formation_z_shift",
+	&"cloud_erosion_scale", &"cloud_erosion_intensity", &"cloud_high_frequency_amount",
+	&"cloud_macro_variation", &"cloud_macro_scale",
 ]
 const STATIC_PARAMETERS: Array[StringName] = [
 	&"static_cloud_altitude_km", &"static_cloud_scale", &"static_cloud_yaw_degrees", &"static_cloud_opacity",
@@ -58,11 +62,17 @@ var _drawn_basis: Basis = Basis.IDENTITY
 var _drawn_center: Vector3 = Vector3.ZERO
 var _drawn_size: float = 0.0
 var _drawn_mode: int = -1
+var _drawn_radial_cell_count: int = 0
 var _elapsed: float = 0.0
 
 
 func _ready() -> void:
 	_native_support = _supports_projector()
+
+
+## Redraws changed authored sampling or strength on the next apply_sky without reallocating the map.
+func request_refresh() -> void:
+	_elapsed = maxf(_elapsed, 1.0 / maxf(updates_per_second, 1.0))
 
 
 func _exit_tree() -> void:
@@ -100,12 +110,34 @@ func apply_sky(
 		return false
 
 	var coverage: Variant = _read_sky_parameter(sky_material, &"cloud_coverage")
+	var radial_count := 0
+	var radial_cells := PackedVector4Array()
+	var radial_values := PackedVector4Array()
+	var radial_can_add := false
+	if mode == VOLUMETRIC:
+		var count: Variant = sky_material.get_shader_parameter(&"radial_cloud_cell_count")
+		if count is int and count > 0:
+			var geometry: Variant = sky_material.get_shader_parameter(&"radial_cloud_cells")
+			var values: Variant = sky_material.get_shader_parameter(&"radial_cloud_cell_values")
+			if geometry is PackedVector4Array and values is PackedVector4Array:
+				radial_cells = geometry
+				radial_values = values
+				radial_count = mini(clampi(count, 0, MAX_RADIAL_CLOUD_CELLS), mini(radial_cells.size(), radial_values.size()))
+				for index in radial_count:
+					if radial_cells[index].z > 0.0 and radial_values[index].x > 0.0 and radial_values[index].y > 0.0:
+						radial_can_add = true
+						break
 	var noise := sky_material.get_shader_parameter(&"cloud_noise") as Texture3D
 	var weather := sky_material.get_shader_parameter(&"cloud_weather") as Texture2D
+	var formation := sky_material.get_shader_parameter(&"cloud_formation") as Texture3D
+	var erosion := sky_material.get_shader_parameter(&"cloud_erosion_volume") as Texture3D
+	var profile := sky_material.get_shader_parameter(&"cloud_profile") as Texture2D
 	var sheet := sky_material.get_shader_parameter(&"dynamic_2d_cloud_map") as Texture2D
 	if (
-		coverage == null or float(coverage) <= 0.0
-		or (mode == VOLUMETRIC and (noise == null or weather == null))
+		coverage == null or (float(coverage) <= 0.0 and not radial_can_add)
+		or (mode == VOLUMETRIC and (
+			noise == null or weather == null or formation == null or erosion == null or profile == null
+		))
 		or (mode != VOLUMETRIC and sheet == null)
 	):
 		_release_projector()
@@ -120,7 +152,7 @@ func apply_sky(
 	var changing_sun := _sun != sun
 	var refresh_now := (
 		needs_texture or changing_sun or sun.light_projector != old_texture
-		or mode != _drawn_mode or _drawn_size != map_size
+		or mode != _drawn_mode or _drawn_size != map_size or radial_count != _drawn_radial_cell_count
 		or basis.z.dot(_drawn_basis.z) < IMMEDIATE_ROTATION_COSINE
 		or basis.x.dot(_drawn_basis.x) < IMMEDIATE_ROTATION_COSINE
 		or center.distance_squared_to(_drawn_center) > map_size * map_size * 0.0625
@@ -154,14 +186,20 @@ func apply_sky(
 		&"shadow_strength": clampf(shadow_strength, 0.0, 1.0),
 		&"cloud_coverage": coverage,
 		&"shadow_cloud_mode": mode,
+		&"radial_cloud_cell_count": radial_count,
 	}
 	var mode_parameters: Array[StringName]
 	match mode:
 		VOLUMETRIC:
+			if radial_count > 0:
+				parameters[&"radial_cloud_cells"] = radial_cells
+				parameters[&"radial_cloud_cell_values"] = radial_values
 			parameters[&"samples_per_ray"] = clampi(samples_per_ray, 4, 24)
 			parameters[&"cloud_noise"] = noise
 			parameters[&"cloud_weather"] = weather
-			parameters[&"cloud_formation"] = sky_material.get_shader_parameter(&"cloud_formation") as Texture3D
+			parameters[&"cloud_formation"] = formation
+			parameters[&"cloud_erosion_volume"] = erosion
+			parameters[&"cloud_profile"] = profile
 			mode_parameters = VOLUME_PARAMETERS
 		STATIC:
 			parameters[&"dynamic_2d_cloud_map"] = sheet
@@ -184,6 +222,7 @@ func apply_sky(
 		_drawn_center = center
 		_drawn_size = map_size
 		_drawn_mode = mode
+		_drawn_radial_cell_count = radial_count
 		sun.global_position = center
 		sun.set(PROJECTOR_SIZE, map_size)
 		if sun.light_projector != _texture:

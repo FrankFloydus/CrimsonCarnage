@@ -124,7 +124,9 @@ static func _append_ribbon(
 		var taper := lerpf(1.0, 0.08, progress) if is_fork else lerpf(0.68, 1.0, progress)
 		var opacity := strength * taper if is_fork else strength
 		var reveal := lerpf(start_progress, end_progress, progress)
-		var offset := side * radius * taper
+		var eye_distance := (view_position - point).length()
+		var angular_radius := maxf(0.055, eye_distance * 0.0085)
+		var offset := side * minf(radius, angular_radius) * taper
 		surface.set_color(Color(opacity, 0.0, 0.0))
 		surface.set_uv(Vector2(0.0, reveal))
 		surface.add_vertex(point - offset)

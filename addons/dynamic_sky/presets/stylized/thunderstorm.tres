@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="DynamicSkyStylizedWeather" format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/weather/stylized_weather.gd" id="1"]
+
+[resource]
+resource_name = "Stylized Thunderstorm"
+script = ExtResource("1")
+cloud_coverage = 0.89
+fog_density = 0.00185
+fog_height_falloff = 0.001
+fog_amount = 0.64
+rain = 0.82
+wind = Vector2(3.1, 7.8)
+gustiness = 0.8
+lightning_rate = 2.6
+sheet_lightning_rate = 2.0
+temperature_offset = -6.0
+sky_zenith_tint = Color(0.24, 0.29, 0.42, 1)
+sky_horizon_tint = Color(0.52, 0.54, 0.65, 1)
+twilight_tint = Color(0.67, 0.39, 0.47, 1)
+cloud_shade_tint = Color(0.21, 0.26, 0.37, 1)
+cloud_light_tint = Color(0.54, 0.59, 0.70, 1)
+day_fog_tint = Color(0.39, 0.46, 0.56, 1)
+night_fog_tint = Color(0.10, 0.14, 0.26, 1)
+sunlight_tint = Color(0.74, 0.84, 0.98, 1)
+sunlight_strength = 0.30

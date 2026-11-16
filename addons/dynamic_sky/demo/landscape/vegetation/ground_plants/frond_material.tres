@@ -1,0 +1,12 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://addons/dynamic_sky/demo/landscape/vegetation/ground_plants/fern_frond.gdshader" id="shader"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/demo/landscape/vegetation/ground_plants/fronds/lady_fern_green.png" id="green"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/demo/landscape/vegetation/ground_plants/fronds/lady_fern_mature.png" id="mature"]
+
+[resource]
+resource_name = "Arching Lady Fern Fronds"
+shader = ExtResource("shader")
+shader_parameter/frond_albedo = ExtResource("green")
+shader_parameter/second_frond_albedo = ExtResource("mature")
+shader_parameter/leaf_transmission = 0.24

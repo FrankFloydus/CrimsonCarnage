@@ -1,11 +1,12 @@
-[gd_resource type="Resource" script_class="DynamicSkyWeather" format=3]
+[gd_resource type="Resource" script_class="DynamicSkyWeather" format=3 uid="uid://8w6bighimng8"]
 
-[ext_resource type="Script" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="1_weather"]
+[ext_resource type="Script" uid="uid://c1xk5mfkswtr8" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="1_weather"]
 
 [resource]
 resource_name = "Calm Dust"
 script = ExtResource("1_weather")
-fog_density = 0.031
+fog_density = 0.0242869
+fog_height_falloff = 0.002079441542
 fog_amount = 0.1
 dust = 0.97
 wind = Vector2(2.1, 0.65)

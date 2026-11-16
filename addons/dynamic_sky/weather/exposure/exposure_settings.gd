@@ -1,9 +1,22 @@
 class_name DynamicSkyExposureSettings
 extends Resource
-## Local observer response to volumetric cloud height and authored water surfaces.
+## Local observer response to cloud height, water surfaces, and nighttime weather.
+
+const NightStormSettings := preload("res://addons/dynamic_sky/weather/exposure/night_storm_settings.gd")
 
 ## Enables the local exposure rules on the component using this resource.
 @export var enabled: bool = true
+## Scales native fog extinction inside volumetric clouds. Zero disables local cloud fog.
+@export_range(0.0, 1.0, 0.01) var cloud_interior_fog_strength: float = 0.06
+
+@export_group("Nighttime Dust")
+## Bounded auto exposure for heavy dust after sunset. An empty resource disables it.
+## Authored camera and world exposure take precedence.
+@export var dust_night_exposure: CameraAttributesPractical
+
+@export_group("Nighttime Storm")
+## Optional lighting and fallback camera exposure for heavy rain after sunset.
+@export var night_storm: NightStormSettings
 
 @export_group("Above Volumetric Clouds")
 ## Suppresses local weather within and above the volumetric cloud layer.

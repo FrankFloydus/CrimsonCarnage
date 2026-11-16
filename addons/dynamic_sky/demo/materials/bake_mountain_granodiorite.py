@@ -2,8 +2,6 @@
 # The 4096-square results are derived storage maps, not native 4K source photography.
 
 import json
-from pathlib import Path
-
 import numpy as np
 from PIL import Image
 from scipy import ndimage

@@ -1,0 +1,10 @@
+[gd_resource type="AudioStreamSynchronized" format=3]
+
+[ext_resource type="AudioStream" path="res://addons/dynamic_sky/audio/clips/radial_thunder_left.wav" id="1_left"]
+[ext_resource type="AudioStream" path="res://addons/dynamic_sky/audio/clips/radial_thunder_right.wav" id="2_right"]
+
+[resource]
+resource_name = "Distant Thunder Stereo"
+stream_count = 2
+stream_0/stream = ExtResource("1_left")
+stream_1/stream = ExtResource("2_right")

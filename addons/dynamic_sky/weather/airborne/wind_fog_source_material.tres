@@ -1,0 +1,10 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://addons/dynamic_sky/weather/airborne/wind_fog_source.gdshader" id="1_shader"]
+[ext_resource type="Texture3D" path="res://addons/dynamic_sky/rendering/cloud_noise.png" id="2_noise"]
+
+[resource]
+resource_name = "Additive snow wind fog"
+render_priority = 110
+shader = ExtResource("1_shader")
+shader_parameter/density_noise = ExtResource("2_noise")

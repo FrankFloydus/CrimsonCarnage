@@ -1,12 +1,14 @@
-[gd_resource type="Resource" script_class="DynamicSkyWeather" format=3]
+[gd_resource type="Resource" script_class="DynamicSkyWeather" format=3 uid="uid://bg3hhq48ces10"]
 
-[ext_resource type="Script" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="1_weather"]
+[ext_resource type="Script" uid="uid://c1xk5mfkswtr8" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="1_weather"]
 
 [resource]
 resource_name = "Partly Cloudy"
 script = ExtResource("1_weather")
-cloud_coverage = 0.54
-fog_density = 0.0012
+cloud_coverage = 0.38
+fog_density = 0.00026473
+fog_height_falloff = 0.004158883083
+fog_start_distance = 73.480335723
 fog_amount = 0.1
 wind = Vector2(3.6, 1.25)
 gustiness = 0.16

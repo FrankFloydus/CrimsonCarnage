@@ -20,6 +20,8 @@ header="""[gd_scene format=3]
 
 [ext_resource type="Mesh" path="res://addons/dynamic_sky/demo/landscape/details/ridge_outcrop.obj" id="outcrop"]
 [ext_resource type="Shape3D" path="res://addons/dynamic_sky/demo/landscape/details/ridge_outcrop_collision.res" id="outcrop_shape"]
+[ext_resource type="Mesh" path="res://addons/dynamic_sky/demo/landscape/details/ridge_outcrop_small.obj" id="small_outcrop"]
+[ext_resource type="Shape3D" path="res://addons/dynamic_sky/demo/landscape/details/ridge_outcrop_small_collision.res" id="small_outcrop_shape"]
 [ext_resource type="Material" path="res://addons/dynamic_sky/demo/materials/ridge_gneiss_outcrop.tres" id="outcrop_material"]
 [ext_resource type="Mesh" path="res://addons/dynamic_sky/demo/landscape/terrace_boulder.obj" id="stone"]
 [ext_resource type="Material" path="res://addons/dynamic_sky/demo/materials/alpine_boulder.tres" id="stone_material"]
@@ -43,11 +45,12 @@ outcrops=[
     ("BeddedStone",14.9,38.4,(2.1,1.0,1.7),(-7,-25,6)),
 ]
 for name,x,z,scale,angles in outcrops:
+    variant = "small_" if name in ("TrailBlock", "BeddedStone") else ""
     y=ground(x,z)+scale[1]*.23
     nodes.append(f"""
 [node name="{name}" type="MeshInstance3D" parent="."]
 transform = {transform((x,y,z),scale,angles)}
-mesh = ExtResource("outcrop")
+mesh = ExtResource("{variant}outcrop")
 material_override = ExtResource("outcrop_material")
 
 [node name="WeatherResponse" type="Node" parent="{name}"]
@@ -59,7 +62,7 @@ snow_seconds = 8.0
 collision_mask = 0
 
 [node name="Shape" type="CollisionShape3D" parent="{name}/Collision"]
-shape = ExtResource("outcrop_shape")
+shape = ExtResource("{variant}outcrop_shape")
 """)
 for index in range(36):
     z=rng.uniform(15,88);x=17+np.sin(z*.06)*8+rng.uniform(-5.5,5.5)

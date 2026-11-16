@@ -37,11 +37,11 @@ func _ready() -> void:
 ## Inactive suspends and clears the lens, including frost, for backgrounds such as Space.
 func apply_weather(
 	rain: float, snow: float, dust: float, wind: Vector2, temperature: float, delta: float,
-	active: bool = true,
+	active: bool = true, night_grade: Vector2 = Vector2.ZERO,
 ) -> void:
 	if not is_node_ready():
 		return
-	if not active or settings == null or not settings.enabled:
+	if not active:
 		reset()
 		return
 	var camera := camera_override
@@ -49,6 +49,16 @@ func apply_weather(
 		camera = get_viewport().get_camera_3d()
 	if camera == null:
 		reset()
+		return
+	if settings == null or not settings.enabled:
+		reset()
+		if night_grade.x > 0.001:
+			_effect.show()
+			_copy.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT
+			_material.set_shader_parameter(&"wetness", 0.0)
+			_material.set_shader_parameter(&"frost", 0.0)
+			_material.set_shader_parameter(&"heat", 0.0)
+			_write_night_grade(night_grade)
 		return
 	if camera != _camera:
 		_camera = camera
@@ -100,7 +110,7 @@ func apply_weather(
 	var heat_target := hot * (1.0 - maxf(rain, snow)) * (1.0 - dust * 0.75) * _exposure
 	_heat = move_toward(_heat, heat_target if settings.heat_enabled else 0.0, step * 1.5)
 	_advance_lens(camera, wind, step)
-	_write_material(camera)
+	_write_material(camera, night_grade)
 
 
 ## Clears accumulated lens water and ice and suspends the screen copy.
@@ -166,12 +176,13 @@ func _advance_lens(camera: Camera3D, wind: Vector2, delta: float) -> void:
 	_travel = (_travel + (gravity * 0.038 + film_wind * 0.0007) * delta).posmod(64.0)
 
 
-func _write_material(camera: Camera3D) -> void:
-	var active := maxf(_wetness, maxf(_frost, _heat)) > 0.001
+func _write_material(camera: Camera3D, night_grade: Vector2) -> void:
+	var active := maxf(night_grade.x, maxf(_wetness, maxf(_frost, _heat))) > 0.001
 	_effect.visible = active
 	_copy.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT if active else BackBufferCopy.COPY_MODE_DISABLED
 	if not active:
 		return
+	_write_night_grade(night_grade)
 	var size := get_viewport().get_visible_rect().size
 	var horizon := -2.0
 	var forward := -camera.global_basis.z
@@ -198,3 +209,11 @@ func _write_material(camera: Camera3D) -> void:
 	for parameter in parameters:
 		if _material.get_shader_parameter(parameter) != parameters[parameter]:
 			_material.set_shader_parameter(parameter, parameters[parameter])
+
+
+func _write_night_grade(grade: Vector2) -> void:
+	if _material.get_shader_parameter(&"night_grade") != grade:
+		_material.set_shader_parameter(&"night_grade", grade)
+	var linear_buffer := get_viewport().use_hdr_2d
+	if _material.get_shader_parameter(&"night_grade_linear_buffer") != linear_buffer:
+		_material.set_shader_parameter(&"night_grade_linear_buffer", linear_buffer)

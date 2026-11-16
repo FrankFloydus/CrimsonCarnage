@@ -18,9 +18,12 @@ varying float model_height;
 varying float crown_radius;
 varying vec3 crown_position;
 varying vec3 canopy_normal;
+// Unbent geometric normal, independent of camera-facing and needle lighting.
+varying vec3 deposition_world_normal;
 
 void vertex() {
 	model_height = VERTEX.y;
+	deposition_world_normal = normalize(MODEL_NORMAL_MATRIX * NORMAL) * sign(determinant(mat3(MODEL_MATRIX)));
 	crown_radius = length(VERTEX.xz);
 	crown_position = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	canopy_normal = normalize(mat3(MODEL_MATRIX) * normalize(vec3(VERTEX.x * 0.36, 0.67, VERTEX.z * 0.36)));
@@ -62,12 +65,15 @@ void fragment() {
 		// This is the transmitted fraction; tinting it again squares needle reflectance.
 		BACKLIGHT = vec3(needle_backlight);
 	}
+	// A card has two physical sides. Only its upward visible side carries snow.
+	vec3 deposition_normal = normalize(deposition_world_normal) * (FRONT_FACING ? 1.0 : -1.0);
+	float snow_exposure = smoothstep(0.08, 0.77, deposition_normal.y);
 	float exposed = smoothstep(0.08, 0.77, (mat3(INV_VIEW_MATRIX) * NORMAL).y);
 	float drift = sin(dot(crown_position, vec3(1.67, 1.82, 1.35))) * 0.54
 		+ cos(dot(crown_position, vec3(-3.12, 4.41, 2.67))) * 0.46;
 	float snowline = weather_surface.y - (0.52 + drift * 0.22);
 	float feather = clamp(fwidth(snowline) * 0.75, 0.027, 0.12);
-	float snow = smoothstep(-feather, 0.14 + feather, snowline) * exposed;
+	float snow = smoothstep(-feather, 0.14 + feather, snowline) * snow_exposure;
 	snow *= 1.0 - clamp(length(dynamic_sky_wind_velocity) * 0.013, 0.0, 0.33);
 	float wet = weather_surface.x * (1.0 - snow);
 	float dust = weather_surface.z * (0.19 + exposed * 0.26) * (1.0 - snow);

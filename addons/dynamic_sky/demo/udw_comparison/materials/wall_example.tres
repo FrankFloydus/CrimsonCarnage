@@ -1,0 +1,21 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://addons/dynamic_sky/demo/udw_comparison/materials/demo_checker.gdshader" id="checker"]
+[ext_resource type="Texture2D" path="res://textures/prototype/grid_worn_concrete_normal.webp" id="substrate"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/surfaces/textures/snowpack_albedo.webp" id="snow_albedo"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/surfaces/textures/snowpack_normal.webp" id="snow_normal"]
+[ext_resource type="Texture2D" path="res://addons/dynamic_sky/surfaces/textures/snowpack_orm.webp" id="snow_orm"]
+
+[resource]
+resource_name = "UDW Wall Example"
+shader = ExtResource("checker")
+shader_parameter/use_surface_uv = true
+shader_parameter/checker_cells_per_uv = 10.0
+shader_parameter/checker_reflectance = Vector2(0.11, 0.10)
+shader_parameter/checker_roughness = Vector2(0.75, 0.8)
+shader_parameter/substrate_normal = ExtResource("substrate")
+shader_parameter/dynamic_sky_snow_albedo = ExtResource("snow_albedo")
+shader_parameter/dynamic_sky_snow_normal = ExtResource("snow_normal")
+shader_parameter/dynamic_sky_snow_orm = ExtResource("snow_orm")
+shader_parameter/dynamic_sky_dust_color = Color(0.54725631, 0.52208291, 0.47455864, 1.0)
+shader_parameter/comparison_source_dust = true

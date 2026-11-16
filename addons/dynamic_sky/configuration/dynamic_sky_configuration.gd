@@ -4,6 +4,7 @@ extends Resource
 ## Saved Inspector configuration for supported sky, weather, and environmental controls.
 ## Native rendering controls remain on the actual Environment, Sky, and ShaderMaterial resources.
 
+const RadialStormSpawning = preload("res://addons/dynamic_sky/weather/radial_storm_spawning.gd")
 const DEFAULT_WEATHER_LIBRARY = preload("res://addons/dynamic_sky/presets/weather_library.tres")
 
 @export_group("Clock and Location")
@@ -64,6 +65,12 @@ const DEFAULT_WEATHER_LIBRARY = preload("res://addons/dynamic_sky/presets/weathe
 	set(value):
 		_watch_resource(climate, value)
 		climate = value
+		emit_changed()
+
+## Optional source-style schedule for spatial storms passing over the active observer.
+@export var radial_storm_spawning: RadialStormSpawning:
+	set(value):
+		radial_storm_spawning = value
 		emit_changed()
 
 ## Cloud texture UV displacement per meter of horizontal wind travel.
@@ -148,6 +155,43 @@ const DEFAULT_WEATHER_LIBRARY = preload("res://addons/dynamic_sky/presets/weathe
 		wind_shake_enabled = value
 		emit_changed()
 
+@export_group("Material Weather")
+## Wetness, snow, and dust on compatible existing shaders, including the prototype grid.
+## Shader code and material assignments remain authored on the geometry.
+@export var material_weather_settings: DynamicSkyMaterialWeatherSettings:
+	set(value):
+		_watch_resource(material_weather_settings, value)
+		material_weather_settings = value
+		emit_changed()
+
+
+@export_group("Rain and Cloud Shadows")
+## Visible rain layers and contacts. Weather-driven wetness, sky, and audio remain independent.
+@export var rain_settings: DynamicSkyRainSettings:
+	set(value):
+		_watch_resource(rain_settings, value)
+		rain_settings = value
+		emit_changed()
+
+## Directional cloud-shadow map projection, sampling, strength, and refresh controls.
+@export var cloud_shadow_settings: DynamicSkyCloudShadowSettings:
+	set(value):
+		_watch_resource(cloud_shadow_settings, value)
+		cloud_shadow_settings = value
+		emit_changed()
+
+## Explicit root cloud mode, or Material Default to retain the actual native material's mode.
+@export_enum("Material Default:-1", "Volumetric:0", "Static:1", "Clear:2", "Dynamic 2D:3", "Space:4") var cloud_mode: int = -1:
+	set(value):
+		cloud_mode = clampi(value, -1, 4)
+		emit_changed()
+
+## Independent root color mode, or Material Default to retain native material authoring.
+@export_enum("Material Default:-1", "Sky Atmosphere:0", "Simplified Color:1") var color_mode: int = -1:
+	set(value):
+		color_mode = clampi(value, -1, 1)
+		emit_changed()
+
 @export_group("Temperature")
 ## Clear-weather air temperature during the warmest part of the day, in degrees Celsius.
 @export_range(-60.0, 60.0, 0.1, "suffix:°C") var day_temperature: float = 18.0:
@@ -180,13 +224,26 @@ const DEFAULT_WEATHER_LIBRARY = preload("res://addons/dynamic_sky/presets/weathe
 		daylight_color = value
 		emit_changed()
 
+## Authored sRGB moonlight tint; lunar phase, altitude and weather control energy separately.
+@export var moon_light_color: Color = Color(0.69846177, 0.77201432, 0.93793751):
+	set(value):
+		moon_light_color = value
+		emit_changed()
+
 ## Direct sunlight tint as the sun passes through the horizon.
 @export var sunset_light_color: Color = Color(1.0, 0.48, 0.23):
 	set(value):
 		sunset_light_color = value
 		emit_changed()
 
-@export_group("Weather Fog Colors")
+@export_group("Weather Fog")
+## Applies the active weather profile's height falloff and start distance in supported Forward+ builds.
+## The active Environment still owns the fog reference height and the authored settings used on opt-out.
+@export var drive_height_fog_from_weather: bool = false:
+	set(value):
+		drive_height_fog_from_weather = value
+		emit_changed()
+
 ## Distance-fog tint at noon, before overcast and dust contributions.
 @export var day_fog_color: Color = Color(0.59, 0.67, 0.76):
 	set(value):
@@ -212,13 +269,13 @@ const DEFAULT_WEATHER_LIBRARY = preload("res://addons/dynamic_sky/presets/weathe
 		emit_changed()
 
 @export_group("Lightning Illumination")
-## Peak energy of the directional light during a visible or obscured lightning flash.
+## Peak directional fill from sheet flashes. Zero also disables lightning glow in the sky.
 @export_range(0.0, 5.0, 0.01, "or_greater") var lightning_energy: float = 1.45:
 	set(value):
 		lightning_energy = maxf(value, 0.0)
 		emit_changed()
 
-## Real seconds for the sky's directional flash response to decay.
+## Real seconds for the sheet light and sky glow to decay.
 @export_range(0.05, 1.0, 0.01, "suffix:s") var lightning_duration: float = 0.26:
 	set(value):
 		lightning_duration = maxf(value, 0.05)
@@ -271,12 +328,16 @@ func get_scalar_values() -> Dictionary[StringName, Variant]:
 		&"north_rotation": north_rotation,
 		&"cloud_drift_scale": cloud_drift_scale,
 		&"volumetric_quality": volumetric_quality,
+		&"cloud_mode": cloud_mode,
+		&"color_mode": color_mode,
 		&"day_temperature": day_temperature,
 		&"night_temperature": night_temperature,
 		&"sun_energy": sun_energy,
 		&"moon_energy": moon_energy,
 		&"daylight_color": daylight_color,
+		&"moon_light_color": moon_light_color,
 		&"sunset_light_color": sunset_light_color,
+		&"drive_height_fog_from_weather": drive_height_fog_from_weather,
 		&"day_fog_color": day_fog_color,
 		&"night_fog_color": night_fog_color,
 		&"overcast_fog_color": overcast_fog_color,

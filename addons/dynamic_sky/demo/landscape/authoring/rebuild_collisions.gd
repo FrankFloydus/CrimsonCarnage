@@ -3,7 +3,7 @@ extends SceneTree
 
 
 func _initialize() -> void:
-	for stem: String in ["lookout_terrain", "details/ridge_outcrop"]:
+	for stem: String in ["lookout_terrain", "details/ridge_outcrop", "details/ridge_outcrop_small"]:
 		var base_path := "res://addons/dynamic_sky/demo/landscape/" + stem
 		var mesh := load(base_path + ".obj") as Mesh
 		assert(mesh != null, "Import the authored OBJ before rebuilding collision: " + base_path)

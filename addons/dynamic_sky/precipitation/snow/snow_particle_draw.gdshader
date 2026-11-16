@@ -1,5 +1,5 @@
 shader_type spatial;
-render_mode blend_mix, cull_back, depth_draw_never, depth_test_disabled, shadows_disabled, fog_disabled, skip_vertex_transform, vertex_lighting;
+render_mode blend_mix, cull_back, depth_draw_never, depth_test_disabled, shadows_disabled, fog_disabled, skip_vertex_transform;
 
 // Linear packed G = sharp snow, B = defocused snow. Each cell is selected independently.
 uniform sampler2D snow_sheet : repeat_enable, filter_linear_mipmap_anisotropic;
@@ -9,6 +9,10 @@ uniform vec3 snow_color = vec3(1.0);
 uniform float snow_sprite_alpha = 1.0;
 uniform vec3 ambient_fog_color = vec3(0.0);
 uniform float snow_ambient_intensity = 0.0;
+uniform float maximum_visual_stretch = 0.0;
+uniform vec2 near_feather_range = vec2(0.45, 0.0);
+// Opacity, distant receiver multiplier, and near feather end in meters.
+uniform vec3 daytime_blizzard_visibility = vec3(1.0, 1.0, 0.0);
 
 // Source circle-DOF parameters. Defaults represent the reference editor's disabled camera DOF.
 uniform vec3 circle_dof_parameters = vec3(0.0);
@@ -55,7 +59,12 @@ void vertex() {
 	} else {
 		vec3 main_position = MODEL_MATRIX[3].xyz;
 		vec3 camera_vector = INV_VIEW_MATRIX[3].xyz - main_position;
-		vec3 facing = camera_vector / max(length(camera_vector), 0.000001);
+		float camera_distance = length(camera_vector);
+		float feather_end = max(near_feather_range.y, daytime_blizzard_visibility.z);
+		if (feather_end > near_feather_range.x) {
+			sprite_alpha *= smoothstep(near_feather_range.x, feather_end, camera_distance);
+		}
+		vec3 facing = camera_vector / max(camera_distance, 0.000001);
 		vec3 sprite_velocity = INSTANCE_CUSTOM.xyz;
 		float speed = length(sprite_velocity);
 		vec3 direction = speed > 0.000001 ? sprite_velocity / speed : vec3(0.0, 1.0, 0.0);
@@ -65,6 +74,11 @@ void vertex() {
 		vec3 up = -direction;
 		vec2 pivot = vec2(0.5, -0.5);
 		vec2 corner = sprite_size * (UV - pivot);
+		if (maximum_visual_stretch > 0.0) {
+			// Shorten the quad around its original center, preserving its trajectory and depth.
+			float render_height = min(sprite_size.y, sprite_size.x * maximum_visual_stretch);
+			corner.y += (render_height - sprite_size.y) * (UV.y - 0.5);
+		}
 		vec3 world_vertex = main_position + right * corner.x + up * corner.y;
 		vec2 center_offset = sprite_size * (vec2(0.5) - pivot);
 		vec3 material_center = main_position + right * center_offset.x + up * center_offset.y;
@@ -98,12 +112,24 @@ void fragment() {
 	float focal_pixels = 0.5 * VIEWPORT_SIZE.x * abs(PROJECTION_MATRIX[0][0]);
 	vec2 dof = dof_mask_and_opacity(-VERTEX.z, particle_radius, focal_pixels);
 	float mask = mix(sheet.g, sheet.b, dof.x);
-	float depth_fade = clamp((opaque_view_depth(SCREEN_UV, INV_PROJECTION_MATRIX) + VERTEX.z) / 0.001, 0.0, 1.0);
+	float receiver_depth = opaque_view_depth(SCREEN_UV, INV_PROJECTION_MATRIX);
+	float depth_fade = clamp((receiver_depth + VERTEX.z) / 0.001, 0.0, 1.0);
+	float distant_visibility = 1.0;
+	if (daytime_blizzard_visibility.y < 1.0) {
+		distant_visibility = mix(1.0, daytime_blizzard_visibility.y, smoothstep(7.0, 42.0, receiver_depth));
+	}
 	vec3 background = textureLod(scene_color, SCREEN_UV, 0.0).rgb;
 	ALBEDO = snow_color;
 	METALLIC = 0.0;
 	ROUGHNESS = 0.5;
 	SPECULAR = 0.5;
 	EMISSION = (ambient_fog_color * snow_ambient_intensity + background * 0.55) * snow_color;
-	ALPHA = depth_fade * mask * sprite_alpha * snow_sprite_alpha * dof.y;
+	ALPHA = depth_fade * mask * sprite_alpha * snow_sprite_alpha * dof.y
+		* daytime_blizzard_visibility.x * distant_visibility;
+}
+
+void light() {
+	// Single-light reduction of the source's diffuse translucency volume with 0.6 directional weight.
+	float response = max(0.0, 0.25 + 0.30 * dot(NORMAL, LIGHT));
+	DIFFUSE_LIGHT += LIGHT_COLOR * (ATTENUATION / PI) * response;
 }

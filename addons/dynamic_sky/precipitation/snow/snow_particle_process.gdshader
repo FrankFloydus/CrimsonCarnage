@@ -113,7 +113,8 @@ void process() {
 			vec3 reference_axis = abs(normal.z) < 0.9 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
 			vec3 tangent = normalize(cross(normal, reference_axis));
 			vec3 bitangent = cross(tangent, normal);
-			mat4 impact = mat4(vec4(tangent, 0.0), vec4(normal, 0.0), vec4(bitangent, 0.0), vec4(USERDATA2.xyz - normal * 0.007, 1.0));
+			// Place the stationary sprite just outside the collider so the visible surface does not bury it.
+			mat4 impact = mat4(vec4(tangent, 0.0), vec4(normal, 0.0), vec4(bitangent, 0.0), vec4(USERDATA2.xyz + normal * 0.01, 1.0));
 			emit_subparticle(impact, vec3(0.0), vec4(1.0), vec4(USERDATA4.w, 0.0, 0.0, 0.0), FLAG_EMIT_POSITION | FLAG_EMIT_ROT_SCALE | FLAG_EMIT_CUSTOM);
 		}
 		ACTIVE = false;

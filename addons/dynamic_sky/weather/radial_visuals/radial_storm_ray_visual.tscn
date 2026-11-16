@@ -1,0 +1,36 @@
+[gd_scene format=3]
+
+[ext_resource type="Shader" path="radial_storm_ray_volume.gdshader" id="1_ray"]
+[ext_resource type="Script" path="radial_storm_ray_visual.gd" id="2_controller"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_cells"]
+noise_type = 0
+seed = 58199
+frequency = 0.074
+fractal_octaves = 3
+
+[sub_resource type="NoiseTexture3D" id="NoiseTexture3D_cells"]
+width = 48
+height = 48
+depth = 48
+seamless = true
+noise = SubResource("FastNoiseLite_cells")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_radial_depth"]
+resource_local_to_scene = true
+render_priority = -10
+shader = ExtResource("1_ray")
+shader_parameter/storm_cells = SubResource("NoiseTexture3D_cells")
+
+[sub_resource type="QuadMesh" id="QuadMesh_screen"]
+size = Vector2(2, 2)
+
+[node name="RadialStormRayVisual" type="MeshInstance3D"]
+visible = false
+cast_shadow = 0
+extra_cull_margin = 80000.0
+ignore_occlusion_culling = true
+gi_mode = 0
+material_override = SubResource("ShaderMaterial_radial_depth")
+mesh = SubResource("QuadMesh_screen")
+script = ExtResource("2_controller")

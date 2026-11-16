@@ -101,7 +101,9 @@ void fragment() {
 		alpha = grain_tint.a * max(core, tail * mix(0.24, 0.54, variant));
 		color = grain_tint.rgb * mix(0.32, 1.05, fract(phase * 5.61));
 	}
-	ALBEDO = color * mix(vec3(0.15, 0.21, 0.34), vec3(1.0), exposure);
-	ALPHA = alpha * opacity * weather_weight
+	// Keep a faint scattered component after sunset without self-lit grains or billows.
+	float night_opacity = particle_kind == 2 ? 0.58 : 0.30;
+	ALBEDO = color * mix(vec3(0.013, 0.021, 0.038), vec3(1.0), exposure);
+	ALPHA = alpha * opacity * weather_weight * mix(night_opacity, 1.0, exposure)
 		* soft_intersection(SCREEN_UV, VERTEX.z, INV_PROJECTION_MATRIX);
 }

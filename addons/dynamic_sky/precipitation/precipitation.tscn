@@ -19,7 +19,6 @@ resolution = 0
 heightfield_mask = 1
 
 [node name="Rain" parent="." instance=ExtResource("6_rain")]
-sub_emitter = NodePath("../RainSplashes")
 
 [node name="Snowfall" parent="." instance=ExtResource("5_snowfall")]
 

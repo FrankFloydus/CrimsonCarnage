@@ -71,10 +71,29 @@ extends Resource
 		intensity = value
 		emit_changed()
 
-## Peak energy of the local OmniLight3D. Zero disables ground illumination.
-@export_range(0.0, 32.0, 0.1, "or_greater") var impact_light_energy: float = 3.8:
+## Nominal energy of the aimed, shadow-casting full-strike light. Zero disables its direct lighting.
+@export_range(0.0, 32.0, 0.1, "or_greater") var impact_light_energy: float = 5.0:
 	set(value):
 		impact_light_energy = value
+		emit_changed()
+
+## Strength of the depth-masked optical glow during a full strike. Zero disables the Forward+ pass.
+@export_range(0.0, 8.0, 0.05, "or_greater") var flash_glow_intensity: float = 2.0:
+	set(value):
+		flash_glow_intensity = maxf(value, 0.0)
+		emit_changed()
+
+## Strength of the world-space cloud ray card during a full strike on Forward+. Zero disables it.
+## This multiplier is independent of Flash Glow Intensity and the direct strike light.
+@export_range(0.0, 4.0, 0.05, "or_greater") var cloud_ray_intensity: float = 1.0:
+	set(value):
+		cloud_ray_intensity = maxf(value, 0.0)
+		emit_changed()
+
+## Ray brightness over its normalized lifetime. An empty curve reference uses the saved default envelope.
+@export var cloud_ray_envelope: Curve:
+	set(value):
+		cloud_ray_envelope = value
 		emit_changed()
 
 @export_group("Timing")
@@ -84,8 +103,8 @@ extends Resource
 		leader_duration = value
 		emit_changed()
 
-## Seconds from impact until the last return stroke fades away.
-@export_range(0.05, 1.0, 0.01, "suffix:s") var return_duration: float = 0.24:
+## Nominal full-strike lighting duration in seconds after the leader, with 11.4% random variation.
+@export_range(0.05, 4.0, 0.005, "or_greater", "suffix:s") var return_duration: float = 1.975:
 	set(value):
 		return_duration = value
 		emit_changed()

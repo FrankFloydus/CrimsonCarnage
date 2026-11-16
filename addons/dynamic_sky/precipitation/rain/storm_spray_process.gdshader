@@ -8,7 +8,7 @@ void start() {
 	vec2 wind = CUSTOM.xy;
 	float seed = CUSTOM.w;
 	vec3 surface_up = normalize(TRANSFORM[1].xyz);
-	TRANSFORM[3].xyz += surface_up * 0.012;
+	TRANSFORM[3].xyz += surface_up * 0.003;
 	vec2 drift = wind * mix(0.018, 0.037, seed);
 	CUSTOM = vec4(drift, 0.0, seed);
 }

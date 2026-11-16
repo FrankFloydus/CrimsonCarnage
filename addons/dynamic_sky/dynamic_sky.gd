@@ -17,25 +17,61 @@ signal midnight(day_offset: int)
 ## Reports the first visible return stroke or an obscured cloud flash.
 signal lightning_struck(world_position: Vector3, intensity: float)
 
-enum CloudMode { VOLUMETRIC, STATIC, CLEAR, DYNAMIC_2D, SPACE }
-enum ColorMode { SKY_ATMOSPHERE, SIMPLIFIED_COLOR }
+## Authored cloud-rendering selection. Material Default leaves the actual material's mode untouched.
+enum CloudMode {
+	## Uses the mode currently authored on the native sky material.
+	MATERIAL_DEFAULT = -1,
+	## Ray-marches the world-space volume.
+	VOLUMETRIC = 0,
+	## Uses the stationary packed-lighting dome.
+	STATIC = 1,
+	## Omits cloud rendering.
+	CLEAR = 2,
+	## Uses the advected layered cloud field.
+	DYNAMIC_2D = 3,
+	## Uses the celestial backdrop and suspends terrestrial observer effects.
+	SPACE = 4,
+}
+## Independent sky-color selection for terrestrial cloud modes.
+enum ColorMode {
+	## Uses the color mode currently authored on the native sky material.
+	MATERIAL_DEFAULT = -1,
+	## Uses atmosphere scattering lookup tables.
+	SKY_ATMOSPHERE = 0,
+	## Uses the separate artist-controlled sun and moon color tables.
+	SIMPLIFIED_COLOR = 1,
+}
+
+## Selects the preset family and its rendering palette.
+enum WeatherStyle { REALISTIC, STYLIZED }
 
 const CLEAR_WEATHER = preload("res://addons/dynamic_sky/presets/clear.tres")
 const WeatherState = preload("res://addons/dynamic_sky/weather/weather_state.gd")
+const RadialStormSpawning = preload("res://addons/dynamic_sky/weather/radial_storm_spawning.gd")
+const RadialStormScheduler = preload("res://addons/dynamic_sky/weather/radial_storm_scheduler.gd")
 const SkyClock = preload("res://addons/dynamic_sky/weather/clock/sky_clock.gd")
+const CloudDaylightTransport = preload("res://addons/dynamic_sky/rendering/cloud_daylight_transport.gd")
+const MaterialWeatherBinding = preload("res://addons/dynamic_sky/surfaces/material_weather_binding.gd")
 const DEFAULT_WEATHER_LIBRARY = preload("res://addons/dynamic_sky/presets/weather_library.tres")
+const DEFAULT_STYLIZED_LIBRARY = preload("res://addons/dynamic_sky/presets/stylized/weather_library.tres")
+const StylizedWeather = preload("res://addons/dynamic_sky/weather/stylized_weather.gd")
 const GROUP := &"dynamic_sky_worlds"
 const CLOUD_OFFSET_PERIOD := 128.0
+const MAX_RADIAL_CLOUD_CELLS := 8
+const SOURCE_NIGHT_DUST_FOG_CHROMA := Vector3(1.048197, 0.970968, 1.145661)
+const SOURCE_DAY_DUST_FOG_SCALE := Color(0.74605, 0.73285, 0.80466, 1.0)
+const NATIVE_HEIGHT_FOG_SETTER := &"environment_set_fog_height_integrated"
 const CONFIGURATION_REFERENCES: Array[StringName] = [
 	&"astronomy", &"start_weather", &"climate", &"wind_settings", &"weather_presets", &"exposure_settings",
 	&"rainbow_settings", &"snow_settings", &"airborne_settings", &"wind_fog_settings",
 	&"screen_settings", &"wind_shake_settings", &"wind_debris_settings",
-	&"weather_audio_settings", &"lightning_settings",
+	&"weather_audio_settings", &"lightning_settings", &"material_weather_settings",
+	&"rain_settings", &"cloud_shadow_settings", &"radial_storm_spawning",
 ]
 
 @export_group("Configuration")
 ## Reusable Inspector configuration. Its resources travel with this rig into other scenes.
-## Empty keeps the individually authored node and child-resource settings.
+## Empty keeps this root's individually authored values and typed settings resources.
 @export var configuration: DynamicSkyConfiguration:
 	set(value):
 		if configuration == value:
@@ -104,13 +140,13 @@ const CONFIGURATION_REFERENCES: Array[StringName] = [
 		start_weather = value
 		if Engine.is_editor_hint() and start_weather != null:
 			start_weather.changed.connect(_preview_weather)
-		if is_node_ready() and Engine.is_editor_hint():
+		if is_node_ready() and Engine.is_editor_hint() and weather_style == WeatherStyle.REALISTIC:
 			_preview_weather()
 
 ## Cloud pattern UV displacement per meter of horizontal wind travel.
 @export_range(0.0, 0.01, 0.0001, "or_greater") var cloud_drift_scale: float = 0.001
 
-## Observer-only weather suppression above volumetric clouds and beneath authored water surfaces.
+## Observer effects for volumetric clouds, water surfaces, and nighttime dust exposure.
 ## Global weather, per-position physics wind, and surface accumulation use the unfiltered state.
 @export var exposure_settings: DynamicSkyExposureSettings = preload("res://addons/dynamic_sky/weather/exposure/exposure_settings.tres"):
 	set(value):
@@ -130,6 +166,74 @@ const CONFIGURATION_REFERENCES: Array[StringName] = [
 	set(value):
 		weather_presets = DEFAULT_WEATHER_LIBRARY.presets.duplicate() if value.is_empty() else value
 
+## Optional seasonal weather schedule. Empty leaves changes under manual control.
+@export var climate: DynamicSkyClimate:
+	set(value):
+		climate = value
+		_climate_time_remaining = 0.0
+
+
+@export_group("Weather Style")
+## Selects which presets, zones, and rendering palette are active. A change starts the selected family's startup weather.
+@export var weather_style: WeatherStyle = WeatherStyle.REALISTIC:
+	set(value):
+		if weather_style == value:
+			return
+		weather_style = value
+		notify_property_list_changed()
+		if not is_node_ready():
+			return
+		_climate_time_remaining = 0.0
+		_radial_storm_scheduler.stop()
+		_flash_remaining = 0.0
+		_lightning_budget = 0.0
+		_rainbow_moisture = 0.0
+		if not Engine.is_editor_hint():
+			if _strikes != null:
+				_strikes.clear_flash()
+			if _screen_weather != null:
+				_screen_weather.reset()
+		set_weather(get_starting_weather())
+
+## Separate preset library for Stylized mode. Empty uses the Nordic Fantasy library.
+@export var stylized_weather_library: DynamicSkyWeatherLibrary = DEFAULT_STYLIZED_LIBRARY:
+	set(value):
+		stylized_weather_library = value
+		if Engine.is_editor_hint() and is_node_ready() and weather_style == WeatherStyle.STYLIZED:
+			_preview_weather()
+
+## Optional starting preset for Stylized mode. Empty uses the first stylized preset in the library.
+@export var stylized_start_weather: StylizedWeather:
+	set(value):
+		if stylized_start_weather != null and stylized_start_weather.changed.is_connected(_preview_weather):
+			stylized_start_weather.changed.disconnect(_preview_weather)
+		stylized_start_weather = value
+		if Engine.is_editor_hint() and stylized_start_weather != null:
+			stylized_start_weather.changed.connect(_preview_weather)
+		if Engine.is_editor_hint() and is_node_ready() and weather_style == WeatherStyle.STYLIZED:
+			_preview_weather()
+
+
+@export_group("Radial Storm Spawning")
+## Optional schedule for storms that travel across the active camera. Manually placed storms remain independent.
+@export var radial_storm_spawning: RadialStormSpawning
+
+
+@export_group("Sky Rendering")
+## Cloud renderer selected by the root. Material Default preserves the actual sky material's setting.
+@export var cloud_mode: CloudMode = CloudMode.MATERIAL_DEFAULT:
+	set(value):
+		cloud_mode = clampi(value, CloudMode.MATERIAL_DEFAULT, CloudMode.SPACE)
+		if is_node_ready() and cloud_mode >= 0:
+			set_cloud_mode(cloud_mode)
+
+## Sky-color path independent of cloud rendering. Material Default preserves native material authoring.
+@export var color_mode: ColorMode = ColorMode.MATERIAL_DEFAULT:
+	set(value):
+		color_mode = clampi(value, ColorMode.MATERIAL_DEFAULT, ColorMode.SIMPLIFIED_COLOR)
+		if is_node_ready() and color_mode >= 0:
+			set_color_mode(color_mode)
+
 ## Volume sampling quality. Material Default preserves the saved sky material's setting.
 @export_enum("Material Default:-1", "Balanced:0", "High:1") var volumetric_quality: int = -1:
 	set(value):
@@ -139,11 +243,13 @@ const CONFIGURATION_REFERENCES: Array[StringName] = [
 		if _sky_material != null and volumetric_quality >= 0:
 			_set_sky_parameter(&"volumetric_quality", volumetric_quality)
 
-## Optional seasonal weather schedule. Empty leaves changes under manual control.
-@export var climate: DynamicSkyClimate:
+## Directional cloud-shadow projection, resolution, sampling, strength, and refresh controls.
+## Empty restores the component's saved standalone values.
+@export var cloud_shadow_settings: DynamicSkyCloudShadowSettings:
 	set(value):
-		climate = value
-		_climate_time_remaining = 0.0
+		_watch_effect_settings(cloud_shadow_settings, value)
+		cloud_shadow_settings = value
+		_effect_settings_changed()
 
 @export_group("Atmospheric Optics")
 ## Anti-solar rainbow optics and lingering rain/fog moisture. Disabled in the saved default.
@@ -158,6 +264,14 @@ const CONFIGURATION_REFERENCES: Array[StringName] = [
 		_rainbow_settings_changed()
 
 @export_group("Precipitation")
+## Visible near, middle, and distant rain, optics, splashes, and storm spray.
+## Its enable switch leaves the weather rain channel, sky, audio, and surface wetness independent.
+@export var rain_settings: DynamicSkyRainSettings:
+	set(value):
+		_watch_effect_settings(rain_settings, value)
+		rain_settings = value
+		_effect_settings_changed()
+
 ## Spawn volume, trajectory cache, wind scale, and flake size for snowfall.
 ## Empty restores the component's saved standalone settings.
 @export var snow_settings: DynamicSkySnowSettings:
@@ -288,6 +402,15 @@ const CONFIGURATION_REFERENCES: Array[StringName] = [
 		lightning_observer = value
 		_effect_settings_changed()
 
+@export_group("Material Weather")
+## Applies accumulated wetness, snow, and dust to geometry whose existing shader includes the
+## DynamicSky weather hook. Custom shaders are preserved; incompatible shaders are untouched.
+@export var material_weather_settings: DynamicSkyMaterialWeatherSettings = preload("res://addons/dynamic_sky/surfaces/material_weather_settings.tres"):
+	set(value):
+		_watch_effect_settings(material_weather_settings, value)
+		material_weather_settings = value
+		_effect_settings_changed()
+
 @export_group("Temperature")
 ## Clear-weather air temperature during the warmest part of the day, in degrees Celsius.
 @export_range(-60.0, 60.0, 0.1, "suffix:°C") var day_temperature: float = 18.0
@@ -312,6 +435,12 @@ const CONFIGURATION_REFERENCES: Array[StringName] = [
 @export var daylight_color: Color = Color(1.0, 0.94, 0.85):
 	set(value):
 		daylight_color = value
+		_apply_sky()
+
+## Authored sRGB tint of the moon directional light. Phase and weather scale its energy separately.
+@export var moon_light_color: Color = Color(0.69846177, 0.77201432, 0.93793751):
+	set(value):
+		moon_light_color = value
 		_apply_sky()
 
 ## Sunlight tint as the sun passes through the horizon.
@@ -344,29 +473,47 @@ const CONFIGURATION_REFERENCES: Array[StringName] = [
 		dust_fog_color = value
 		_apply_sky()
 
-## Peak energy of the directional light that illuminates the scene during a flash.
+## Peak directional fill from sheet flashes. Zero also disables lightning glow in the sky.
 @export_range(0.0, 5.0, 0.01, "or_greater") var lightning_energy: float = 1.45
 
-## Real seconds for the light and sky flash to decay.
+## Real seconds for the sheet light and sky glow to decay.
 @export_range(0.05, 1.0, 0.01, "suffix:s") var lightning_duration: float = 0.26
 
+@export_group("Height Fog")
+## Applies the active weather profile's height falloff and start distance in supported Forward+ builds.
+## The active Environment still owns the fog reference height and the authored settings used on opt-out.
+@export var drive_height_fog_from_weather: bool = false:
+	set(value):
+		if drive_height_fog_from_weather == value:
+			return
+		drive_height_fog_from_weather = value
+		if not value:
+			_restore_authored_height_fog()
+		if is_node_ready():
+			_apply_sky()
+
+
 const EFFECT_RESOURCE_BINDINGS := {
- &"snow_settings": [^"Precipitation/Snowfall", &"settings"],
- &"airborne_settings": [^"AirborneWeather", &""],
- &"wind_fog_settings": [^"AirborneWeather", &"wind_fog_settings"],
- &"screen_settings": [^"ScreenWeather", &"settings"],
- &"wind_shake_settings": [^"WindCameraShake", &"settings"],
- &"wind_debris_settings": [^"WindDebris", &""],
- &"weather_audio_settings": [^"WeatherAudio", &""],
- &"lightning_settings": [^"LightningStrikes", &""],
+	&"rain_settings": [^"Precipitation/Rain", &"settings"],
+	&"cloud_shadow_settings": [^"CloudShadows", &""],
+	&"snow_settings": [^"Precipitation/Snowfall", &"settings"],
+	&"airborne_settings": [^"AirborneWeather", &""],
+	&"wind_fog_settings": [^"AirborneWeather", &"wind_fog_settings"],
+	&"screen_settings": [^"ScreenWeather", &"settings"],
+	&"wind_shake_settings": [^"WindCameraShake", &"settings"],
+	&"wind_debris_settings": [^"WindDebris", &""],
+	&"weather_audio_settings": [^"WeatherAudio", &""],
+	&"lightning_settings": [^"LightningStrikes", &""],
 }
 const EFFECT_SCALAR_FIELDS: Array[StringName] = [
- &"precipitation_surface_collision", &"snow_contact_enabled", &"wind_shake_enabled",
+	&"precipitation_surface_collision", &"snow_contact_enabled", &"wind_shake_enabled",
 ]
 
 var _effect_fallbacks: Dictionary = {}
 var _applying_effect_authoring: bool = false
+var _material_weather := MaterialWeatherBinding.new()
 var _weather := WeatherState.new()
+var _radial_storm_scheduler := RadialStormScheduler.new()
 var _clock := SkyClock.new()
 var _advancing_clock: bool = false
 var _cloud_offset: Vector2 = Vector2.ZERO
@@ -382,6 +529,7 @@ var _climate_time_remaining: float = 0.0
 var _calendar_day_offset: int = 0
 var _astronomy_state: Dictionary[StringName, Variant]
 var _environment: Environment
+var _weather_height_fog_environment: Environment
 var _sky_material: ShaderMaterial
 var _cloud_projector_active: bool = false
 var _configuration_values: Dictionary[StringName, Variant] = {}
@@ -407,6 +555,7 @@ var _underwater_fog_enabled: bool = false
 @onready var _strikes: DynamicSkyLightning = get_node_or_null("LightningStrikes")
 @onready var _cloud_shadows: DynamicSkyCloudShadows = get_node_or_null("CloudShadows")
 @onready var _precipitation = get_node_or_null("Precipitation")
+@onready var _stylized_precipitation = get_node_or_null("StylizedPrecipitation")
 @onready var _audio = get_node_or_null("WeatherAudio")
 @onready var _airborne: DynamicSkyAirborneWeather = get_node_or_null("AirborneWeather")
 @onready var _wind_debris: DynamicSkyWindDebris = get_node_or_null("WindDebris")
@@ -439,6 +588,8 @@ func _effect_settings_changed() -> void:
 		return
 	_apply_effect_authoring()
 	if is_node_ready() and not _weather.current.is_empty():
+		if Engine.is_editor_hint():
+			_apply_sky()
 		_apply_weather_effects(0.0)
 
 
@@ -461,6 +612,7 @@ func _apply_effect_authoring() -> void:
 			if authored != null:
 				if not _effect_fallbacks.has(field):
 					_effect_fallbacks[field] = {}
+				var component_changed := false
 				for property in authored.get_property_list():
 					if not (property.usage & PROPERTY_USAGE_SCRIPT_VARIABLE and property.usage & PROPERTY_USAGE_STORAGE):
 						continue
@@ -468,6 +620,9 @@ func _apply_effect_authoring() -> void:
 						_effect_fallbacks[field][property.name] = component.get(property.name)
 					if component.get(property.name) != authored.get(property.name):
 						component.set(property.name, authored.get(property.name))
+						component_changed = true
+				if component_changed and field == &"cloud_shadow_settings":
+					component.request_refresh()
 			elif _effect_fallbacks.has(field):
 				for property in _effect_fallbacks[field]:
 					component.set(property, _effect_fallbacks[field][property])
@@ -543,7 +698,9 @@ func _ready() -> void:
 		set_process(false)
 		return
 
-	_weather.apply(_starting_profile())
+	_weather.apply(get_starting_weather())
+	if not Engine.is_editor_hint():
+		_material_weather.bind(self)
 	if rainbow_settings != null and not rainbow_settings.changed.is_connected(_rainbow_settings_changed):
 		rainbow_settings.changed.connect(_rainbow_settings_changed)
 	if _exposure != null:
@@ -568,6 +725,9 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
+	_radial_storm_scheduler.stop()
+	_restore_authored_height_fog()
+	_material_weather.unbind()
 	_apply_underwater_fog_mask(false)
 
 
@@ -587,6 +747,8 @@ func _process(delta: float) -> void:
 			clock_step = maxf(next_absolute_hour - float(_calendar_day_offset) * 24.0 - time_of_day, 0.0)
 	_advance_climate(delta, clock_step)
 	var completed_profile := _weather.advance(delta)
+	if weather_style == WeatherStyle.REALISTIC and _radial_storm_scheduler.advance(delta, radial_storm_spawning):
+		_spawn_scheduled_radial_storm(next_absolute_hour)
 	_refresh_view_weather()
 	_advance_rainbow(delta)
 	var wind := _get_observer_wind()
@@ -677,8 +839,15 @@ func _sync_environment_resources() -> void:
 	_apply_underwater_fog_mask(false)
 	if _airborne != null and not Engine.is_editor_hint():
 		_airborne.bind_environment(active_environment)
+	if active_environment != _environment:
+		_restore_authored_height_fog()
 	_environment = active_environment
 	_sky_material = active_material
+	if _sky_material != null:
+		if cloud_mode >= 0:
+			_set_sky_parameter(&"cloud_mode", cloud_mode)
+		if color_mode >= 0:
+			_set_sky_parameter(&"sky_color_mode", color_mode)
 	if _sky_material != null and volumetric_quality >= 0:
 		_set_sky_parameter(&"volumetric_quality", volumetric_quality)
 
@@ -719,17 +888,21 @@ func _dispatch_clock_events(events: Array[Dictionary]) -> void:
 
 ## Changes the weather immediately or blends from the current state over real seconds.
 ## A new call during a blend starts from the values currently being displayed.
+## Profiles from the inactive weather style are ignored.
 func set_weather(profile: DynamicSkyWeather, seconds: float = 0.0) -> void:
-	if profile == null:
+	if not accepts_weather_profile(profile):
 		return
 	if seconds > 0.0 and is_node_ready() and not Engine.is_editor_hint():
 		if _weather.current.is_empty():
-			_weather.apply(_starting_profile())
+			_weather.apply(get_starting_weather())
 		_weather.blend_to(profile, seconds)
 	else:
 		_weather.apply(profile)
 		if not is_node_ready():
-			start_weather = profile
+			if weather_style == WeatherStyle.STYLIZED:
+				stylized_start_weather = profile as StylizedWeather
+			else:
+				start_weather = profile
 		else:
 			_refresh_view_weather()
 			_apply_sky()
@@ -737,20 +910,41 @@ func set_weather(profile: DynamicSkyWeather, seconds: float = 0.0) -> void:
 			weather_transition_finished.emit(profile)
 
 
+## Reports whether a preset belongs to the active weather style.
+func accepts_weather_profile(profile: DynamicSkyWeather) -> bool:
+	return profile != null and (profile is StylizedWeather) == (weather_style == WeatherStyle.STYLIZED)
+
+
+## Lists selectable profiles from the active library in authored order.
+func get_weather_presets() -> Array[DynamicSkyWeather]:
+	var source := weather_presets
+	if weather_style == WeatherStyle.STYLIZED:
+		var library := stylized_weather_library if stylized_weather_library != null else DEFAULT_STYLIZED_LIBRARY
+		source = library.presets
+	var presets: Array[DynamicSkyWeather] = []
+	for profile in source:
+		if accepts_weather_profile(profile):
+			presets.append(profile)
+	return presets
+
+
 ## Returns the global weather before spatial overrides, as an independent snapshot.
 func get_weather_state() -> Dictionary[StringName, Variant]:
 	if _weather.current.is_empty():
-		return _starting_profile().sample()
+		return get_starting_weather().sample()
 	return _weather.current.duplicate()
 
 
 ## Selects the renderer used for clouds and the space background.
 func set_cloud_mode(mode: int) -> void:
+	if mode < CloudMode.VOLUMETRIC or mode > CloudMode.SPACE:
+		return
+	if cloud_mode != mode:
+		cloud_mode = mode
+		return
 	_sync_environment_resources()
 	if _sky_material != null and mode >= CloudMode.VOLUMETRIC and mode <= CloudMode.SPACE:
 		_set_sky_parameter(&"cloud_mode", mode)
-		if _strikes != null:
-			_strikes.visible = not is_space_mode()
 		_apply_sky()
 		_apply_weather_effects(0.0)
 
@@ -767,6 +961,11 @@ func get_cloud_mode() -> int:
 
 ## Selects physical atmosphere or the independent artist-controlled sky-color path.
 func set_color_mode(mode: int) -> void:
+	if mode < ColorMode.SKY_ATMOSPHERE or mode > ColorMode.SIMPLIFIED_COLOR:
+		return
+	if color_mode != mode:
+		color_mode = mode
+		return
 	_sync_environment_resources()
 	if _sky_material != null and mode >= ColorMode.SKY_ATMOSPHERE and mode <= ColorMode.SIMPLIFIED_COLOR:
 		_set_sky_parameter(&"sky_color_mode", mode)
@@ -815,7 +1014,7 @@ func capture_state() -> DynamicSkySnapshot:
 			snapshot.volumetric_quality = int(quality)
 	_weather.capture_into(snapshot)
 	if snapshot.current_weather == null:
-		snapshot.current_weather = _starting_profile().duplicate() as DynamicSkyWeather
+		snapshot.current_weather = get_starting_weather().duplicate() as DynamicSkyWeather
 	return snapshot
 
 
@@ -823,6 +1022,12 @@ func capture_state() -> DynamicSkySnapshot:
 func restore_state(snapshot: DynamicSkySnapshot) -> bool:
 	_sync_environment_resources()
 	if snapshot == null or _sky_material == null or not is_node_ready():
+		return false
+	if (
+		not accepts_weather_profile(snapshot.current_weather)
+		or (snapshot.transition_from != null and not accepts_weather_profile(snapshot.transition_from))
+		or (snapshot.transition_to != null and not accepts_weather_profile(snapshot.transition_to))
+	):
 		return false
 	if (
 		not is_finite(snapshot.time_of_day) or not is_finite(snapshot.wind_phase)
@@ -847,11 +1052,11 @@ func restore_state(snapshot: DynamicSkySnapshot) -> bool:
 	_rainbow_moisture = snapshot.rainbow_moisture
 	_flash_remaining = 0.0
 	_lightning_budget = 0.0
-	_set_sky_parameter(&"cloud_mode", snapshot.cloud_mode)
-	_set_sky_parameter(&"sky_color_mode", snapshot.color_mode)
+	cloud_mode = snapshot.cloud_mode
+	color_mode = snapshot.color_mode
 	set_volumetric_quality(snapshot.volumetric_quality)
-	if _strikes != null:
-		_strikes.visible = not is_space_mode()
+	if _strikes != null and not Engine.is_editor_hint():
+		_strikes.clear_flash()
 	_refresh_view_weather()
 	time_of_day = snapshot.time_of_day
 	_apply_weather_effects(0.0)
@@ -863,7 +1068,7 @@ func get_weather_at(world_position: Vector3) -> Dictionary[StringName, Variant]:
 	if not is_inside_tree() or _weather.current.is_empty():
 		return get_weather_state()
 	_weather.collect_zones(get_world_3d(), get_tree())
-	return _weather.sample_at(world_position).duplicate()
+	return _weather.sample_at(world_position, _uses_radial_cloud_field()).duplicate()
 
 
 ## Returns the air temperature in degrees Celsius at the given point.
@@ -877,7 +1082,7 @@ func get_wind_at(world_position: Vector3) -> Vector3:
 		return Vector3.ZERO
 	var conditions := _weather.sample_at(world_position)
 	if conditions.is_empty():
-		conditions = _starting_profile().sample()
+		conditions = get_starting_weather().sample()
 	var base_wind: Vector2 = conditions[&"wind"]
 	var gustiness: float = conditions[&"gustiness"]
 	if wind_settings != null:
@@ -892,16 +1097,15 @@ func _get_observer_wind() -> Vector2:
 	return Vector2(velocity.x, velocity.z)
 
 
-func _get_view_wind() -> Vector2:
+func _get_view_wind_sample() -> Vector4:
 	if is_space_mode():
-		return Vector2.ZERO
+		return Vector4(0.0, 0.0, 0.0, 1.0)
 	var wind: Vector2 = _view_weather[&"wind"]
 	if wind_settings == null:
-		return wind
+		return Vector4(wind.x, 0.0, wind.y, 1.0)
 	var camera := get_viewport().get_camera_3d()
 	var point := global_position if camera == null else camera.global_position
-	var velocity := wind_settings.sample_wind(wind, _view_weather[&"gustiness"], point, _wind_phase, self)
-	return Vector2(velocity.x, velocity.z)
+	return wind_settings.sample_wind_and_gust(wind, _view_weather[&"gustiness"], point, _wind_phase, self)
 
 
 ## Returns the world-space unit direction toward the sun.
@@ -942,7 +1146,7 @@ func set_calendar_day_offset(day_offset: int) -> void:
 ## Requests lightning in the distant cloud deck ahead of the active camera.
 func trigger_lightning() -> void:
 	if _strikes != null and not Engine.is_editor_hint() and not is_space_mode():
-		_strikes.strike_near_observer()
+		_strikes.strike_near_observer(weather_style == WeatherStyle.STYLIZED)
 
 
 func _advance_lightning(delta: float) -> void:
@@ -955,8 +1159,10 @@ func _advance_lightning(delta: float) -> void:
 	if _lightning_budget == 0.0:
 		_lightning_budget = _lightning_rng.randf_range(0.32, 0.55)
 	_lightning_budget -= rate * delta / 60.0
-	if _lightning_budget <= 0.0 and _flash_remaining == 0.0:
-		var sheet_only := sheet_rate > 0.0 and _lightning_rng.randf() * rate >= bolt_rate
+	if _lightning_budget <= 0.0 and _flash_remaining == 0.0 and not _strikes.is_processing():
+		var sheet_only := weather_style == WeatherStyle.STYLIZED or (
+			sheet_rate > 0.0 and _lightning_rng.randf() * rate >= bolt_rate
+		)
 		_strikes.strike_near_observer(sheet_only)
 		_lightning_budget = _lightning_rng.randf_range(0.56, 1.44)
 
@@ -964,29 +1170,38 @@ func _advance_lightning(delta: float) -> void:
 ## Starts a ground strike at a known point, such as an authored lightning rod.
 func trigger_lightning_at(world_position: Vector3) -> void:
 	if _strikes != null and not Engine.is_editor_hint() and not is_space_mode():
-		_strikes.strike_at(world_position)
+		if weather_style == WeatherStyle.STYLIZED:
+			_strikes.strike_near_observer(true)
+		else:
+			_strikes.strike_at(world_position)
 
 
 func _on_lightning_struck(world_position: Vector3, intensity: float) -> void:
 	if is_space_mode():
 		return
-	_flash_remaining = maxf(lightning_duration, 0.05)
+	_flash_remaining = 0.0 if _strikes.is_processing() else maxf(lightning_duration, 0.05)
 	_flash_intensity = intensity
 	_flash_world_position = _strikes.get_flash_position()
+	if _exposure != null and _strikes.is_processing():
+		_exposure.hold_night_storm_exposure()
 	if _audio != null and _thunder_exposure > 0.0:
 		_audio.play_thunder(world_position, intensity * _thunder_exposure)
 	lightning_struck.emit(world_position, intensity)
 
 
-func _starting_profile() -> DynamicSkyWeather:
-	if start_weather == null:
-		return CLEAR_WEATHER
-	return start_weather
+## Resolves the current family's authored startup profile or its stock fallback.
+func get_starting_weather() -> DynamicSkyWeather:
+	if weather_style == WeatherStyle.STYLIZED:
+		if stylized_start_weather != null:
+			return stylized_start_weather
+		var presets := get_weather_presets()
+		return DEFAULT_STYLIZED_LIBRARY.presets[0] if presets.is_empty() else presets[0]
+	return start_weather if accepts_weather_profile(start_weather) else CLEAR_WEATHER
 
 
 func _preview_weather() -> void:
 	if is_node_ready():
-		_weather.apply(_starting_profile())
+		_weather.apply(get_starting_weather())
 		_refresh_view_weather()
 		_apply_sky()
 
@@ -1002,6 +1217,28 @@ func _celestial_changed() -> void:
 func _refresh_astronomy_state() -> void:
 	if _astronomy_state.is_empty():
 		_astronomy_state = astronomy.sample(time_of_day, latitude, north_rotation, _calendar_day_offset)
+
+
+func _spawn_scheduled_radial_storm(absolute_hour: float) -> void:
+	var camera := get_viewport().get_camera_3d()
+	var control_point := global_position if camera == null else camera.global_position
+	var wind: Vector2 = _weather.current[&"wind"]
+	if wind.is_zero_approx():
+		wind = Vector2.DOWN
+	if wind_settings != null:
+		var steady_wind := wind_settings.sample_wind(wind, 0.0, control_point, _wind_phase, self)
+		wind = Vector2(steady_wind.x, steady_wind.z)
+
+	var date: Dictionary = {}
+	var day := floori(absolute_hour / 24.0)
+	if astronomy != null:
+		date = astronomy.get_civil_date(day)
+	elif use_system_time:
+		date = _clock.system_sample().get(&"date", {})
+	var season := RadialStormScheduler.get_season(
+		radial_storm_spawning, date, fposmod(absolute_hour, 24.0), latitude,
+	)
+	_radial_storm_scheduler.spawn(self, control_point, wind, season)
 
 
 func _advance_climate(delta: float, clock_step: float) -> void:
@@ -1029,7 +1266,7 @@ func _advance_climate(delta: float, clock_step: float) -> void:
 		season = posmod(floori(float(month % 12) / 3.0) - 1, 4)
 		if latitude < 0.0:
 			season = (season + 2) % 4
-	var profile := climate.sample_weather(season, _climate_rng)
+	var profile := climate.sample_weather(season, _climate_rng, accepts_weather_profile)
 	if profile != null:
 		set_weather(profile, climate.blend_seconds)
 
@@ -1037,7 +1274,7 @@ func _advance_climate(delta: float, clock_step: float) -> void:
 func _refresh_view_weather() -> void:
 	_sync_environment_resources()
 	var camera := get_viewport().get_camera_3d()
-	_weather.refresh_view(get_world_3d(), get_tree(), camera)
+	_weather.refresh_view(get_world_3d(), get_tree(), camera, _uses_radial_cloud_field())
 	_view_weather = _weather.view
 	var was_underwater := _observer_underwater
 	_observer_underwater = false
@@ -1066,6 +1303,44 @@ func _refresh_view_weather() -> void:
 	_exposure_camera_id = camera_id
 
 
+func _uses_radial_cloud_field() -> bool:
+	return get_cloud_mode() == CloudMode.VOLUMETRIC and not is_space_mode()
+
+
+func _apply_radial_cloud_field() -> void:
+	var storms := _weather.get_radial_storms()
+	if not _uses_radial_cloud_field() or storms.is_empty():
+		if _sky_material.get_shader_parameter(&"radial_cloud_cell_count") != null:
+			_set_sky_parameter(&"radial_cloud_cell_count", 0)
+		return
+
+	var cells := PackedVector4Array()
+	var values := PackedVector4Array()
+	# Reserve the shared renderer slots for the highest-priority valid storms.
+	for index in range(storms.size() - 1, -1, -1):
+		var storm := storms[index]
+		var center := (storm.global_position - global_position) * 0.001
+		var coverage := storm.weather.cloud_coverage
+		if not center.is_finite() or not is_finite(coverage):
+			continue
+		cells.append(Vector4(
+			center.x, center.z, storm.outer_radius * 0.001, storm.get_full_weather_radius() * 0.001,
+		))
+		values.append(Vector4(clampf(coverage, 0.0, 1.0), storm.get_effective_alpha(), 0.0, 0.0))
+		if cells.size() == MAX_RADIAL_CLOUD_CELLS:
+			break
+
+	# Apply in the same low-to-high order as the physical weather sampler.
+	cells.reverse()
+	values.reverse()
+	var count := cells.size()
+	cells.resize(MAX_RADIAL_CLOUD_CELLS)
+	values.resize(MAX_RADIAL_CLOUD_CELLS)
+	_set_sky_parameter(&"radial_cloud_cells", cells)
+	_set_sky_parameter(&"radial_cloud_cell_values", values)
+	_set_sky_parameter(&"radial_cloud_cell_count", count)
+
+
 func _get_cloud_layer_value(parameter: StringName, fallback: float) -> float:
 	if _sky_material == null:
 		return fallback
@@ -1089,52 +1364,76 @@ func _apply_sky() -> void:
 	var lunar_illumination := 0.5 * (1.0 - cos(TAU * moon_phase))
 	var elevation := sun_direction.y
 	var space_mode := is_space_mode()
+	var stylized := weather_style == WeatherStyle.STYLIZED and not space_mode
 	var cloud_coverage: float = _view_weather[&"cloud_coverage"]
 	var dust: float = 0.0 if space_mode else _view_weather[&"dust"]
+	var daylight_dust := _daylight_dust_weight(dust, elevation)
+	var moonlit_dust := _moonlit_dust_weight(dust, elevation)
 	var blocks_light := not space_mode and get_cloud_mode() != CloudMode.CLEAR
 	var cloud_attenuation := lerpf(1.0, 0.22, cloud_coverage * cloud_coverage) if blocks_light else 1.0
 	var dust_attenuation := pow(1.0 - dust * 0.93, 1.6)
 	var projector_weight := smoothstep(0.035, 0.13, elevation) if _cloud_projector_active else 0.0
 	var sun_attenuation := dust_attenuation * lerpf(cloud_attenuation, 1.0, projector_weight)
-	var daylight := smoothstep(-0.15, 0.27, elevation)
 	var flash := 0.0
+	var full_strike := false
+	if not Engine.is_editor_hint() and _strikes != null:
+		if space_mode:
+			_strikes.clear_flash()
+			_flash_remaining = 0.0
+		else:
+			full_strike = _strikes.is_processing()
+			if full_strike:
+				var cloud_base_m := global_position.y + 1000.0 * _get_cloud_layer_value(&"cloud_base_km", 0.60)
+				var cloud_top_m := cloud_base_m + 1000.0 * _get_cloud_layer_value(&"cloud_thickness_km", 0.70)
+				_strikes.set_glow_environment(elevation, cloud_base_m, cloud_top_m, _view_weather[&"wind"])
 	if lightning_energy > 0.0 and not space_mode:
-		var fade := clampf(_flash_remaining / maxf(lightning_duration, 0.05), 0.0, 1.0)
-		flash = _flash_intensity * pow(fade, 2.4)
+		if full_strike:
+			flash = _strikes.get_full_flash_intensity()
+		else:
+			var fade := clampf(_flash_remaining / maxf(lightning_duration, 0.05), 0.0, 1.0)
+			flash = _flash_intensity * pow(fade, 2.4)
 
 	_point_light(_sun, sun_direction)
 	_point_light(_moon, moon_direction)
-	_sun.light_energy = sun_energy * smoothstep(-0.01, 0.24, elevation) * sun_attenuation
+	_sun.light_energy = sun_energy * smoothstep(-0.01, 0.24, elevation) * sun_attenuation * lerpf(1.0, 0.10, daylight_dust)
 	_sun.light_color = sunset_light_color.lerp(daylight_color, smoothstep(0.0, 0.36, elevation))
+	_moon.light_color = moon_light_color
 	var night := 1.0 - smoothstep(-0.18, 0.12, elevation)
 	_moon.light_energy = (
 		moon_energy * smoothstep(0.0, 0.33, moon_direction.y)
 		* lunar_illumination * night * cloud_attenuation * dust_attenuation
 	)
-	_lightning.light_energy = lightning_energy * flash
+	var night_storm_weight := _night_storm_weight(float(_weather.view[&"rain"]), elevation) if not space_mode and not stylized else 0.0
+	var night_storm := exposure_settings.night_storm if exposure_settings != null else null
+	var night_storm_irradiance := 1.0
+	if night_storm_weight > 0.0 and night_storm != null:
+		_moon.light_energy *= lerpf(1.0, night_storm.moon_irradiance, night_storm_weight)
+		night_storm_irradiance = lerpf(1.0, night_storm.sky_irradiance, night_storm_weight)
+	_set_sky_parameter(&"night_storm_irradiance", night_storm_irradiance)
+	_lightning.light_energy = 0.0 if full_strike else lightning_energy * flash
 
-	var fog_density: float = _view_weather[&"fog_density"]
-	_environment.fog_enabled = not space_mode and fog_density > 0.0
-	_environment.fog_density = fog_density
-	var overcast := smoothstep(0.55, 1.0, cloud_coverage)
-	var fog_daylight := day_fog_color.lerp(overcast_fog_color, overcast)
-	var fog_color := night_fog_color.lerp(fog_daylight, daylight)
-	var dust_illumination := lerpf(0.16, 1.0, daylight)
-	_environment.fog_light_color = fog_color.lerp(dust_fog_color * dust_illumination, dust)
-	var weather_veil := (1.0 - exp(-fog_density * 125.0)) * 0.93
-	_environment.fog_sky_affect = maxf(weather_veil, dust * 0.91)
-	var aerial_mix := lerpf(0.58, 0.06, smoothstep(0.003, 0.016, fog_density))
-	_environment.fog_aerial_perspective = (
-		(1.0 - dust) * aerial_mix if get_color_mode() == ColorMode.SKY_ATMOSPHERE else 0.0
+	var horizon_fog_strength := _apply_distance_fog(
+		space_mode, cloud_coverage, dust, elevation, daylight_dust, moonlit_dust,
 	)
+	_set_sky_parameter(&"stylized_weather_enabled", stylized)
+	if stylized:
+		_apply_stylized_palette(elevation)
 
 	_set_sky_parameter(&"sun_direction", sun_direction)
 	_set_sky_parameter(&"moon_direction", moon_direction)
 	_set_sky_parameter(&"moon_phase", moon_phase)
 	_set_sky_parameter(&"star_rotation", _astronomy_state.get(&"star_rotation", Basis.IDENTITY))
 	_set_sky_parameter(&"cloud_coverage", cloud_coverage)
+	var daylight_transport := 0.0
+	if not space_mode and not stylized and get_cloud_mode() == CloudMode.VOLUMETRIC and get_color_mode() == ColorMode.SKY_ATMOSPHERE:
+		daylight_transport = float(_view_weather[&"daylight_cloud_transport"]) * smoothstep(0.03, 0.35, elevation)
+	_set_sky_parameter(&"daylight_cloud_transport", daylight_transport)
+	if daylight_transport > 0.0:
+		_set_sky_parameter(&"daylight_cloud_distant_sky", CloudDaylightTransport.sample(elevation))
+	_apply_radial_cloud_field()
 	_set_sky_parameter(&"cloud_offset", _cloud_offset)
 	_set_sky_parameter(&"dust_density", dust)
+	_set_sky_parameter(&"daylight_dust_scattering_scale", lerpf(1.0, 1.68, daylight_dust))
 	_set_sky_parameter(&"lightning_flash", minf(flash, 1.0))
 	var camera := get_viewport().get_camera_3d()
 	var flash_from_camera := Vector3.ZERO
@@ -1146,9 +1445,193 @@ func _apply_sky() -> void:
 	_set_sky_parameter(&"cloud_observer_position_km", cloud_observer_position)
 	_set_sky_parameter(&"lightning_direction", flash_from_camera.normalized())
 	_set_sky_parameter(&"lightning_position_km", flash_from_camera)
-	if _modifiers != null:
+	if _modifiers != null and not stylized:
 		_modifiers.apply_outputs(time_of_day, _sky_material, _environment, _sun, _moon)
-	_apply_rainbow(camera)
+	_apply_horizon_fog(horizon_fog_strength)
+	var moonlit_sky := maxf(moonlit_dust, 0.0)
+	if moonlit_sky > 0.0:
+		var radiance := _environment.fog_light_color.srgb_to_linear() * _environment.fog_light_energy
+		_set_sky_parameter(&"moonlit_dust_fog_radiance", Vector3(radiance.r, radiance.g, radiance.b))
+	_set_sky_parameter(&"moonlit_dust_fog_weight", moonlit_sky)
+	if stylized:
+		_set_sky_parameter(&"rainbow_enabled", false)
+	else:
+		_apply_rainbow(camera)
+
+
+func _apply_stylized_palette(solar_elevation: float) -> void:
+	var daylight := smoothstep(-0.12, 0.20, solar_elevation)
+	var day_fog: Color = _view_weather[&"day_fog_tint"]
+	var night_fog: Color = _view_weather[&"night_fog_tint"]
+	_environment.fog_light_color = night_fog.lerp(day_fog, daylight)
+	_environment.fog_aerial_perspective = 0.0
+	_environment.fog_sky_affect = lerpf(0.04, 0.86, smoothstep(0.10, 1.0, float(_view_weather[&"fog_amount"])))
+	var sunlight: Color = _view_weather[&"sunlight_tint"]
+	var twilight: Color = _view_weather[&"twilight_tint"]
+	_sun.light_color = twilight.lerp(sunlight, smoothstep(0.0, 0.30, solar_elevation))
+	_sun.light_energy *= float(_view_weather[&"sunlight_strength"])
+	_moon.light_color = _view_weather[&"moonlight_tint"]
+	_set_sky_parameter(&"stylized_day_zenith", _linear_rgb(_view_weather[&"sky_zenith_tint"]))
+	_set_sky_parameter(&"stylized_day_horizon", _linear_rgb(_view_weather[&"sky_horizon_tint"]))
+	_set_sky_parameter(&"stylized_night_zenith", _linear_rgb(_view_weather[&"night_sky_tint"]))
+	_set_sky_parameter(&"stylized_night_horizon", _linear_rgb(night_fog))
+	_set_sky_parameter(&"stylized_twilight", _linear_rgb(twilight))
+	_set_sky_parameter(&"stylized_cloud_shade", _linear_rgb(_view_weather[&"cloud_shade_tint"]))
+	_set_sky_parameter(&"stylized_cloud_light", _linear_rgb(_view_weather[&"cloud_light_tint"]))
+	_set_sky_parameter(&"stylized_aurora_strength", _view_weather[&"aurora_strength"])
+	_set_sky_parameter(&"stylized_aurora_azimuth", deg_to_rad(north_rotation))
+	_set_sky_parameter(&"stylized_aurora_scroll", _wind_phase * 0.03)
+
+
+func _linear_rgb(color: Color) -> Vector3:
+	var linear := color.srgb_to_linear()
+	return Vector3(linear.r, linear.g, linear.b)
+
+
+func _get_effective_wind_fog_settings() -> DynamicSkyWindFogSettings:
+	if wind_fog_settings == null and _airborne != null:
+		return _airborne.wind_fog_settings
+	return wind_fog_settings
+
+
+func _daylight_dust_weight(dust: float, elevation: float) -> float:
+	var fog_settings := _get_effective_wind_fog_settings()
+	if (
+		fog_settings == null
+		or fog_settings.mode != DynamicSkyWindFogSettings.Mode.SOURCE_SNOW_AND_DUST
+		or not fog_settings.calibrate_daylight_dust
+		or get_color_mode() != ColorMode.SKY_ATMOSPHERE
+		or float(_view_weather[&"fog_density"]) <= 0.0
+	):
+		return 0.0
+	return smoothstep(0.30, 0.70, dust) * smoothstep(0.08, 0.32, elevation)
+
+
+func _moonlit_dust_weight(dust: float, sun_elevation: float) -> float:
+	if dust <= 0.30 or sun_elevation >= -0.15:
+		return 0.0
+	var fog_settings := _get_effective_wind_fog_settings()
+	if (
+		fog_settings == null or fog_settings.mode != DynamicSkyWindFogSettings.Mode.SOURCE_SNOW_AND_DUST
+		or get_color_mode() != ColorMode.SKY_ATMOSPHERE or float(_view_weather[&"fog_density"]) <= 0.0
+	):
+		return 0.0
+	var moon_elevation := get_moon_direction().y
+	var phase: float = _astronomy_state.get(&"moon_phase", 0.5)
+	var illumination := 0.5 * (1.0 - cos(TAU * phase))
+	# Approximate the source's rapid onset above the horizon and slower rise overhead.
+	var scatter := sqrt(clampf(moon_elevation, 0.0, 1.0)) * smoothstep(0.0, 0.18, moon_elevation) * illumination
+	var response := clampf((scatter - 0.72) / 0.206, -1.0, 1.0)
+	var night := 1.0 - smoothstep(-0.38, -0.15, sun_elevation)
+	return response * night * smoothstep(0.30, 0.70, dust)
+
+
+func _apply_distance_fog(
+	space_mode: bool, cloud_coverage: float, dust: float, elevation: float, daylight_dust: float, moonlit_dust: float,
+) -> float:
+	var fog_density: float = _view_weather[&"fog_density"]
+	_environment.fog_enabled = not space_mode and fog_density > 0.0
+	_environment.fog_density = fog_density
+	_apply_weather_height_fog()
+
+	var storm := 0.0
+	var blizzard := 0.0
+	if _environment.fog_enabled and weather_style == WeatherStyle.REALISTIC:
+		var fog_amount: float = _view_weather[&"fog_amount"]
+		var heavy_overcast := smoothstep(0.85, 1.0, cloud_coverage) * (1.0 - dust)
+		blizzard = smoothstep(0.65, 1.0, fog_amount) * float(_view_weather[&"snow"]) * heavy_overcast
+		storm = smoothstep(0.32, 0.65, fog_amount) * float(_view_weather[&"rain"]) * heavy_overcast
+		storm *= 1.0 - blizzard
+
+	var daylight := smoothstep(-0.15, 0.27, elevation)
+	var overcast := smoothstep(0.55, 1.0, cloud_coverage)
+	var fog_daylight := day_fog_color.lerp(overcast_fog_color, overcast)
+	var fog_color := night_fog_color.lerp(fog_daylight, daylight)
+	var dust_illumination := lerpf(0.16, 1.0, daylight)
+	fog_color = fog_color.lerp(dust_fog_color * dust_illumination, dust)
+	var fog_settings := _get_effective_wind_fog_settings()
+	if fog_settings != null and fog_settings.mode == DynamicSkyWindFogSettings.Mode.SOURCE_SNOW_AND_DUST:
+		var night_dust := smoothstep(0.30, 0.70, dust) * (1.0 - daylight)
+		if night_dust > 0.0:
+			# Use the source night hue and scale the rig's fog luminance by lunar illumination.
+			var linear := fog_color.srgb_to_linear()
+			var chroma := SOURCE_NIGHT_DUST_FOG_CHROMA * linear.get_luminance()
+			chroma *= 1.0 + 0.16 * moonlit_dust
+			var night_color := Color(chroma.x, chroma.y, chroma.z, linear.a)
+			fog_color = linear.lerp(night_color, night_dust).linear_to_srgb()
+	var storm_daylight := smoothstep(-0.08, 0.32, elevation)
+	var storm_dimming := storm * storm_daylight
+	if storm_dimming > 0.0:
+		# Scale the resolved distance fog in linear light, retaining the authored Environment energy.
+		var fog_alpha := fog_color.a
+		fog_color = (fog_color.srgb_to_linear() * lerpf(1.0, 0.62, storm_dimming)).linear_to_srgb()
+		fog_color.a = fog_alpha
+	if daylight_dust > 0.0:
+		# Account for the terrain renderer's fog response in linear light.
+		var linear := fog_color.srgb_to_linear()
+		fog_color = linear.lerp(linear * SOURCE_DAY_DUST_FOG_SCALE, daylight_dust).linear_to_srgb()
+	_environment.fog_light_color = fog_color
+
+	var weather_veil := (1.0 - exp(-fog_density * 125.0)) * 0.93
+	var sky_affect := maxf(weather_veil, dust * 0.91)
+	sky_affect = lerpf(sky_affect, 0.35, daylight_dust)
+	_environment.fog_sky_affect = lerpf(sky_affect, maxf(sky_affect, 0.76), blizzard)
+	var aerial_mix := lerpf(0.58, 0.06, smoothstep(0.003, 0.016, fog_density))
+	aerial_mix = lerpf(aerial_mix, minf(aerial_mix, 0.28), storm)
+	aerial_mix = lerpf(aerial_mix, minf(aerial_mix, 0.12), blizzard)
+	_environment.fog_aerial_perspective = (
+		(1.0 - dust) * aerial_mix if get_color_mode() == ColorMode.SKY_ATMOSPHERE else 0.0
+	)
+
+	var horizon_strength := lerpf(0.83, 0.94, storm_daylight) * storm + 0.90 * blizzard
+	horizon_strength = lerpf(horizon_strength, 0.94, daylight_dust)
+	if horizon_strength > 0.0:
+		var altitude_limits := Vector2(0.13, 0.54).lerp(Vector2(0.19, 0.58), storm_dimming)
+		if daylight_dust > 0.0:
+			# Bring shallow sky rays toward the same fog radiance as distant surfaces.
+			altitude_limits = altitude_limits.lerp(Vector2(-0.025, 0.030), daylight_dust)
+		_set_sky_parameter(&"horizon_fog_direction_y_range", altitude_limits)
+	return horizon_strength
+
+
+func _apply_weather_height_fog() -> void:
+	if not drive_height_fog_from_weather or _environment.fog_mode != Environment.FOG_MODE_EXPONENTIAL:
+		_restore_authored_height_fog()
+		return
+	if (
+		not RenderingServer.has_method(NATIVE_HEIGHT_FOG_SETTER)
+		or RenderingServer.get_current_rendering_method() != "forward_plus"
+	):
+		return
+
+	# The RID override keeps the Environment's authored resource values available for editing and saving.
+	RenderingServer.call(
+		NATIVE_HEIGHT_FOG_SETTER, _environment.get_rid(), true,
+		_view_weather[&"fog_height_falloff"], _view_weather[&"fog_start_distance"]
+	)
+	_weather_height_fog_environment = _environment
+
+
+func _restore_authored_height_fog() -> void:
+	var previous := _weather_height_fog_environment
+	_weather_height_fog_environment = null
+	if previous == null:
+		return
+
+	RenderingServer.call(
+		NATIVE_HEIGHT_FOG_SETTER, previous.get_rid(), previous.get(&"fog_height_integrated"),
+		previous.get(&"fog_height_falloff"), previous.get(&"fog_start_distance")
+	)
+
+
+func _apply_horizon_fog(strength: float) -> void:
+	var active := strength > 0.0 and _environment.fog_enabled and _environment.fog_density > 0.0
+	if active:
+		# Match the effective native fog, including any authored modifier outputs.
+		var radiance := _environment.fog_light_color.srgb_to_linear() * _environment.fog_light_energy
+		radiance /= maxf(_environment.background_energy_multiplier, 0.001)
+		_set_sky_parameter(&"horizon_fog_radiance", Vector3(radiance.r, radiance.g, radiance.b))
+	_set_sky_parameter(&"horizon_fog_strength", strength if active else 0.0)
 
 
 func _rainbow_settings_changed() -> void:
@@ -1199,42 +1682,82 @@ func _apply_rainbow(camera: Camera3D) -> void:
 	)
 
 
+func _night_storm_weight(rain: float, elevation: float) -> float:
+	return _exposure.get_night_storm_weight(rain, elevation) if _exposure != null else 0.0
+
+
 func _apply_weather_effects(delta: float) -> void:
-	if Engine.is_editor_hint():
+	if Engine.is_editor_hint() or _weather.current.is_empty():
 		return
 
 	var space_mode := is_space_mode()
+	var stylized := weather_style == WeatherStyle.STYLIZED
 	var rain: float = 0.0 if space_mode else _view_weather[&"rain"]
 	var snow: float = 0.0 if space_mode else _view_weather[&"snow"]
 	var dust: float = 0.0 if space_mode else _view_weather[&"dust"]
-	var wind := _get_view_wind()
+	var wind_sample := _get_view_wind_sample()
+	var wind := Vector2(wind_sample.x, wind_sample.z)
+	var sun_elevation := get_sun_direction().y
 	if _precipitation != null:
-		_precipitation.set_observer_active(not space_mode and not _observer_underwater)
-		_precipitation.apply_weather(rain, snow, wind, dust)
+		_precipitation.set_observer_active(not stylized and not space_mode and not _observer_underwater)
+		_precipitation.apply_weather(0.0 if stylized else rain, 0.0 if stylized else snow, wind, 0.0 if stylized else dust, sun_elevation)
+	if _stylized_precipitation != null:
+		var effect_camera: Camera3D = _precipitation.get_effect_camera() if _precipitation != null else get_viewport().get_camera_3d()
+		var particle_look := Vector2(_view_weather.get(&"particle_scale", 1.0), _view_weather.get(&"particle_opacity_scale", 1.0))
+		_stylized_precipitation.apply_weather(
+			stylized and not space_mode and not _observer_underwater, effect_camera, rain, snow, wind,
+			_airborne_exposure, sun_elevation, particle_look,
+		)
 	if _audio != null:
 		var muffle := _observer_underwater and exposure_settings != null and exposure_settings.force_underwater_audio_occlusion
 		_audio.set_underwater(muffle)
-		_audio.apply_weather(rain, snow, dust, wind)
+		var base_wind: Vector2 = Vector2.ZERO if space_mode else _view_weather[&"wind"]
+		_audio.apply_weather(rain, snow, dust, wind, WeatherState.source_wind_strength(base_wind), wind_sample.w)
 	if _airborne != null:
 		var effect_camera: Camera3D = _precipitation.get_effect_camera() if _precipitation != null else null
 		var collision_enabled: bool = _precipitation != null and _precipitation.surface_collision_enabled
+		var local_dust_scattering := lerpf(1.0, 1.0 / 1.65, _daylight_dust_weight(dust, sun_elevation))
+		# The visible lunar glow comes from the distant haze. Keep the nearby dust veil subdued.
+		local_dust_scattering *= lerpf(1.0, 0.42, maxf(_moonlit_dust_weight(dust, sun_elevation), 0.0))
 		_airborne.apply_weather(
-			rain, snow, dust, wind, delta, get_sun_direction().y, effect_camera, collision_enabled, _airborne_exposure,
+			rain, snow, dust, wind, delta, sun_elevation, effect_camera, collision_enabled,
+			0.0 if stylized else _airborne_exposure,
+			_view_weather[&"fog_amount"], (_view_weather[&"wind"] as Vector2).length(),
+			local_dust_scattering,
 		)
 	_apply_underwater_fog_mask(_observer_underwater, _airborne != null)
 	if space_mode and _environment != null:
 		_environment.volumetric_fog_enabled = false
+	var night_grade := Vector2.ZERO
+	if _exposure != null:
+		var camera := get_viewport().get_camera_3d()
+		var night_storm_weight := _night_storm_weight(rain, sun_elevation) if not _observer_underwater and not stylized else 0.0
+		_exposure.update_camera_exposure(camera, dust, sun_elevation, night_storm_weight, delta)
+		night_grade = _exposure.get_night_storm_grade(camera, night_storm_weight)
+		_exposure.update_cloud_interior(
+			camera, _sky_material, _environment, global_position,
+			not space_mode and not _observer_underwater and get_cloud_mode() == CloudMode.VOLUMETRIC,
+		)
 	if _wind_debris != null:
-		_wind_debris.apply_weather(wind, _view_weather[&"gustiness"], delta, _airborne_exposure)
+		_wind_debris.apply_weather(wind, _view_weather[&"gustiness"], delta, 0.0 if stylized else _airborne_exposure)
 	if _screen_weather != null:
 		var temperature := _get_clear_temperature() + float(_view_weather[&"temperature_offset"])
-		var screen_active := not space_mode and not (
+		var screen_active := not stylized and not space_mode and not (
 			_observer_underwater and exposure_settings != null and exposure_settings.suppress_screen_underwater
 		)
 		if _wet_on_emerge_pending and screen_active:
 			_screen_weather.wet_on_emerge()
-		_screen_weather.apply_weather(rain, snow, dust, wind, temperature, delta, screen_active)
+		_screen_weather.apply_weather(rain, snow, dust, wind, temperature, delta, screen_active, night_grade)
 	_wet_on_emerge_pending = false
+	var preserve_radial_cloud_coverage := _uses_radial_cloud_field()
+	_material_weather.apply(
+		_weather, delta, _get_clear_temperature(), material_weather_settings, not space_mode, preserve_radial_cloud_coverage,
+	)
+	if _precipitation != null and rain_settings != null and rain_settings.contact_normal_strength > 0.0:
+		var receivers: Array[MeshInstance3D] = []
+		if rain > 0.0 and not stylized and not _observer_underwater:
+			receivers = _material_weather.get_rain_contact_receivers()
+		_precipitation.set_rain_contact_receivers(receivers)
 	if space_mode:
 		return
 
@@ -1242,11 +1765,21 @@ func _apply_weather_effects(delta: float) -> void:
 	var temperature := _get_clear_temperature()
 	for surface: DynamicSkySurface in get_tree().get_nodes_in_group(DynamicSkySurface.GROUP):
 		if surface.get_surface_world() == world:
-			var weather_here := _weather.sample_at(surface.get_surface_position())
+			var position := surface.get_surface_position()
+			var weather_here := _weather.sample_at(position, preserve_radial_cloud_coverage, true)
+			var accumulation := weather_here
+			var precipitation: Vector2 = weather_here.get(
+				&"surface_precipitation", DynamicSkySurface.USE_AIRBORNE_PRECIPITATION,
+			)
+			if _material_weather.uses_radial_coating(surface.get_surface_geometry()):
+				accumulation = _weather.sample_at(position, preserve_radial_cloud_coverage, true, true)
+				precipitation = accumulation.get(
+					&"surface_precipitation", Vector2(accumulation[&"rain"], accumulation[&"snow"]),
+				)
 			surface.apply_weather(
-				weather_here[&"rain"], weather_here[&"snow"], weather_here[&"dust"],
-				delta, temperature + float(weather_here[&"temperature_offset"]),
-				weather_here[&"snow_coverage_limit"]
+				weather_here[&"rain"], accumulation[&"snow"], accumulation[&"dust"],
+				delta, temperature + float(accumulation[&"temperature_offset"]),
+				accumulation[&"snow_coverage_limit"], precipitation,
 			)
 
 

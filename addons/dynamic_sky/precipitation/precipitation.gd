@@ -22,6 +22,7 @@ var _rain_intensity: float = 0.0
 var _snow_intensity: float = 0.0
 var _dust_intensity: float = 0.0
 var _wind: Vector2 = Vector2.ZERO
+var _solar_elevation: float = -1.0
 var _observer_active: bool = true
 var _visibility_before_suppression: bool = true
 
@@ -34,8 +35,8 @@ func _ready() -> void:
 	_update_particles()
 
 
-func _process(_delta: float) -> void:
-	_follow_camera()
+func _process(delta: float) -> void:
+	_follow_camera(delta)
 
 
 ## Hides precipitation immediately for a submerged or suspended observer and restores visibility on exit.
@@ -53,8 +54,14 @@ func set_observer_active(active: bool) -> void:
 
 
 ## Sets rain and snow emissions and keeps the collision field available for airborne dust.
-## Wind is horizontal world-space velocity in meters per second.
-func apply_weather(rain: float, snow: float, wind: Vector2, dust: float = 0.0) -> void:
+## Wind is horizontal world-space velocity in meters per second. Solar elevation is the sun direction's Y component.
+func apply_weather(
+	rain: float,
+	snow: float,
+	wind: Vector2,
+	dust: float = 0.0,
+	solar_elevation: float = -1.0,
+) -> void:
 	var next_rain: float = clampf(rain, 0.0, 1.0)
 	var next_snow: float = clampf(snow, 0.0, 1.0)
 	var next_dust: float = clampf(dust, 0.0, 1.0)
@@ -63,12 +70,14 @@ func apply_weather(rain: float, snow: float, wind: Vector2, dust: float = 0.0) -
 		and _snow_intensity == next_snow
 		and _dust_intensity == next_dust
 		and _wind == wind
+		and _solar_elevation == solar_elevation
 	):
 		return
 	_rain_intensity = next_rain
 	_snow_intensity = next_snow
 	_dust_intensity = next_dust
 	_wind = wind
+	_solar_elevation = solar_elevation
 	if is_node_ready():
 		_update_particles()
 
@@ -78,15 +87,15 @@ func _update_particles() -> void:
 	set_process(_has_precipitation())
 
 
-func _follow_camera() -> void:
+func _follow_camera(delta: float = 0.0) -> void:
 	var camera := get_effect_camera()
 	if camera != null:
 		global_position = camera.get_camera_transform().origin
 	var has_camera: bool = camera != null and _observer_active
-	_rain.apply_rain(_rain_intensity, _wind, has_camera)
+	_rain.apply_rain(_rain_intensity, _wind, has_camera, camera, delta, surface_collision_enabled)
 	_snow.apply_snow(
 		_snow_intensity, _wind, has_camera, enable_snow_contact and surface_collision_enabled,
-		surface_collision_enabled, camera,
+		surface_collision_enabled, camera, _solar_elevation,
 	)
 	_update_collision_field(has_camera and _has_precipitation() and surface_collision_enabled)
 
@@ -96,6 +105,11 @@ func get_effect_camera() -> Camera3D:
 	if is_instance_valid(camera_override) and camera_override.is_inside_tree():
 		return camera_override
 	return get_viewport().get_camera_3d()
+
+
+## Forwards the weather material owner's same-world candidates to the rain contact field.
+func set_rain_contact_receivers(receivers: Array[MeshInstance3D]) -> void:
+	_rain.set_contact_receivers(receivers)
 
 
 func _has_precipitation() -> bool:

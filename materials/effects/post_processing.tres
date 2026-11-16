@@ -1,0 +1,19 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://cdxx6eqioi03l"]
+
+[ext_resource type="Shader" uid="uid://foyi74qybvme" path="res://shaders/effects/post_processing.gdshader" id="1_shader"]
+
+[resource]
+resource_name = "Post Processing"
+shader = ExtResource("1_shader")
+shader_parameter/painterly_strength = 0.0
+shader_parameter/brush_radius = 2.5
+shader_parameter/brush_stroke_strength = 0.70999998413008
+shader_parameter/edge_sharpness = 0.73999998345952
+shader_parameter/paper_grain_strength = 0.11999999731776
+shader_parameter/vignette_strength = 0.71999998390656
+shader_parameter/vignette_start = 0.75999998301248
+shader_parameter/vignette_feather = 0.62999998591824
+shader_parameter/posterization_strength = 0.0
+shader_parameter/posterization_levels = 16
+shader_parameter/dither_strength = 0.0
+shader_parameter/dither_pixel_size = 1

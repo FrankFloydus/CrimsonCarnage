@@ -2,6 +2,10 @@
 
 [ext_resource type="Script" path="res://addons/dynamic_sky/configuration/effects/lightning_settings.gd" id="1_settings"]
 
+[ext_resource type="Curve" path="res://addons/dynamic_sky/lightning/cloud_ray_envelope.tres" id="2_cloud_ray_envelope"]
+
 [resource]
 resource_local_to_scene = true
 script = ExtResource("1_settings")
+cloud_ray_intensity = 1.0
+cloud_ray_envelope = ExtResource("2_cloud_ray_envelope")

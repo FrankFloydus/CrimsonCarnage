@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="DynamicSkySnowSettings" format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/precipitation/snow/snow_settings.gd" id="1_settings"]
+
+[resource]
+resource_local_to_scene = true
+resource_name = "UDW Comparison Snow Settings"
+script = ExtResource("1_settings")
+maximum_visual_stretch = 4.0
+near_feather_end_meters = 1.2
+blizzard_daytime_opacity = 0.7
+blizzard_near_feather_end_meters = 2.0

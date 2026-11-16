@@ -1,12 +1,14 @@
-[gd_resource type="Resource" script_class="DynamicSkyWeather" format=3]
+[gd_resource type="Resource" script_class="DynamicSkyWeather" format=3 uid="uid://bb37wkkc1215i"]
 
-[ext_resource type="Script" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="1_weather"]
+[ext_resource type="Script" uid="uid://c1xk5mfkswtr8" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="1_weather"]
 
 [resource]
 resource_name = "Overcast"
 script = ExtResource("1_weather")
 cloud_coverage = 0.89
-fog_density = 0.004
+fog_density = 0.000362772
+fog_height_falloff = 0.003101833633
+fog_start_distance = 55.659310497
 fog_amount = 0.15
 wind = Vector2(4, 1.5)
 gustiness = 0.2

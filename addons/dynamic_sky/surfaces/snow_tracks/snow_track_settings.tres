@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="DynamicSkySnowTrackSettings" format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/surfaces/snow_tracks/snow_track_settings.gd" id="1_settings"]
+
+[resource]
+resource_local_to_scene = true
+script = ExtResource("1_settings")
+normal_strength = 0.5
+retain_grazing_relief = true

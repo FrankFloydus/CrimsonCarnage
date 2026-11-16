@@ -1,0 +1,313 @@
+[gd_scene format=3 uid="uid://c10n7q5yv4xfm"]
+
+[ext_resource type="Script" uid="uid://depghrqlm1fe8" path="res://addons/dynamic_sky/demo/udw_comparison/blizzard_lighting_calibration.gd" id="blizzard_calibration"]
+[ext_resource type="Environment" uid="uid://dyukxcge3owgr" path="res://addons/dynamic_sky/demo/udw_comparison/comparison_environment.tres" id="comparison_environment"]
+[ext_resource type="Shader" uid="uid://b6csm6a477v81" path="res://addons/dynamic_sky/demo/udw_comparison/comparison_lens.gdshader" id="comparison_lens"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/demo/udw_comparison/comparison_snow_settings.tres" id="comparison_snow_settings"]
+[ext_resource type="Script" uid="uid://b04vth6cufsj6" path="res://addons/dynamic_sky/demo/udw_comparison/udw_demo_map.gd" id="controller"]
+[ext_resource type="Material" path="res://addons/dynamic_sky/demo/udw_comparison/materials/landscape_example_distant.tres" id="landscape_distant"]
+[ext_resource type="Material" path="res://addons/dynamic_sky/demo/udw_comparison/materials/landscape_example.tres" id="landscape_material"]
+[ext_resource type="ArrayMesh" path="res://addons/dynamic_sky/demo/udw_comparison/landscape_with_tracks.res" id="landscape_mesh"]
+[ext_resource type="Material" path="res://addons/dynamic_sky/demo/udw_comparison/materials/plain_example.tres" id="plain_material"]
+[ext_resource type="PackedScene" path="res://addons/dynamic_sky/demo/udw_comparison/rain_drip_spline.tscn" id="runoff"]
+[ext_resource type="PackedScene" uid="uid://2fbk60pr8twj" path="res://addons/dynamic_sky/dynamic_sky.tscn" id="sky"]
+[ext_resource type="Script" uid="uid://b0winj82aoy5m" path="res://addons/dynamic_sky/demo/udw_comparison/comparison_surface.gd" id="surface"]
+[ext_resource type="Script" uid="uid://c5oeyfuktabxk" path="res://addons/dynamic_sky/surfaces/snow_tracks/snow_track_receiver.gd" id="track_receiver"]
+[ext_resource type="Resource" path="res://addons/dynamic_sky/surfaces/snow_tracks/snow_track_settings.tres" id="track_settings"]
+[ext_resource type="PackedScene" path="res://addons/dynamic_sky/surfaces/snow_tracks/snow_track_stamp.tscn" id="track_stamp"]
+[ext_resource type="Material" path="res://addons/dynamic_sky/demo/udw_comparison/materials/wall_example.tres" id="wall_material"]
+[ext_resource type="Resource" uid="uid://h5yckklkymn5" path="res://addons/dynamic_sky/demo/udw_comparison/weather/blizzard.tres" id="weather_blizzard"]
+[ext_resource type="Resource" uid="uid://dekuk7updmq8n" path="res://addons/dynamic_sky/demo/udw_comparison/weather/calm_dust.tres" id="weather_calm_dust"]
+[ext_resource type="Resource" uid="uid://iw2p6o7wff6p" path="res://addons/dynamic_sky/demo/udw_comparison/weather/clear.tres" id="weather_clear"]
+[ext_resource type="Resource" uid="uid://dciqavxolhdcy" path="res://addons/dynamic_sky/demo/udw_comparison/weather/cloudy.tres" id="weather_cloudy"]
+[ext_resource type="Resource" uid="uid://oinlnbbmxti8" path="res://addons/dynamic_sky/demo/udw_comparison/weather/foggy.tres" id="weather_foggy"]
+[ext_resource type="Resource" uid="uid://d4mop66y5v6mv" path="res://addons/dynamic_sky/demo/udw_comparison/weather/light_rain.tres" id="weather_light_rain"]
+[ext_resource type="Resource" uid="uid://bhsl302023ivk" path="res://addons/dynamic_sky/demo/udw_comparison/weather/light_snow.tres" id="weather_light_snow"]
+[ext_resource type="Resource" uid="uid://bkixru3a34t7y" path="res://addons/dynamic_sky/demo/udw_comparison/weather/overcast.tres" id="weather_overcast"]
+[ext_resource type="Resource" uid="uid://dxs5x6osolh2f" path="res://addons/dynamic_sky/demo/udw_comparison/weather/partly_cloudy.tres" id="weather_partly_cloudy"]
+[ext_resource type="Script" uid="uid://c1xk5mfkswtr8" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="weather_profile"]
+[ext_resource type="Resource" uid="uid://ca0poc7c072m7" path="res://addons/dynamic_sky/demo/udw_comparison/weather/rain.tres" id="weather_rain"]
+[ext_resource type="Resource" uid="uid://cjf6sw678fof7" path="res://addons/dynamic_sky/demo/udw_comparison/weather/sandstorm.tres" id="weather_sandstorm"]
+[ext_resource type="Resource" uid="uid://cpfwc2yu7lbfm" path="res://addons/dynamic_sky/demo/udw_comparison/weather/snow.tres" id="weather_snow"]
+[ext_resource type="Resource" uid="uid://hyxnd4cj7k0q" path="res://addons/dynamic_sky/demo/udw_comparison/weather/storm.tres" id="weather_storm"]
+
+[sub_resource type="ConcavePolygonShape3D" id="LandscapeCollision"]
+data = PackedVector3Array(-120.96, 0, -120.96, 120.96, 0, -120.96, -120.96, 0, 120.96, 120.96, 0, -120.96, 120.96, 0, 120.96, -120.96, 0, 120.96)
+
+[sub_resource type="BoxMesh" id="CubeMesh"]
+size = Vector3(2, 2, 2)
+
+[sub_resource type="BoxShape3D" id="CubeCollision"]
+size = Vector3(2, 2, 2)
+
+[sub_resource type="SphereMesh" id="SphereMesh"]
+radius = 1.0608447
+height = 2.1216893
+
+[sub_resource type="SphereShape3D" id="SphereCollision"]
+radius = 1.0608447
+
+[sub_resource type="SphereMesh" id="Sphere2Mesh"]
+radius = 0.2
+height = 0.4
+radial_segments = 32
+rings = 16
+
+[sub_resource type="SphereShape3D" id="Sphere2Collision"]
+radius = 0.2
+
+[sub_resource type="Curve3D" id="DripCurve"]
+closed = true
+bake_interval = 0.02
+_data = {
+"points": PackedVector3Array(0.007304492, 0, 0.6265576, -0.007304492, 0, -0.6265576, 0, 0, 0, 0.5357669, 5.8004276e-16, -0.0032803647, -0.5357669, -5.8004276e-16, 0.0032803647, -1.0521396, 0, -1.0366054, 0.0004700696, -1.4135013e-15, -0.6136191, -0.0004700696, 1.4135013e-15, 0.6136191, -2.1001778, -2.2737367e-15, 0.012858855, -0.5667706, -7.1118935e-16, -2.1631664e-08, 0.5667706, 7.1118935e-16, 2.1631664e-08, -1.0537463, 4.8316907e-15, 1.0608937),
+"tilts": PackedFloat32Array(0, 0, 0, 0)
+}
+point_count = 4
+
+[sub_resource type="ShaderMaterial" id="ComparisonLensMaterial"]
+resource_local_to_scene = true
+shader = ExtResource("comparison_lens")
+shader_parameter/vignette_intensity = 0.5
+shader_parameter/display_response = 1.35
+
+[node name="UDWComparison" type="Node3D" unique_id=1368420405]
+process_priority = 1
+script = ExtResource("controller")
+comparison_msaa = 2
+metadata/source_level = "/Game/UltraDynamicSky/Maps/DemoMap"
+metadata/source_weather_origin_meters = Vector3(-2.5, 0.9000001, 0.5)
+metadata/source_unbound_postprocess_origin_meters = Vector3(0.2, -15.8, 0.2)
+
+[node name="DynamicSky" parent="." unique_id=959137263 instance=ExtResource("sky")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 0.89999986, -1.5)
+time_of_day = 9.6
+latitude = 30.0
+start_weather = ExtResource("weather_blizzard")
+weather_presets = Array[ExtResource("weather_profile")]([ExtResource("weather_clear"), ExtResource("weather_partly_cloudy"), ExtResource("weather_cloudy"), ExtResource("weather_overcast"), ExtResource("weather_foggy"), ExtResource("weather_light_rain"), ExtResource("weather_rain"), ExtResource("weather_storm"), ExtResource("weather_light_snow"), ExtResource("weather_snow"), ExtResource("weather_blizzard"), ExtResource("weather_calm_dust"), ExtResource("weather_sandstorm")])
+snow_settings = ExtResource("comparison_snow_settings")
+daylight_color = Color(1, 1, 1, 1)
+metadata/source_actor = "Ultra_Dynamic_Sky_0"
+
+[node name="WorldEnvironment" parent="DynamicSky" index="0" unique_id=1677835470]
+environment = ExtResource("comparison_environment")
+
+[node name="Sun" parent="DynamicSky" index="1" unique_id=1146701177]
+transform = Transform3D(0.5669153, -0.57716167, 0.58778524, 0, 0.71352553, 0.7006293, -0.8237761, -0.39719746, 0.4045085, 0, 0, 0)
+light_color = Color(1, 1, 1, 1)
+light_energy = 0.275
+
+[node name="Moon" parent="DynamicSky" index="2" unique_id=1070462989]
+transform = Transform3D(-0.5669153, -0.57716167, -0.58778524, 0, 0.71352553, -0.7006293, 0.8237761, -0.39719746, -0.4045085, 0, 0, 0)
+
+[node name="Precipitation" parent="DynamicSky" index="4" unique_id=416301458]
+enable_snow_contact = true
+
+[node name="WindDebris" parent="DynamicSky" index="9" unique_id=647543286]
+enabled = false
+
+[node name="WindCameraShake" parent="DynamicSky" index="12" unique_id=707719879 node_paths=PackedStringArray("sky_rig")]
+sky_rig = NodePath("..")
+
+[node name="BlizzardLightingCalibration" type="Node" parent="." unique_id=1414159217 node_paths=PackedStringArray("rig", "blowing_snow_ground")]
+process_priority = 2
+script = ExtResource("blizzard_calibration")
+rig = NodePath("../DynamicSky")
+blowing_snow_ground = NodePath("../Terrain")
+
+[node name="Terrain" type="Node3D" parent="." unique_id=473677376]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 0, 30.009829)
+metadata/source_actor = "Landscape_1"
+metadata/source_component_quads = 63
+metadata/source_components = Vector2i(3, 3)
+metadata/source_vertex_spacing_meters = 1.28
+metadata/source_actor_scale = Vector3(128, 128, 256)
+metadata/distant_lod_material = ExtResource("landscape_distant")
+
+[node name="Landscape" type="MeshInstance3D" parent="Terrain" unique_id=1960966474]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40.32, 0, -40.32)
+material_override = ExtResource("landscape_material")
+mesh = ExtResource("landscape_mesh")
+
+[node name="WeatherResponse" type="Node" parent="Terrain/Landscape" unique_id=788144716]
+script = ExtResource("surface")
+
+[node name="Collision" type="StaticBody3D" parent="Terrain" unique_id=954824457]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40.32, 0, -40.32)
+collision_mask = 0
+
+[node name="Shape" type="CollisionShape3D" parent="Terrain/Collision" unique_id=2004477148]
+shape = SubResource("LandscapeCollision")
+
+[node name="SnowTrackReceiver" type="Node3D" parent="Terrain" unique_id=757416294 node_paths=PackedStringArray("geometry", "accumulation", "substrate", "sky_override")]
+script = ExtResource("track_receiver")
+geometry = NodePath("../Landscape")
+track_region = Rect2(-3.2, 7.04, 6.4, 6.4)
+accumulation = NodePath("../Landscape/WeatherResponse")
+substrate = NodePath("../Collision")
+settings = ExtResource("track_settings")
+sky_override = NodePath("../../DynamicSky")
+
+[node name="Props" type="Node3D" parent="." unique_id=729090285]
+
+[node name="Cube" type="MeshInstance3D" parent="Props" unique_id=1442714579]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.0135661e-10, 0.9777096, 5.0621142)
+material_override = ExtResource("plain_material")
+mesh = SubResource("CubeMesh")
+metadata/source_actor = "StaticMeshActor_2"
+metadata/source_actor_scale = Vector3(2, 1.9999999, 1.9999999)
+
+[node name="Collision" type="StaticBody3D" parent="Props/Cube" unique_id=945584096]
+collision_mask = 0
+
+[node name="Shape" type="CollisionShape3D" parent="Props/Cube/Collision" unique_id=1251308285]
+shape = SubResource("CubeCollision")
+
+[node name="Sphere" type="MeshInstance3D" parent="Props" unique_id=335637818]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.013980618, 1.0031424, -4.985445)
+material_override = ExtResource("wall_material")
+mesh = SubResource("SphereMesh")
+metadata/source_actor = "Sphere"
+metadata/source_actor_scale = Vector3(2.1216886, 2.1216893, 2.1216893)
+
+[node name="Collision" type="StaticBody3D" parent="Props/Sphere" unique_id=1607053042]
+collision_mask = 0
+
+[node name="Shape" type="CollisionShape3D" parent="Props/Sphere/Collision" unique_id=1966910041]
+shape = SubResource("SphereCollision")
+
+[node name="WeatherResponse" type="Node" parent="Props/Sphere" unique_id=988755988]
+script = ExtResource("surface")
+
+[node name="Sphere2" type="MeshInstance3D" parent="Props" unique_id=239757]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.3858934e-06, 0.16838293, -2)
+material_override = ExtResource("plain_material")
+mesh = SubResource("Sphere2Mesh")
+metadata/source_actor = "Sphere2_2"
+metadata/source_actor_scale = Vector3(0.4, 0.4, 0.4)
+
+[node name="Collision" type="AnimatableBody3D" parent="Props/Sphere2" unique_id=202403939]
+collision_mask = 0
+sync_to_physics = false
+
+[node name="Shape" type="CollisionShape3D" parent="Props/Sphere2/Collision" unique_id=1629803080]
+shape = SubResource("Sphere2Collision")
+
+[node name="SnowTrackStamp" parent="Props/Sphere2" unique_id=1506325997 node_paths=PackedStringArray("receiver", "actor_body") instance=ExtResource("track_stamp")]
+receiver = NodePath("../../../Terrain/SnowTrackReceiver")
+continuous_contact = true
+actor_body = NodePath("../Collision")
+
+[node name="RainDripSpline" parent="." unique_id=1308259681 node_paths=PackedStringArray("wet_surface") instance=ExtResource("runoff")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 0.00057898264, 1.1083021, -3.936392)
+curve = SubResource("DripCurve")
+drop_rate_per_meter = 100.0
+wet_surface = NodePath("../Props/Sphere/WeatherResponse")
+wet_drop_rate_per_meter = 1.0
+drop_sprite_scale = 1.5
+splash_frequency = 1.0
+drain_seconds = 0.1
+collision_head_start = 0.35
+metadata/source_actor = "Rain_Drip_Spline_C_1"
+metadata/source_curve_length_meters = 6.606254883
+
+[node name="RainSplashes" parent="RainDripSpline" index="1"]
+amount = 256
+
+[node name="PlayerStart" type="Marker3D" parent="." unique_id=1991538576]
+transform = Transform3D(-0.34202015, 0, 0.9396926, 0, 1, 0, -0.9396926, 0, -0.34202015, 6.578032, 1.7271752, -3.2025201)
+metadata/source_actor = "PlayerStart"
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1179912331]
+transform = Transform3D(-0.34202015, 0.07372744, 0.9367959, 0, 0.9969173, -0.0784591, -0.9396926, -0.02683459, -0.3409658, 6.578, 2.45, -3.2025)
+current = true
+fov = 73.73979
+near = 0.1
+far = 5000.0
+
+[node name="ReferenceViews" type="Node3D" parent="." unique_id=1851517417]
+
+[node name="DefaultCapture" type="Camera3D" parent="ReferenceViews" unique_id=1913030124]
+transform = Transform3D(-0.34202015, 0.07372744, 0.9367959, 0, 0.9969173, -0.0784591, -0.9396926, -0.02683459, -0.3409658, 6.578, 2.45, -3.2025)
+fov = 73.73979
+near = 0.1
+far = 5000.0
+metadata/source_authored_horizontal_fov_degrees = 90.0
+
+[node name="SunsetCapture" type="Camera3D" parent="ReferenceViews" unique_id=1325092529]
+transform = Transform3D(-0.03275397, 0.078416996, 0.9963824, 0, 0.9969173, -0.0784591, -0.99946344, -0.0025698468, -0.032653, 6.578, 2.45, -3.2025)
+fov = 73.73979
+near = 0.1
+far = 5000.0
+metadata/source_authored_horizontal_fov_degrees = 90.0
+
+[node name="ReferenceVignette" type="CanvasLayer" parent="." unique_id=293081535]
+layer = -1
+
+[node name="LensFalloff" type="ColorRect" parent="ReferenceVignette" unique_id=1847857211]
+material = SubResource("ComparisonLensMaterial")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Controls" type="CanvasLayer" parent="." unique_id=1086240092]
+visible = false
+
+[node name="Panel" type="PanelContainer" parent="Controls" unique_id=1137845475]
+offset_left = 18.0
+offset_top = 18.0
+offset_right = 350.0
+offset_bottom = 155.0
+
+[node name="Margins" type="MarginContainer" parent="Controls/Panel" unique_id=1015264117]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="Rows" type="VBoxContainer" parent="Controls/Panel/Margins" unique_id=57407998]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ReferenceView" type="OptionButton" parent="Controls/Panel/Margins/Rows" unique_id=124248185]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Move the active camera to a saved reference view."
+
+[node name="WeatherPreset" type="OptionButton" parent="Controls/Panel/Margins/Rows" unique_id=1986090717]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Select a weather preset from the Dynamic Sky rig."
+
+[node name="Clock" type="HBoxContainer" parent="Controls/Panel/Margins/Rows" unique_id=271689654]
+layout_mode = 2
+
+[node name="TimeReadout" type="Label" parent="Controls/Panel/Margins/Rows/Clock" unique_id=532036985]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(48, 0)
+layout_mode = 2
+text = "09:36"
+
+[node name="TimeSlider" type="HSlider" parent="Controls/Panel/Margins/Rows/Clock" unique_id=1183019711]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 23.99
+step = 0.016666667
+value = 9.600000192
+
+[node name="RunClock" type="CheckButton" parent="Controls/Panel/Margins/Rows" unique_id=330471631]
+layout_mode = 2
+text = "Run clock"
+
+[connection signal="item_selected" from="Controls/Panel/Margins/Rows/ReferenceView" to="." method="_on_reference_selected"]
+[connection signal="item_selected" from="Controls/Panel/Margins/Rows/WeatherPreset" to="." method="_on_weather_selected"]
+[connection signal="value_changed" from="Controls/Panel/Margins/Rows/Clock/TimeSlider" to="." method="_on_time_changed"]
+[connection signal="toggled" from="Controls/Panel/Margins/Rows/RunClock" to="." method="_on_run_clock_toggled"]
+
+[editable path="DynamicSky"]
+[editable path="RainDripSpline"]

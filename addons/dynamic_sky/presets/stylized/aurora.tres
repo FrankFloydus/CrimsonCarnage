@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="DynamicSkyStylizedWeather" format=3]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/weather/stylized_weather.gd" id="1"]
+
+[resource]
+resource_name = "Stylized Aurora"
+script = ExtResource("1")
+cloud_coverage = 0.11
+fog_density = 0.00058
+fog_height_falloff = 0.0011
+fog_amount = 0.15
+wind = Vector2(1.0, 2.0)
+gustiness = 0.18
+temperature_offset = -11.0
+sky_zenith_tint = Color(0.25, 0.42, 0.56, 1)
+sky_horizon_tint = Color(0.63, 0.72, 0.76, 1)
+night_sky_tint = Color(0.08, 0.105, 0.22, 1)
+day_fog_tint = Color(0.53, 0.64, 0.69, 1)
+night_fog_tint = Color(0.12, 0.23, 0.28, 1)
+moonlight_tint = Color(0.55, 0.72, 0.98, 1)
+aurora_strength = 2.8

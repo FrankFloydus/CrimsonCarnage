@@ -11,18 +11,23 @@ enum Mode {
 	POST_PROCESS,
 	## Disables the local haze. Distant environment fog remains independently authored.
 	DISABLED,
+	## Uses additive, depth-bounded wind fog in snowfall and the lit volume in other weather.
+	SOURCE_SNOW,
+	## Uses depth-bounded fog in snow and dust, with separate drifting dust cards and spots.
+	SOURCE_SNOW_AND_DUST,
 }
 
-## Chooses volumetric or post-process local wind fog.
+## Chooses the local fog path and, in Source Snow and Dust, enables the finite dust particle field.
 @export var mode: Mode = Mode.VOLUMETRIC:
 	set(value):
 		if mode == value:
 			return
 		mode = value
+		notify_property_list_changed()
 		emit_changed()
 
 @export_group("Weather")
-## Overall multiplier for post-process fog. Zero disables this pass.
+## Overall multiplier for screen-space wind fog. Zero disables its contribution.
 @export_range(0.0, 2.0, 0.01) var intensity_scale: float = 1.0:
 	set(value):
 		if intensity_scale == value:
@@ -30,7 +35,7 @@ enum Mode {
 		intensity_scale = value
 		emit_changed()
 
-## Source-scale post-process wind fog amount in rain.
+## Legacy Post Process wind fog amount in rain.
 @export_range(0.0, 1.0, 0.001) var rain_amount: float = 0.1372:
 	set(value):
 		if rain_amount == value:
@@ -38,7 +43,7 @@ enum Mode {
 		rain_amount = value
 		emit_changed()
 
-## Source-scale amount in strong wind and heavy rain.
+## Legacy Post Process wind fog amount in strong wind and heavy rain.
 @export_range(0.0, 1.0, 0.001) var storm_amount: float = 0.3967:
 	set(value):
 		if storm_amount == value:
@@ -46,7 +51,7 @@ enum Mode {
 		storm_amount = value
 		emit_changed()
 
-## Source-scale amount in windblown snow.
+## Legacy Post Process wind fog amount in windblown snow.
 @export_range(0.0, 1.0, 0.001) var blizzard_amount: float = 0.56:
 	set(value):
 		if blizzard_amount == value:
@@ -54,7 +59,7 @@ enum Mode {
 		blizzard_amount = value
 		emit_changed()
 
-## Source-scale amount in a full dust storm.
+## Depth-integrated wind fog amount in a full dust storm.
 @export_range(0.0, 1.0, 0.001) var dust_amount: float = 0.70:
 	set(value):
 		if dust_amount == value:
@@ -62,7 +67,15 @@ enum Mode {
 		dust_amount = value
 		emit_changed()
 
-## Maximum post-process haze from strong dry wind.
+## Matches daylight sky and distance-fog scattering in heavy dust when using Sky Atmosphere.
+@export var calibrate_daylight_dust: bool = false:
+	set(value):
+		if calibrate_daylight_dust == value:
+			return
+		calibrate_daylight_dust = value
+		emit_changed()
+
+## Maximum Legacy Post Process haze from strong dry wind.
 @export_range(0.0, 1.0, 0.001) var dry_wind_amount: float = 0.09:
 	set(value):
 		if dry_wind_amount == value:
@@ -95,7 +108,7 @@ enum Mode {
 		noise_scale_meters = value
 		emit_changed()
 
-## Extinction per meter at full density and full weather amount.
+## Legacy extinction per meter. Source fog scales additive scattering relative to the 0.12 default.
 @export_range(0.0, 0.3, 0.001) var extinction_per_meter: float = 0.12:
 	set(value):
 		if extinction_per_meter == value:
@@ -110,3 +123,19 @@ enum Mode {
 			return
 		density_variation = value
 		emit_changed()
+
+
+func _validate_property(property: Dictionary) -> void:
+	match property.name:
+		&"rain_amount", &"storm_amount", &"blizzard_amount", &"dry_wind_amount":
+			if mode != Mode.POST_PROCESS:
+				property.usage &= ~PROPERTY_USAGE_EDITOR
+		&"dust_amount":
+			if mode != Mode.POST_PROCESS and mode != Mode.SOURCE_SNOW_AND_DUST:
+				property.usage &= ~PROPERTY_USAGE_EDITOR
+		&"calibrate_daylight_dust":
+			if mode != Mode.SOURCE_SNOW_AND_DUST:
+				property.usage &= ~PROPERTY_USAGE_EDITOR
+		&"intensity_scale", &"trace_distance_meters", &"sample_step_meters", &"noise_scale_meters", &"extinction_per_meter", &"density_variation":
+			if mode == Mode.VOLUMETRIC or mode == Mode.DISABLED:
+				property.usage &= ~PROPERTY_USAGE_EDITOR

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="DynamicSkyWeather" format=3 uid="uid://bhsl302023ivk"]
+
+[ext_resource type="Script" path="res://addons/dynamic_sky/dynamic_sky_weather.gd" id="1_weather"]
+
+[resource]
+resource_name = "Light Snow"
+script = ExtResource("1_weather")
+cloud_coverage = 0.6
+fog_density = 0.0003672263
+fog_height_falloff = 0.002980532876
+fog_start_distance = 54.951165035
+fog_amount = 0.3
+rain = 0.0
+snow = 0.3
+snow_coverage_limit = 0.5
+wind = Vector2(0, 0.15)
+gustiness = 1.0
+temperature_offset = -20.0
+metadata/source_preset = "Snow_Light"
+metadata/source_wind_intensity = 1.0
+metadata/source_thunder_lightning = 0.0
+metadata/source_material_state = Vector3(0.0, 0.5, 0.0)
