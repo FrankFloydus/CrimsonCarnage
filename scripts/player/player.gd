@@ -1,69 +1,90 @@
 class_name Player
 extends CharacterBody3D
-## Resolves first-person movement input and advances physical locomotion once.
+## Boots native controls and routes combat input to the active form.
 
+enum CombatForm { DUAL_SWORDS, SPELLCASTER }
+
+const WeaponControl := preload("res://scripts/melee/first_person_melee.gd")
 const LOCOMOTION_MAP := &"Locomotion"
-const WALK := &"walk"
-const CROUCH := &"crouch"
-const DASH := &"dash"
+const MELEE_SLASH := &"melee_slash"
+const ACTIVATE_SPELLCASTER := &"activate_spellcaster"
+const BLOOD_PER_SWING := 50.0
 
-var _gait := FirstPersonGait.new()
-var _crouch_input_held: bool = false
+var combat_form: CombatForm = CombatForm.DUAL_SWORDS
+
 var _controls: Controls
+var _locomotion_active := false
+var _left_sword_was_visible := true
 
-@onready var _movement: FirstPersonMovement = $Movement
-@onready var _crouch: FirstPersonCrouch = $Crouch
+@onready var _mover: MoverComponent = $Mover
 @onready var _controls_setup: ControlsComponent = $Controls
+@onready var _look: FirstPersonLook = $Look
+@onready var _weapon: WeaponControl = $Look/Camera3D/WeaponControl
+@onready var _left_sword_mount: Node3D = $Look/Camera3D/LeftWeaponControl
+@onready var _stats: PlayerStats = $Stats
+@onready var _presentation: PlayerPresentation = $PlayerPresentation
 
 
 func _ready() -> void:
-	_controls = Controls.boot(self, _controls_setup.input_layout)
-	if _controls == null or not _controls.is_ready() or _controls.set_map_enabled(LOCOMOTION_MAP, true) != OK:
-		push_error("Assign a valid Locomotion Input Layout to the player's Controls.")
-		_controls = null
+	_presentation.bind_combat_stats(_stats)
+	_weapon.swing_started.connect(_on_swing_started)
+	var control := _controls_setup.boot(_look, null, _look.apply_aim)
+	if control == null or not control.is_ready():
+		return
+	_controls = control.controls()
+	var movement := control.mover()
+	movement.landed.connect(_weapon.play_landing_motion)
+	movement.landed.connect(_on_landed)
+	var camera: Camera3D = _look.get_node(^"Camera3D")
+	_mover.boot_stair_smoothing(camera, _look.get_base_camera_position())
+	_update_locomotion_enabled()
 
 
 func _physics_process(delta: float) -> void:
-	_advance_control_frame(delta, Input.mouse_mode == Input.MOUSE_MODE_CAPTURED)
-
-
-func _advance_control_frame(delta: float, controls_active: bool) -> void:
-	if not controls_active or _controls == null or not _controls.is_ready():
-		advance_locomotion(delta, Vector2.ZERO)
+	if _controls == null:
 		return
-	advance_locomotion(delta, _controls.vector(_controls_setup.move_action),
-			_controls.pressed(_controls_setup.jump_action),
-			_controls.pressed(CROUCH), _controls.held(CROUCH),
-			_controls.held(WALK), _controls.pressed(DASH)
-	)
+	_update_locomotion_enabled()
+	if combat_form == CombatForm.SPELLCASTER:
+		_stats.add_blood(-_stats.blood_drain * delta)
+		if is_zero_approx(_stats.blood):
+			_stats.blood = 0.0
+			_set_combat_form(CombatForm.DUAL_SWORDS)
+	elif _locomotion_active:
+		_process_sword_input()
 
 
-## Resolves stance, gait, and takeoff for one physics interval using the supplied input.
-func advance_locomotion(
-		delta: float,
-		movement_input: Vector2,
-		jump_pressed: bool = false,
-		crouch_pressed: bool = false,
-		crouch_held: bool = false,
-		walk_held: bool = false,
-		dash_pressed: bool = false
-) -> void:
-	_update_crouch_input(crouch_pressed, crouch_held, not jump_pressed and _movement.is_grounded())
-	_crouch.retry_standing()
-	_gait.advance(walk_held, _crouch.is_crouching)
-	_movement.move(delta, movement_input, _gait.current_gait, jump_pressed, dash_pressed)
+func _process_sword_input() -> void:
+	if _controls.pressed(ACTIVATE_SPELLCASTER) and _stats.blood >= PlayerStats.BLOOD_CAP:
+		_set_combat_form(CombatForm.SPELLCASTER)
+	elif _controls.pressed(MELEE_SLASH):
+		_weapon.request_slash()
 
 
-func _update_crouch_input(pressed: bool, held: bool, can_enter: bool) -> void:
-	if _crouch.settings.mode == FirstPersonCrouchSettings.Mode.TOGGLE:
-		if pressed:
-			if _crouch.is_crouching:
-				_crouch.try_set_crouched(false)
-			elif can_enter:
-				_crouch.try_set_crouched(true)
-	elif held:
-		if can_enter or _crouch.is_crouching:
-			_crouch.try_set_crouched(true)
-	elif _crouch_input_held:
-		_crouch.request_stand()
-	_crouch_input_held = held
+func _set_combat_form(form: CombatForm) -> void:
+	combat_form = form
+	var spellcaster_active := form == CombatForm.SPELLCASTER
+	_weapon.set_sword_form_active(not spellcaster_active)
+	if spellcaster_active:
+		_left_sword_was_visible = _left_sword_mount.visible
+		_left_sword_mount.hide()
+		_look.attack_camera_motion = Transform3D.IDENTITY
+	else:
+		_left_sword_mount.visible = _left_sword_was_visible
+	_presentation.set_spellcaster_active(spellcaster_active)
+
+
+func _on_swing_started() -> void:
+	if combat_form == CombatForm.DUAL_SWORDS:
+		_stats.add_blood(BLOOD_PER_SWING)
+
+
+func _on_landed(_impact_speed: float) -> void:
+	var movement := _mover.mover()
+	if movement != null:
+		_stats.apply_fall_damage(movement.get_last_fall_distance())
+
+
+func _update_locomotion_enabled() -> void:
+	var active := _controls.pointer_captured()
+	if active != _locomotion_active and _controls.set_map_enabled(LOCOMOTION_MAP, active) == OK:
+		_locomotion_active = active

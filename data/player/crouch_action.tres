@@ -1,0 +1,7 @@
+[gd_resource type="InputAction" format=3 uid="uid://div22xqm82l0p"]
+
+[sub_resource type="InputTriggerPressed" id="InputTriggerPressed_rspkm"]
+
+[resource]
+display_name = "Crouch"
+trigger = SubResource("InputTriggerPressed_rspkm")

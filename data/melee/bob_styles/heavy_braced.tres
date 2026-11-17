@@ -49,9 +49,9 @@ resource_name = "Braced Stop"
 script = ExtResource("2_motion")
 duration = 0.55
 envelope = SubResource("Curve_stop_motion")
-position = Vector3(0, 0, -0.021)
-rotation_degrees = Vector3(-1.65, 0, 0)
-stop_weight_shift = 0.009
+position = Vector3(0, 0, -0.009)
+rotation_degrees = Vector3(-0.65, 0, 0)
+stop_weight_shift = 0.003
 
 [sub_resource type="Curve" id="Curve_walk_step"]
 resource_name = "Walk Step"

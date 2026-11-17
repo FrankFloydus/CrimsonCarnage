@@ -1,6 +1,6 @@
 # UDW DemoMap comparison
 
-Open [UDW DemoMap](udw_demo_map.tscn) and press **F6**. The comparison camera opens at **09:36** and uses the weather saved on the scene’s **DynamicSky** node. Press **Tab** to show the view, weather, and clock controls, then select **Partly Cloudy** to reproduce the source map’s starting condition. Hold **RMB** to look around, use **WASD** to fly, and use **Q/E** to change height. The [Dynamic Sky rig](../../dynamic_sky.tscn) provides the weather controls and resources.
+Open **UDW DemoMap** and press **F6**. The saved comparison starts at **09:36** in **Blizzard**. Press **Tab** to show the view, weather, and clock controls, then select **Partly Cloudy** to reproduce the source map’s starting condition. Hold **RMB** to look around, use **WASD** to fly, and use **Q/E** to change height. [DemoMap scene](udw_demo_map.tscn) · [Dynamic Sky rig](../../dynamic_sky.tscn)
 
 The layout is based on the local Ultra Dynamic Sky 9.7 `DemoMap` reflected in Unreal 5.8.4. A source point in centimeters maps to Godot meters as `(UE_Y, UE_Z, -UE_X) × 0.01`. The source ground spans 241.92 m on each horizontal axis and contains 189 × 189 quads at 1.28 m spacing. All 36,100 source landscape samples are flat at elevation zero. The editable Godot mesh and collider use that ground footprint. A 6.4 × 6.4 m inset adds vertices at 2.5 cm spacing for the orbiting sphere’s snow track. The Landscape uses the near material, with the source's distant LOD material recorded on the Terrain node.
 

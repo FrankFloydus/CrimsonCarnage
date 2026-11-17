@@ -20,7 +20,7 @@ Preserve filenames required by their tools, such as `AGENTS.md` and `project.god
 
 Every exported property exposed in the Inspector must have a meaningful `##` documentation comment, including properties using specialized annotations such as `@export_range`, `@export_enum`, or `@export_file`.
 
-Place the comment immediately above the property's annotation block. Explain its purpose and include units, constraints, or special behavior when relevant. A group heading does not document the individual properties beneath it.
+Place the comment immediately above the property's annotation block. Explain what the control changes, include units and relevant limits, and give a brief tuning example when the effect is hard to infer. Document each property in a group.
 
 The stair height setting documents the unit and the meaning of zero.
 
@@ -48,7 +48,7 @@ not require a scene node for every responsibility.
 - Have internal helpers receive needed configuration from their owner. Do not duplicate tuning
   or invent editable options to justify a scene node.
 
-The controller owns its `FirstPersonGait` helper for runtime gait selection. The saved Movement, Crouch, and Look components each expose their own **Settings** resource.
+The native MoverComponent authors movement, stairs, and optional crouch. The live Mover emits landing events and reports the measured fall distance. Controls authors mouse sensitivity. Camera3D authors pitch, strafe roll, and movement FOV. Look composes the view with imported camera animation. Stats owns fall damage tuning and health changes. PlayerPresentation consumes damage events, and DamageVignette owns the hit flash and optional low-health warning.
 
 Keep requested scenes, UI, and resources as saved, editable project assets. Extracting internal
 logic into helpers must preserve that authored content and its meaningful editor controls.
@@ -70,7 +70,9 @@ logic into helpers must preserve that authored content and its meaningful editor
 
 ## Engine references
 
-The project targets **Godot 4.8 beta** based on upstream revision `c51ff06e8` in the sibling Godot checkout. It uses Jolt Physics, physics interpolation, and Forward Plus with D3D12 on Windows. Melee and effect scripts use the upstream `*_into` physics query APIs available in this revision. The local build also includes the Forward+ directional projector used by Dynamic Sky, rendering-device particle sub-emission queues that retain births across fixed simulation steps, and an audio shutdown fix for active playback. Match version-sensitive findings to the installed build. The editor launched by the user is `C:\Users\Drako\Desktop\_CRIMSON_CARNAGE_DEV\Godot_RPG.exe`. Every verified engine rebuild must replace that root executable, and the installed copy must be checked. [Godot source](../../godot) · [Installed editor](../../Godot_RPG.exe) · [Project settings](../project.godot)
+The project targets **Godot 4.8 beta** based on upstream revision `c51ff06e8`. The sibling engine checkout adds the Carnage renderer and editor extensions in commit `22d5afd`. The project uses Jolt Physics, physics interpolation, and Forward+ with D3D12 on Windows. Melee and effect scripts use the upstream `*_into` physics query APIs available in this revision. The local build includes the Forward+ directional projector used by Dynamic Sky, rendering-device particle sub-emission queues that retain births across fixed simulation steps, and an audio shutdown fix for active playback. Match version-sensitive findings to the installed build. Open `Godot_RPG.exe` at the workspace root. Every verified engine rebuild must replace that executable and verify the installed copy. [Godot source](../../godot) · [Installed editor](../../Godot_RPG.exe) · [Project settings](../project.godot)
+
+Carnage bundles the Windows x86-64 Debug and Release Crimson Framework DLLs under `addons/crimson-framework/bin`. The source lives in the separate Crimson Framework checkout. Reopen the editor after replacing the DLLs so it registers the new native APIs. The Weapon Animation Tweaker has its own extension descriptor and build. [Framework descriptor](../addons/crimson-framework/crimson-framework.gdextension) · [Tweaker build](../native/weapon_animation_tweaker/README.md)
 
 Forward+ cameras can enable **Auto Exposure → Use EV Adaptation** on either Practical or Physical camera attributes. **Bright Scene Speed** and **Dark Scene Speed** cap exposure changes separately, in stops per second. The mode defaults to off. The installed editor passed a native brightness step with separate viewport histories, history reset on resize and re-enable, and saved camera resource checks. [CameraAttributes API](../../godot/doc/classes/CameraAttributes.xml) · [Forward+ exposure shader](../../godot/servers/rendering/renderer_rd/shaders/effects/luminance_reduce.glsl)
 
@@ -82,10 +84,10 @@ Foreign resources embedded in a source scene remain guarded until the author exp
 
 This feature is installed in the root `Godot_RPG.exe` from the `tests=yes extra_suffix=exposed_nodes` [editor build](../../godot/bin/godot.windows.editor.x86_64.exposed_nodes.exe). The same build also produces a [console executable](../../godot/bin/godot.windows.editor.x86_64.exposed_nodes.console.exe). Native PackedScene checks passed 66 assertions, including a rerun from the installed root executable. Actual native widget checks passed 35 positive/read-only checks and 27 independent negative checks. The 35-check path also passed in an offscreen D3D12 editor, and its rendered button and controls were visually inspected without interacting with the user's open editor. Record the executable used when reporting results.
 
-For an already imported checkout, run this PowerShell command from the Godot project root to verify scene startup and the item catalog report. For a fresh test copy, run the same executable with `--headless --path . --import` first.
+For an already imported checkout, run this PowerShell command from the Godot project root to verify scene startup. For a fresh test copy, run the same executable with `--headless --path . --import` first.
 
 ```powershell
-& ..\godot\bin\godot.windows.editor.x86_64.console.exe --headless --path . --quit-after 60
+& ..\godot\bin\godot.windows.editor.x86_64.exposed_nodes.console.exe --headless --path . --quit-after 60
 ```
 
 Use the Playground's rendered view for checks of GPU particles, decals, shadows, and first-person presentation. [Manual checks](../README.md)

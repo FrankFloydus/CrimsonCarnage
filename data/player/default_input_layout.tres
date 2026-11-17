@@ -1,5 +1,8 @@
 [gd_resource type="InputLayout" format=3 uid="uid://cbg4h73h2tlu7"]
 
+[ext_resource type="InputAction" path="res://addons/crimson-framework/input/actions/mouse_aim.tres" id="1_mouse_aim"]
+[ext_resource type="InputAction" uid="uid://div22xqm82l0p" path="res://data/player/crouch_action.tres" id="2_crouch"]
+
 [sub_resource type="InputAction" id="action_move"]
 display_name = "Move"
 kind = 2
@@ -74,9 +77,6 @@ id = &"jump"
 action = SubResource("action_jump")
 bindings = Array[InputBinding]([SubResource("bind_jump")])
 
-[sub_resource type="InputAction" id="action_crouch"]
-display_name = "Crouch"
-
 [sub_resource type="InputEventKey" id="key_crouch"]
 physical_keycode = 67
 
@@ -88,7 +88,7 @@ allow_extra_modifiers = true
 
 [sub_resource type="InputActionMapping" id="map_crouch"]
 id = &"crouch"
-action = SubResource("action_crouch")
+action = ExtResource("2_crouch")
 bindings = Array[InputBinding]([SubResource("bind_crouch")])
 
 [sub_resource type="InputAction" id="action_walk"]
@@ -126,10 +126,76 @@ id = &"dash"
 action = SubResource("action_dash")
 bindings = Array[InputBinding]([SubResource("bind_dash")])
 
+[sub_resource type="InputEventMouseMotion" id="mouse_motion"]
+
+[sub_resource type="InputBinding" id="bind_mouse_aim"]
+id = &"mouse_aim/mouse"
+display_name = "Mouse XY"
+event = SubResource("mouse_motion")
+contribution = Vector3(1, 1, 0)
+
+[sub_resource type="InputActionMapping" id="map_mouse_aim"]
+id = &"mouse_aim"
+action = ExtResource("1_mouse_aim")
+bindings = Array[InputBinding]([SubResource("bind_mouse_aim")])
+
 [sub_resource type="InputActionMap" id="locomotion"]
 id = &"Locomotion"
 display_name = "Locomotion"
-mappings = Array[InputActionMapping]([SubResource("map_move"), SubResource("map_jump"), SubResource("map_crouch"), SubResource("map_walk"), SubResource("map_dash")])
+mappings = Array[InputActionMapping]([SubResource("map_move"), SubResource("map_jump"), SubResource("map_crouch"), SubResource("map_walk"), SubResource("map_dash"), SubResource("map_mouse_aim")])
+
+[sub_resource type="InputAction" id="action_release_mouse"]
+display_name = "Release Mouse"
+
+[sub_resource type="InputEventKey" id="key_release_mouse"]
+physical_keycode = 4194305
+
+[sub_resource type="InputBinding" id="bind_release_mouse"]
+id = &"release_mouse/keyboard"
+display_name = "Escape"
+event = SubResource("key_release_mouse")
+allow_extra_modifiers = true
+
+[sub_resource type="InputActionMapping" id="map_release_mouse"]
+id = &"release_mouse"
+action = SubResource("action_release_mouse")
+bindings = Array[InputBinding]([SubResource("bind_release_mouse")])
+
+[sub_resource type="InputAction" id="action_melee_slash"]
+display_name = "Melee Slash"
+
+[sub_resource type="InputEventMouseButton" id="mouse_melee_slash"]
+button_index = 1
+
+[sub_resource type="InputBinding" id="bind_melee_slash"]
+id = &"melee_slash/mouse"
+event = SubResource("mouse_melee_slash")
+
+[sub_resource type="InputActionMapping" id="map_melee_slash"]
+id = &"melee_slash"
+action = SubResource("action_melee_slash")
+bindings = Array[InputBinding]([SubResource("bind_melee_slash")])
+
+[sub_resource type="InputAction" id="action_spellcaster"]
+display_name = "Activate Spellcaster"
+
+[sub_resource type="InputEventKey" id="key_spellcaster"]
+physical_keycode = 4194306
+
+[sub_resource type="InputBinding" id="bind_spellcaster"]
+id = &"activate_spellcaster/keyboard"
+event = SubResource("key_spellcaster")
+
+[sub_resource type="InputActionMapping" id="map_spellcaster"]
+id = &"activate_spellcaster"
+action = SubResource("action_spellcaster")
+bindings = Array[InputBinding]([SubResource("bind_spellcaster")])
+
+[sub_resource type="InputActionMap" id="gameplay"]
+display_name = "Gameplay"
+mappings = Array[InputActionMapping]([SubResource("map_release_mouse"), SubResource("map_melee_slash"), SubResource("map_spellcaster")])
 
 [resource]
-maps = Array[InputActionMap]([SubResource("locomotion")])
+maps = Array[InputActionMap]([SubResource("locomotion"), SubResource("gameplay")])
+click_to_capture = true
+release_action = &"release_mouse"

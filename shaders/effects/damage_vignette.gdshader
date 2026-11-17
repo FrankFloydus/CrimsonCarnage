@@ -7,6 +7,9 @@ uniform vec4 tint : source_color = vec4(0.48, 0.055, 0.075, 1.0);
 uniform vec2 mask_size = vec2(2.5, 1.5);
 
 void fragment() {
+	if (COLOR.a <= 0.0) {
+		discard;
+	}
 	vec2 viewport_size = 1.0 / SCREEN_PIXEL_SIZE;
 	vec2 mask_pixels = max(mask_size, vec2(0.01)) * (0.5 * length(viewport_size));
 	vec2 mask_uv = vec2(0.5) + (UV - vec2(0.5)) * viewport_size / mask_pixels;

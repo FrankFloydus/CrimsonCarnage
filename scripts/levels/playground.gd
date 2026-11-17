@@ -14,7 +14,6 @@ const BOB_STYLES := [
 @export_range(0.0, 10.0, 0.1, "or_greater", "suffix:m") var mannequin_lens_blood_range: float = 3.0
 
 var _lens_played_this_swing: bool = false
-var _vignette_played_this_swing: bool = false
 
 @onready var _mannequin: Node3D = $BloodTestTarget
 @onready var _player: Node3D = $Player
@@ -25,7 +24,6 @@ var _vignette_played_this_swing: bool = false
 
 func _ready() -> void:
 	_weapon.swing_started.connect(_on_swing_started)
-	_weapon.world_contact.connect(_on_world_contact)
 	_weapon.surface_contact.connect(_on_surface_contact)
 
 
@@ -55,14 +53,6 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 func _on_swing_started() -> void:
 	_lens_played_this_swing = false
-	_vignette_played_this_swing = false
-
-
-func _on_world_contact(_collider: Node3D) -> void:
-	if _vignette_played_this_swing:
-		return
-	_vignette_played_this_swing = true
-	_presentation.pulse_damage_vignette()
 
 
 func _on_surface_contact(

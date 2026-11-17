@@ -14,7 +14,6 @@
 [ext_resource type="PackedScene" path="res://scenes/levels/crouch_tunnels.tscn" id="7_crouch_tunnels"]
 [ext_resource type="CompressedTexture3D" uid="uid://dfdfkdivt7cfo" path="res://addons/dynamic_sky/rendering/atmosphere_view.png" id="7_q3yie"]
 [ext_resource type="CompressedTexture3D" uid="uid://c0ycajjqsal2o" path="res://addons/dynamic_sky/rendering/cloud_formation.png" id="8_b2wub"]
-[ext_resource type="PackedScene" path="res://scenes/ui/item_definition_inspector.tscn" id="8_item_inspector"]
 [ext_resource type="CompressedTexture3D" uid="uid://dtc75rrue2tif" path="res://addons/dynamic_sky/rendering/cloud_noise.png" id="9_j0x21"]
 [ext_resource type="PackedScene" uid="uid://dvselcect811b" path="res://scenes/characters/blood_test_target.tscn" id="10_blood_target"]
 [ext_resource type="Texture2D" uid="uid://ouigrcst8ni5" path="res://addons/dynamic_sky/rendering/cloud_weather.png" id="10_l66j3"]
@@ -403,8 +402,6 @@ transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -18,
 
 [node name="CrouchTunnels" parent="." unique_id=905863008 instance=ExtResource("7_crouch_tunnels")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 13)
-
-[node name="ItemDefinitionInspector" parent="." unique_id=1418025125 instance=ExtResource("8_item_inspector")]
 
 [node name="BloodTestTarget" parent="." unique_id=344074496 instance=ExtResource("10_blood_target")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 14.5)

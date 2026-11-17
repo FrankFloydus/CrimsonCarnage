@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://p2pbkg3rikpq"]
+
+[ext_resource type="Texture2D" uid="uid://dgmuq2xssh64" path="res://textures/weapons/prototype_blade_albedo.png" id="1_albedo"]
+[ext_resource type="Texture2D" uid="uid://785mjgf4wkw7" path="res://textures/weapons/prototype_blade_roughness.png" id="2_roughness"]
+
+[resource]
+resource_name = "Weathered Blade Steel"
+albedo_texture = ExtResource("1_albedo")
+metallic = 1.0
+roughness = 0.7
+roughness_texture = ExtResource("2_roughness")
+uv1_scale = Vector3(-1.28, -1.28, -1.28)
+uv1_triplanar = true
+uv1_triplanar_sharpness = 1.3660406

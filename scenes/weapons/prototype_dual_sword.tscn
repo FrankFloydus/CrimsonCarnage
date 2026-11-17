@@ -1,0 +1,50 @@
+[gd_scene format=3 uid="uid://csog8u2twlnld"]
+
+[ext_resource type="ArrayMesh" uid="uid://dpp4k3xi8kqr3" path="res://meshes/weapons/prototype_dual_blade.obj" id="1_blade"]
+[ext_resource type="ArrayMesh" uid="uid://xesnrhlyh3ff" path="res://meshes/weapons/prototype_dual_fittings.obj" id="2_fittings"]
+[ext_resource type="ArrayMesh" uid="uid://cweoj3dssew3n" path="res://meshes/weapons/prototype_dual_bands.obj" id="3_bands"]
+[ext_resource type="ArrayMesh" uid="uid://bxq7tndq27pv8" path="res://meshes/weapons/prototype_dual_wrap.obj" id="4_wrap"]
+[ext_resource type="Material" uid="uid://p2pbkg3rikpq" path="res://materials/weapons/prototype_blade.tres" id="5_steel"]
+
+[sub_resource type="StandardMaterial3D" id="Material_Fittings"]
+resource_name = "Dark Forged Guard and Pommel"
+albedo_color = Color(0.31, 0.315, 0.32, 1)
+metallic = 0.85
+roughness = 0.38
+
+[sub_resource type="StandardMaterial3D" id="Material_Bands"]
+resource_name = "Patinated Brass"
+albedo_color = Color(0.48, 0.29, 0.12, 1)
+metallic = 0.79
+roughness = 0.44
+
+[sub_resource type="StandardMaterial3D" id="Material_Wrap"]
+resource_name = "Dark Brown Leather Wrap"
+albedo_color = Color(0.13, 0.061, 0.035, 1)
+roughness = 0.78
+
+[node name="PrototypeDualSword" type="Node3D" unique_id=216141024]
+
+[node name="Visuals" type="Node3D" parent="." unique_id=1152798220]
+
+[node name="Blade" type="MeshInstance3D" parent="Visuals" unique_id=1196691220]
+material_override = ExtResource("5_steel")
+cast_shadow = 0
+mesh = ExtResource("1_blade")
+
+[node name="GuardAndPommel" type="MeshInstance3D" parent="Visuals" unique_id=1640560143]
+material_override = SubResource("Material_Fittings")
+cast_shadow = 0
+mesh = ExtResource("2_fittings")
+
+[node name="CollarBands" type="MeshInstance3D" parent="Visuals" unique_id=1214899145]
+material_override = SubResource("Material_Bands")
+cast_shadow = 0
+mesh = ExtResource("3_bands")
+
+[node name="LeatherWrap" type="MeshInstance3D" parent="Visuals" unique_id=803374942]
+material_override = SubResource("Material_Wrap")
+cast_shadow = 0
+mesh = ExtResource("4_wrap")
+
+[node name="MainGrip" type="Marker3D" parent="." unique_id=717313544]

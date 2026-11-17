@@ -1,6 +1,6 @@
 @tool
 extends Node3D
-## Runs authored melee clips and procedural motion for any assigned weapon sweeps.
+## Runs authored melee clips and applies procedural motion to weapons mounted on the sockets.
 
 ## Emitted when a new slash starts.
 signal swing_started
@@ -14,8 +14,6 @@ const BobStyleResource := preload("res://scripts/melee/weapon_bob_style.gd")
 
 ## Player rig AnimationPlayer. The rig advances it in physics so visuals and contacts use the same pose.
 @export var animation_player: AnimationPlayer
-## Player locomotion component that supplies floor, stair support, and dash state for weapon bob.
-@export var movement: FirstPersonMovement
 ## Right-hand long sword sweep, selected with the first comparison input.
 @export var long_sweep: MeleeSweep3D
 ## Right-hand short sword sweep, selected with the second comparison input.
@@ -33,15 +31,19 @@ const BobStyleResource := preload("res://scripts/melee/weapon_bob_style.gd")
 @export var contact_direction_fallback: Vector3 = Vector3.LEFT
 
 @export_group("Weapon Clearance")
-## Physics layers that keep the visible weapon clear of walls and other bodies. Zero disables clearance.
+## Physics layers the visible weapons react to. Include walls and props you want the weapon to avoid.
+## Clearing every layer disables both collision compression and the proximity wall tuck.
 @export_flags_3d_physics var clearance_mask: int = 1
-## Extra space kept between the fitted weapon bounds and world collision, in meters.
+## Extra space in meters around the weapon's fitted collision bounds.
+## Raise it if a blade still clips corners when you approach a wall.
 @export_range(0.0, 0.2, 0.001, "suffix:m") var clearance_padding: float = 0.025
-## Time to return from full compression to the authored size. Zero restores it immediately.
+## Time in seconds for the weapon to regain its size after being fully compressed at a wall.
+## Raise it to soften a sudden pop back to full size. Zero restores the size immediately.
 @export_range(0.0, 1.0, 0.01, "suffix:s") var clearance_recovery_time: float = 0.12
 
 @export_group("Weapon Sway")
-## Directional look poses and locomotion response. The left hand mirrors the right hand's poses.
+## Procedural settings shared by both weapon mounts. Use Locomotion for movement lag and lean,
+## Bob for the step rhythm and gait transitions, or Jump and Landing for changes in footing.
 @export var sway_settings: WeaponSwaySettings
 
 @export_group("Animation Clips")
@@ -57,6 +59,8 @@ var _excluded: Array[RID]
 var _playback: CrimsonMeleePlayback
 var _rig: CrimsonWeaponRig
 var _configured_sway: WeaponSwaySettings
+var _sword_mount_was_visible := true
+var _was_grounded := false
 @onready var _camera := get_parent() as Camera3D
 @onready var _body := owner as CharacterBody3D
 
@@ -78,20 +82,19 @@ func _ready() -> void:
 	_playback.configure(animation_player, _camera, _excluded, swing_started.emit)
 	_rig = CrimsonWeaponRig.new()
 	_sync_rig_settings()
-	if is_instance_valid(left_sweep):
-		_rig.set_left_visuals(left_sweep.get_parent().get_node_or_null(^"Visuals") as Node3D)
+	_rig.set_right_socket(self)
+	_rig.set_left_socket(_camera.get_node_or_null(^"LeftWeaponControl") as Node3D)
+	_was_grounded = _body.is_on_floor()
 	_select_sword(long_sweep if is_instance_valid(long_sweep) else short_sweep)
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 		return
-	if event.is_action_pressed(&"melee_long_sword"):
+	if InputMap.has_action(&"melee_long_sword") and event.is_action_pressed(&"melee_long_sword"):
 		_select_sword(long_sweep)
-	elif event.is_action_pressed(&"melee_short_sword"):
+	elif InputMap.has_action(&"melee_short_sword") and event.is_action_pressed(&"melee_short_sword"):
 		_select_sword(short_sweep)
-	elif event.is_action_pressed(&"melee_slash"):
-		_request_slash()
 	else:
 		return
 	get_viewport().set_input_as_handled()
@@ -99,26 +102,29 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	var captured := Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+	_rig.restore_socket_visuals()
 	_playback.advance(delta, captured)
 	_sync_rig_settings()
-	var has_movement := is_instance_valid(movement)
 	var world_velocity := _body.get_real_velocity()
+	var travel := _body.get_position_delta()
+	var grounded := _body.is_on_floor()
+	if _was_grounded and not grounded and _body.velocity.dot(_body.up_direction) > 0.0:
+		play_takeoff_motion()
+	_was_grounded = grounded
 	_rig.advance(
-		delta, Vector2(world_velocity.x, world_velocity.z),
-		movement.get_ground_travel() if has_movement else Vector2.ZERO,
-		_body.global_basis, has_movement and movement.is_grounded(),
-		has_movement and movement.did_dash_last_step(),
-		has_movement and movement.is_ground_braking(), captured, _playback.get_active_sweep() != null
+		delta, Vector2(world_velocity.x, world_velocity.z), Vector2(travel.x, travel.z),
+		_body.global_basis, grounded, false, false, captured, _playback.get_active_sweep() != null
 	)
 	_rig.apply_visuals(
 		delta, _camera, clearance_mask, clearance_padding, clearance_recovery_time, _excluded,
-		_right_sweep == short_sweep, _playback.sway_weight(_right_sweep), _playback.sway_weight(left_sweep)
+		_right_sweep != null and _right_sweep == short_sweep,
+		_playback.sway_weight(_right_sweep), _playback.sway_weight(left_sweep)
 	)
 
 
 ## Accumulates the pitch and yaw applied by Look between physics ticks.
 func add_look_turn(angles: Vector2) -> void:
-	if _rig != null:
+	if _rig != null and is_physics_processing():
 		_rig.add_look_turn(angles)
 
 
@@ -135,9 +141,9 @@ func play_takeoff_motion() -> void:
 		_rig.play_takeoff_motion()
 
 
-## Scales the landing reaction to pre-contact downward speed in meters per second.
+## Plays the sword landing pose from Mover's impact speed in meters per second.
 func play_landing_motion(impact_speed: float) -> void:
-	if _rig != null:
+	if _rig != null and is_physics_processing():
 		_sync_rig_settings()
 		_rig.play_landing_motion(impact_speed)
 
@@ -157,6 +163,7 @@ func _sync_rig_settings() -> void:
 func _select_sword(sweep: MeleeSweep3D) -> void:
 	if not is_instance_valid(sweep) or _right_sweep == sweep:
 		return
+	_rig.restore_socket_visuals()
 	_right_sweep = sweep
 	for candidate: MeleeSweep3D in [long_sweep, short_sweep]:
 		if is_instance_valid(candidate):
@@ -164,16 +171,36 @@ func _select_sword(sweep: MeleeSweep3D) -> void:
 	_playback.set_sweeps(sweep, left_sweep)
 	_playback.set_clips(carry_animation, right_slash_animation, left_slash_animation)
 	_playback.restore_carry_pose()
-	_rig.set_right_visuals(sweep.get_parent().get_node_or_null(^"Visuals") as Node3D)
 
 
-func _request_slash() -> void:
+## Requests a sword swing. The empty prototype rig emits the same start event without playback.
+func request_slash() -> void:
 	if not is_instance_valid(_right_sweep) or right_slash_animation.is_empty():
+		if not is_instance_valid(_right_sweep) and not is_instance_valid(left_sweep) \
+				and right_slash_animation.is_empty() and left_slash_animation.is_empty():
+			swing_started.emit()
 		return
+	_rig.restore_socket_visuals()
 	_playback.set_clips(carry_animation, right_slash_animation, left_slash_animation)
 	_playback.set_reach(slash_reach)
 	_playback.set_contact_direction_fallback(contact_direction_fallback)
 	_playback.request_slash()
+
+
+## Suspends sword playback in Spellcaster form and restores sword controls on return.
+func set_sword_form_active(active: bool) -> void:
+	_rig.restore_socket_visuals()
+	if active:
+		_was_grounded = _body.is_on_floor()
+	else:
+		clear_air_motion()
+		_sword_mount_was_visible = visible
+		if _playback.get_active_sweep() != null:
+			animation_player.stop()
+	_playback.restore_carry_pose()
+	visible = active and _sword_mount_was_visible
+	set_physics_process(active)
+	set_process_unhandled_input(active)
 
 
 func _update_reach_preview() -> void:

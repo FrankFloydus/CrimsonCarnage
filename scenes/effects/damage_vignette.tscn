@@ -1,15 +1,21 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://t3jiyi1ma77t"]
 
-[ext_resource type="Script" path="res://scripts/effects/damage_vignette.gd" id="1_vignette"]
-[ext_resource type="Shader" path="res://shaders/effects/damage_vignette.gdshader" id="2_shader"]
-[ext_resource type="Texture2D" path="res://textures/effects/damage_vignette_mask.png" id="3_mask"]
+[ext_resource type="Script" uid="uid://biqvibo5r4wpn" path="res://scripts/effects/damage_vignette.gd" id="1_vignette"]
+[ext_resource type="Shader" uid="uid://csie0gpyv352g" path="res://shaders/effects/damage_vignette.gdshader" id="2_shader"]
+[ext_resource type="Texture2D" uid="uid://vr2aov8t1g7f" path="res://textures/effects/damage_vignette_mask.png" id="3_mask"]
+[ext_resource type="Shader" path="res://shaders/effects/low_health_vignette.gdshader" id="4_low_health_shader"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_vignette"]
 shader = ExtResource("2_shader")
 shader_parameter/mask_texture = ExtResource("3_mask")
+shader_parameter/tint = Color(0.785149, 0, 0.13487726, 1)
+shader_parameter/mask_size = Vector2(2.5, 1.5)
 
-[node name="DamageVignette" type="ColorRect"]
-visible = false
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_low_health"]
+shader = ExtResource("4_low_health_shader")
+shader_parameter/mask_texture = ExtResource("3_mask")
+
+[node name="DamageVignette" type="ColorRect" unique_id=2077891248]
 material = SubResource("ShaderMaterial_vignette")
 anchors_preset = 15
 anchor_right = 1.0
@@ -18,3 +24,15 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_vignette")
+
+[node name="LowHealthPulse" type="ColorRect" parent="."]
+visible = false
+show_behind_parent = true
+material = SubResource("ShaderMaterial_low_health")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2

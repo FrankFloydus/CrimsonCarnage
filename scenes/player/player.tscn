@@ -1,13 +1,10 @@
 [gd_scene format=3 uid="uid://bx6r2r5geskx"]
 
 [ext_resource type="Script" uid="uid://3ry3r8c72k06" path="res://scripts/player/player.gd" id="1_controller"]
-[ext_resource type="Script" uid="uid://dqtstqyhulsqh" path="res://scripts/player/first_person_movement.gd" id="2_movement"]
 [ext_resource type="Script" uid="uid://c4420ury171pa" path="res://scripts/player/first_person_look.gd" id="3_look"]
-[ext_resource type="InputLayout" path="res://data/player/default_input_layout.tres" id="4_input_layout"]
-[ext_resource type="Resource" uid="uid://cc31xas73uelj" path="res://data/player/default_movement_settings.tres" id="4_movement_settings"]
-[ext_resource type="Resource" uid="uid://b3hofdexb4c6v" path="res://data/player/default_look_settings.tres" id="5_look_settings"]
-[ext_resource type="Script" uid="uid://mlnpvjmwxo2e" path="res://scripts/player/first_person_crouch.gd" id="6_crouch"]
-[ext_resource type="Resource" uid="uid://t406r5ht26s5" path="res://data/player/default_crouch_settings.tres" id="7_crouch_settings"]
+[ext_resource type="InputLayout" uid="uid://cbg4h73h2tlu7" path="res://data/player/default_input_layout.tres" id="4_input_layout"]
+[ext_resource type="InputAction" uid="uid://div22xqm82l0p" path="res://data/player/crouch_action.tres" id="5_crouch_action"]
+[ext_resource type="MoverCrouchSettings" uid="uid://t406r5ht26s5" path="res://data/player/default_crouch_settings.tres" id="7_crouch_settings"]
 [ext_resource type="Script" uid="uid://d2f5hidbivb0r" path="res://scripts/melee/first_person_melee.gd" id="9_melee"]
 [ext_resource type="Resource" uid="uid://dkwwtewr2t2va" path="res://data/melee/bob_styles/heavy_braced.tres" id="11_lgqa7"]
 [ext_resource type="Resource" uid="uid://cq5mly5bqouu8" path="res://data/melee/slash_reach.tres" id="11_slash_reach"]
@@ -15,6 +12,8 @@
 [ext_resource type="PackedScene" path="res://scenes/player/player_presentation.tscn" id="13_presentation"]
 [ext_resource type="Script" uid="uid://cd2a2axlawtxo" path="res://scripts/melee/weapon_sway_settings.gd" id="18_sway_settings"]
 [ext_resource type="Script" uid="uid://diovui4407aq0" path="res://scripts/melee/weapon_air_motion.gd" id="19_air_motion"]
+[ext_resource type="Script" uid="uid://ococdmow5nrl" path="res://scripts/player/player_stats.gd" id="20_stats"]
+[ext_resource type="PackedScene" uid="uid://csog8u2twlnld" path="res://scenes/weapons/prototype_dual_sword.tscn" id="21_preview_sword"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
 radius = 0.35
@@ -41,16 +40,16 @@ point_count = 4
 [sub_resource type="Curve" id="Curve_landing_motion"]
 resource_name = "Absorb and Settle"
 _limits = [-1.0, 1.0, 0.0, 1.0]
-_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.17, 1), 0.0, 0.0, 0, 0, Vector2(0.34, 0.68), -2.7, -2.7, 0, 0, Vector2(0.72, -0.08), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.17, 1), 0.0, 0.0, 0, 0, Vector2(0.33539602, 0.8229666), -2.7, -2.7, 0, 0, Vector2(0.6101485, -0.06698561), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
 point_count = 5
 
 [sub_resource type="Resource" id="AirMotion_landing"]
 resource_name = "Landing Compression"
 script = ExtResource("19_air_motion")
-duration = 0.48
+duration = 0.4
 envelope = SubResource("Curve_landing_motion")
-position = Vector3(0.006, -0.066, 0.038)
-rotation_degrees = Vector3(-5.5, 0, -1.5)
+position = Vector3(0, -0.048, 0)
+rotation_degrees = Vector3(-2.4, 0, 0)
 
 [sub_resource type="Curve" id="Curve_takeoff_motion"]
 resource_name = "Takeoff Grip Lag"
@@ -70,11 +69,12 @@ script = ExtResource("19_air_motion")
 duration = 0.4
 envelope = SubResource("Curve_takeoff_motion")
 rotation_envelope = SubResource("Curve_takeoff_wrist")
-position = Vector3(-0.012, -0.018, 0.007)
-rotation_degrees = Vector3(-2.5, 0, 1.8)
+position = Vector3(0, -0.023, 0)
+rotation_degrees = Vector3(-1.2, 0, 0)
 
 [sub_resource type="Resource" id="Resource_weapon_sway"]
 script = ExtResource("18_sway_settings")
+look_response_time = 0.105
 inward_position = Vector3(-0.01, -0.003, 0.002)
 inward_rotation = Vector3(0, 2.8, 1.2)
 outward_position = Vector3(0.006, -0.002, -0.004)
@@ -96,9 +96,16 @@ bob_walk_step = SubResource("Curve_walk_step")
 bob_run_step = SubResource("Curve_run_step")
 breath_curve = SubResource("Curve_idle_breath")
 breath_period = 3.0
-breath_wrist_delay = 0.16
 takeoff_motion = SubResource("AirMotion_takeoff")
 landing_motion = SubResource("AirMotion_landing")
+landing_full_speed = 10.0
+
+[sub_resource type="Animation" id="Animation_ugbui"]
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_fcs02"]
+_data = {
+&"idle": SubResource("Animation_ugbui")
+}
 
 [node name="Player" type="CharacterBody3D" unique_id=223682386]
 process_physics_priority = -10
@@ -113,53 +120,61 @@ shape = SubResource("CapsuleShape3D_player")
 [node name="PlayerPresentation" parent="." unique_id=2061578408 node_paths=PackedStringArray("observer") instance=ExtResource("13_presentation")]
 observer = NodePath("..")
 
-[node name="Crouch" type="Node" parent="." unique_id=1880628811 node_paths=PackedStringArray("body", "collision", "eye")]
-script = ExtResource("6_crouch")
-body = NodePath("..")
-collision = NodePath("../CollisionShape3D")
-eye = NodePath("../Look")
-settings = ExtResource("7_crouch_settings")
+[node name="Stats" type="AbilitySystemComponent" parent="." unique_id=785223258]
+attribute_sets = PackedStringArray("vitals")
+script = ExtResource("20_stats")
+fall_damage_safe_distance = 4.0
+fall_damage_per_meter = 5.0
 
-[node name="Movement" type="MoverComponent" parent="." unique_id=1238766472 node_paths=PackedStringArray("body")]
-first_person = true
-script = ExtResource("2_movement")
-body = NodePath("..")
-settings = ExtResource("4_movement_settings")
+[node name="Mover" type="MoverComponent" parent="." unique_id=1598768285 node_paths=PackedStringArray("crouch_collision", "crouch_eye", "crouch_camera")]
+crouch_enabled = true
+crouch_settings = ExtResource("7_crouch_settings")
+crouch_collision = NodePath("../CollisionShape3D")
+crouch_eye = NodePath("../Look")
+crouch_camera = NodePath("../Look/Camera3D")
+forward_direction = 1
+gravity_scale = 1.5
+jump_speed = 6.0
 
 [node name="Controls" type="ControlsComponent" parent="." unique_id=453449960]
 input_layout = ExtResource("4_input_layout")
-mouse_look_action = &""
+crouch_input_action = ExtResource("5_crouch_action")
 stick_look_action = &""
+capture_pointer_on_boot = true
 
 [node name="Look" type="Node3D" parent="." unique_id=794868390 node_paths=PackedStringArray("body")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.62, 0)
 script = ExtResource("3_look")
 body = NodePath("..")
-settings = ExtResource("5_look_settings")
 
 [node name="Camera3D" type="Camera3D" parent="Look" unique_id=897164582]
 current = true
 fov = 55.0
 script = ExtResource("12_camera_effects")
+tilt_response = 3.0
+movement_fov_forward_offset = 1.5
+movement_fov_backward_offset = -0.09999999999999964
+movement_fov_response_time = 0.24
 
-[node name="WeaponControl" type="Node3D" parent="Look/Camera3D" unique_id=1988381765 node_paths=PackedStringArray("animation_player", "movement")]
-process_physics_priority = 1
+[node name="WeaponControl" type="Node3D" parent="Look/Camera3D" unique_id=1988381765 node_paths=PackedStringArray("animation_player")]
+process_physics_priority = 101
+transform = Transform3D(0.30781263, 0.0005453072, -0.95144665, 0.13011448, 0.9905817, 0.0426625, 0.9425075, -0.1369294, 0.30484244, 0.20948291, -0.3654045, -0.34529334)
 script = ExtResource("9_melee")
 animation_player = NodePath("../../../AnimationPlayer")
-movement = NodePath("../../../Movement")
 slash_reach = ExtResource("11_slash_reach")
 contact_direction_fallback = Vector3(0, 0, 0)
 sway_settings = SubResource("Resource_weapon_sway")
 
+[node name="PrototypeSwordR" parent="Look/Camera3D/WeaponControl" unique_id=2065525541 instance=ExtResource("21_preview_sword")]
+transform = Transform3D(1.0000001, 0, 0, 0, 0.724518, 0, 0, 0, 1, 0, 0, 0)
+
 [node name="LeftWeaponControl" type="Node3D" parent="Look/Camera3D" unique_id=1748731221]
+transform = Transform3D(0.18953371, 0.005186747, 0.98186064, -0.18027982, 0.9831705, 0.029606752, -0.96518165, -0.18262118, 0.18727908, -0.22717153, -0.32185745, -0.34731647)
+
+[node name="PrototypeSwordR2" parent="Look/Camera3D/LeftWeaponControl" unique_id=1805089810 instance=ExtResource("21_preview_sword")]
+transform = Transform3D(0.9999992, 0, 0, 0, 0.72451824, 0, 0, 0, 1.0000002, 0, 0, 0)
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=104067665]
+libraries/sword = SubResource("AnimationLibrary_fcs02")
 
-[connection signal="dash_state_changed" from="Movement" to="Look/Camera3D" method="set_dash_active"]
-[connection signal="dash_state_changed" from="Movement" to="PlayerPresentation" method="set_dash_active"]
-[connection signal="jump_started" from="Movement" to="Look/Camera3D/WeaponControl" method="play_takeoff_motion"]
-[connection signal="landed" from="Movement" to="Look/Camera3D/WeaponControl" method="play_landing_motion"]
-[connection signal="terrain_advanced" from="Movement" to="Look" method="advance_terrain"]
-[connection signal="terrain_reset" from="Movement" to="Look" method="clear_stair_smoothing"]
-[connection signal="terrain_reset" from="Movement" to="Look/Camera3D/WeaponControl" method="clear_air_motion"]
 [connection signal="mouse_turned" from="Look" to="Look/Camera3D/WeaponControl" method="add_look_turn"]

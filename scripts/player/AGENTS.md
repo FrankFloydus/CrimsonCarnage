@@ -1,12 +1,10 @@
 # Player
 
-Apply the [project instructions](../../AGENTS.md) and [Godot conventions](../../docs/godot_conventions.md). [Movement architecture](../../docs/architecture.md#scenes-and-ownership) describes the saved scene and component ownership.
+Apply the [project instructions](../../AGENTS.md) and [Godot conventions](../../docs/godot_conventions.md). [Movement architecture](../../docs/architecture.md#movement-and-jumping) describes the saved scene and component ownership.
 
-- Sample the Framework input scope from **Controls → Input Layout** while the mouse is captured. Feed neutral input while the mouse is released so braking, gravity, and collision continue.
-- Resolve crouch and gait before advancing Movement once per physics tick. Allow jump from floor or coyote support in each gait.
-- Enter crouch on a supported tick without a jump request. Keep the capsule bottom at the feet. Use the full standing volume, collision mask, and exceptions when testing clearance. Toggle standing requires a fresh press after an obstruction. One Shot retries standing once the button is released.
-- Keep baseline run speed, gait multipliers, jump heights, dash tuning, acceleration, gravity, and stair settings under **Movement → Settings**. Keep stance and look tuning in their respective settings. Store per-player state on components and helpers.
-- Use Movement's native MoverComponent solver for custom gravity, coyote time, air steering, dash charge recovery, stair support, and one `move_and_slide()` per physics tick. Keep stair camera compensation in Look through the scene's terrain signal connections.
-- Require a directional input to begin a dash. An idle press leaves the charge count and dash presentation alone.
-- Keep body yaw, eye pivot pitch, and camera roll on separate transforms. Crouch owns the eye pivot height and Look owns stair compensation on the camera.
-- Keep FOV transitions on **Look → Camera3D** and the screen-space distortion on **PlayerPresentation → ScreenEffects → DashSpeedStreaks**. Route Movement's saved dash connections to **Camera3D** and **PlayerPresentation** so they follow accepted dashes and actual stops.
+- Boot the stock native controller from **Controls** and let its Mover driver advance collision once per physics tick. Use the authored **Mover** settings.
+- Enable the Locomotion input map only while the mouse is captured. Keep braking, gravity, and collision active when steering is released.
+- Assign the optional Crouch Action resource in Controls. The native controller routes that input to Mover, which resolves crouch before the movement step. Keep the capsule bottom at the feet and check the full standing volume using the collision mask and exceptions. Toggle standing requires a fresh press after an obstruction. One Shot retries after release.
+- Subscribe to the live Mover's `landed` signal for landing effects. Read `get_last_fall_distance()` during the callback for fall damage in either combat form. WeaponControl owns the sword reaction in sword form.
+- Route mapped mouse aim through Controls to Look. Keep body yaw, eye pitch, camera roll, and imported camera animation on their existing transforms. Author sensitivity on Controls and pitch, roll, and movement FOV on Camera3D. Mover owns stair smoothing and camera clearance. Look composes its output with roll and camera animation. Keep the weapon rig's physics callback after the stock Mover driver.
+- Apply incoming damage through `PlayerStats.apply_damage()`. PlayerPresentation responds to `damage_taken` for hit feedback. DamageVignette owns the optional low-health pulse and draws over the ordinary post-processing vignette.

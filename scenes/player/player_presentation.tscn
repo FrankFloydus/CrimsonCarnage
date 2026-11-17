@@ -1,13 +1,13 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://mw7w01k3gq2x"]
 
-[ext_resource type="Script" path="res://scripts/player/player_presentation.gd" id="1_presentation"]
+[ext_resource type="Script" uid="uid://clqxbdifdru6g" path="res://scripts/player/player_presentation.gd" id="1_presentation"]
 [ext_resource type="PackedScene" uid="uid://jm5wofpkxba8" path="res://scenes/effects/lens_blood.tscn" id="2_lens_blood"]
-[ext_resource type="PackedScene" path="res://scenes/effects/damage_vignette.tscn" id="3_vignette"]
+[ext_resource type="PackedScene" uid="uid://t3jiyi1ma77t" path="res://scenes/effects/damage_vignette.tscn" id="3_vignette"]
 [ext_resource type="PackedScene" path="res://scenes/effects/dash_speed_streaks.tscn" id="4_dash_streaks"]
 [ext_resource type="PackedScene" uid="uid://nq160hlco3ye" path="res://scenes/ui/damage_indicator.tscn" id="5_damage_indicator"]
 [ext_resource type="PackedScene" uid="uid://dppptq8qeiamp" path="res://scenes/effects/post_processing.tscn" id="6_post_processing"]
 
-[node name="PlayerPresentation" type="Node"]
+[node name="PlayerPresentation" type="Node" unique_id=1351615103]
 script = ExtResource("1_presentation")
 
 [node name="HUD" type="CanvasLayer" parent="." unique_id=616394026]
@@ -16,15 +16,49 @@ layer = 2
 [node name="DamageIndicator" parent="HUD" unique_id=1132562095 instance=ExtResource("5_damage_indicator")]
 preview_marker_count = 1
 
+[node name="CombatStats" type="VBoxContainer" parent="HUD" unique_id=1442659069]
+visible = false
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -112.0
+offset_right = 254.0
+offset_bottom = -24.0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="HealthLabel" type="Label" parent="HUD/CombatStats" unique_id=609160364]
+layout_mode = 2
+text = "Health"
+
+[node name="HealthBar" type="ProgressBar" parent="HUD/CombatStats" unique_id=2109852980]
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+mouse_filter = 2
+show_percentage = false
+
+[node name="BloodLabel" type="Label" parent="HUD/CombatStats" unique_id=1920978442]
+layout_mode = 2
+text = "Blood"
+
+[node name="BloodBar" type="ProgressBar" parent="HUD/CombatStats" unique_id=1020763505]
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+mouse_filter = 2
+show_percentage = false
+
 [node name="ScreenEffects" type="CanvasLayer" parent="." unique_id=1040540561]
 layer = 0
 
 [node name="DashSpeedStreaks" parent="ScreenEffects" unique_id=2050863672 instance=ExtResource("4_dash_streaks")]
 
-[node name="DamageVignette" parent="ScreenEffects" unique_id=1135164261 instance=ExtResource("3_vignette")]
-peak_opacity = 1.0
-fade_time = 0.65
-
 [node name="LensBlood" parent="ScreenEffects" unique_id=904043926 instance=ExtResource("2_lens_blood")]
 
 [node name="PostProcessing" parent="ScreenEffects" unique_id=1501353919 instance=ExtResource("6_post_processing")]
+
+[node name="DamageVignette" parent="ScreenEffects" unique_id=1135164261 instance=ExtResource("3_vignette")]
+peak_opacity = 1.0
+fade_time = 1.0
+low_health_pulse_enabled = true
+low_health_pulse_threshold = 100.0

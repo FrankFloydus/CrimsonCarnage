@@ -1,18 +1,16 @@
 # Weapon Animation Tweaker runtime API
 
-`WeaponAnimationClip` is a GDScript reader for the data saved by **Apply** or **Save As** in the Weapon Animation Tweaker. Create a snapshot when choosing a clip, then reuse it while the clip plays. It reads from an `Animation` resource and can run without the editor plugin. A snapshot and its returned rows are independent copies. Read a new snapshot to pick up later edits.
+`CrimsonWeaponAnimationClip` is the runtime reader supplied by the standalone C++ Weapon Animation Tweaker. It reads an `Animation` resource after **Apply** or **Save Variant** in the native editor. Create a snapshot when choosing a clip and reuse it while the clip plays. The snapshot and its returned rows are independent copies. Create a new snapshot to pick up later edits. The native class is available in exports that include the Tweaker's runtime library. [Standalone addon](../native/weapon_animation_tweaker/README.md)
 
 ```gdscript
-const ClipData := preload("res://addons/weapon_animation_tweaker/weapon_animation_clip.gd")
-
 func inspect_attack(player: AnimationPlayer, clip_key: StringName, time: float) -> void:
-	var clip := ClipData.from_player(player, clip_key)
+	var clip := CrimsonWeaponAnimationClip.from_player(player, clip_key)
 	if clip == null:
 		return
 
 	var recovery_time := clip.get_marker_time(&"Recovery")
 	var reach := clip.sample_curve(&"Reach", time, 1.0)
-	var traces := clip.get_active_notify_states(time, ClipData.MELEE_TRACE)
+	var traces := clip.get_active_notify_states(time, &"MeleeTrace")
 	print(recovery_time, " ", reach, " ", traces.size())
 ```
 
@@ -38,9 +36,11 @@ Clip keys use the same names as `AnimationPlayer.play()`, including a library pr
 | `get_notify_states(name = &"")` | Notify states, optionally filtered by exact name. |
 | `get_active_notify_states(seconds, kind = &"")` | States active at that clip time, optionally filtered by kind. |
 
-A missing marker or curve info lookup returns an empty dictionary. An unknown curve returns an empty key array. Sampling clamps to the clip and returns the fallback for a missing or empty curve or a nonfinite time. Keys include `time` in seconds, `phase` in the normalized clip domain, `value`, `mode`, `in_slope`, `out_slope`, `in_weight`, `out_weight`, `weighted_in`, and `weighted_out`. Compare `mode` against `ClipData.CurveMode`. Slopes and weights use normalized time coordinates. Automatic slopes reflect the curve's current neighboring keys within the snapshot.
+A missing marker or curve info lookup returns an empty dictionary. An unknown curve returns an empty key array. Sampling clamps to the clip and returns the fallback for a missing or empty curve or a nonfinite time. Keys include `time` in seconds, `phase` in the normalized clip domain, `value`, `mode`, `in_slope`, `out_slope`, `in_weight`, `out_weight`, `weighted_in`, and `weighted_out`. The serialized modes are 0 (constant), 1 (linear), 2 (auto), 3 (broken), and 4 (legacy). Slopes and weights use normalized time coordinates. Automatic slopes reflect the curve's current neighboring keys within the snapshot.
 
-Marker names are unique within the clip. They are authored separately from Godot's built-in Animation markers. Notify dictionaries contain `name`, `kind`, `time`, `track_name`, `track_index`, `entry_index`, and optional `color`. A state adds `end_time`. A state is active on `[time, end_time)`. Generic notifies use an empty `kind`, and a MeleeTrace state uses `ClipData.MELEE_TRACE`. Use the lane and entry indices to distinguish multiple notifies with the same name in a snapshot.
+Marker names are unique within the clip. They are authored separately from Godot's built-in Animation markers. Notify dictionaries contain `name`, `kind`, `time`, `track_name`, `track_index`, `entry_index`, and optional `color`. A state adds `end_time`. A state is active on `[time, end_time)`. Generic notifies use an empty `kind`, and a MeleeTrace state uses `&"MeleeTrace"`. Use the lane and entry indices to distinguish multiple notifies with the same name in a snapshot.
+
+Carnage's sword playback uses the built-in `HitStart` and `HitEnd` Animation markers for contact checks. `MeleeTrace` is available as authored metadata through the snapshot API. The API returns records for callers to handle.
 
 ## Query events between samples
 
@@ -49,11 +49,11 @@ Marker names are unique within the clip. They are authored separately from Godot
 ```gdscript
 for event in clip.get_events_crossed(previous_time, current_time):
 	match event.type:
-		ClipData.EventType.STATE_STARTED:
+		CrimsonWeaponAnimationClip.STATE_STARTED:
 			print("Begin ", event.name, " at ", event.time)
-		ClipData.EventType.STATE_ENDED:
+		CrimsonWeaponAnimationClip.STATE_ENDED:
 			print("End ", event.name, " at ", event.time)
-		ClipData.EventType.NOTIFY, ClipData.EventType.MARKER:
+		CrimsonWeaponAnimationClip.NOTIFY, CrimsonWeaponAnimationClip.MARKER:
 			print("Passed ", event.name, " at ", event.time)
 ```
 
@@ -61,4 +61,8 @@ Events carry the corresponding notify or marker fields and a `type`. A state eve
 
 Use `get_loop_events_crossed(previous, current, loop_start = 0.0, loop_end = -1.0)` after exactly one wrap. It returns events from `(previous, loop_end]` followed by `[loop_start, current]`. The default loop end is the clip duration. For several wraps, query each crossing in order. When a custom loop starts or ends inside a state, use `get_active_notify_states()` to reconcile state at the loop entry. The application calling the reader decides how to act on the returned data.
 
-[Runtime script](../addons/weapon_animation_tweaker/weapon_animation_clip.gd) · [Tweaker authoring guide](architecture.md#melee)
+## GDScript compatibility
+
+`WeaponAnimationClip` remains available to scripts that preload the original reader. It exposes `CurveMode`, `MELEE_TRACE`, and `EventType`. Preserve existing resource scripts when a saved track or combo references them. The native reader accepts compatible metadata saved by the original GDScript editor.
+
+[Native class reference](../native/weapon_animation_tweaker/src/modules/weapon_animation/doc_classes/CrimsonWeaponAnimationClip.xml) · [Original GDScript reader](../addons/weapon_animation_tweaker/weapon_animation_clip.gd) · [Native authoring guide](../native/weapon_animation_tweaker/src/modules/weapon_animation/editor/README.md)
